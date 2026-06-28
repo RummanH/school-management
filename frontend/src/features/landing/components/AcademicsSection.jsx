@@ -24,15 +24,15 @@ export default function AcademicsSection() {
         </div>
 
         <div className="mt-10 flex flex-wrap justify-center gap-4">
-          <button className="btn-outline flex items-center gap-2">
+          <button className="btn-cta-outline flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             {t('academics.examSchedule')}
           </button>
-          <button className="btn-outline flex items-center gap-2">
+          <button className="btn-cta-outline flex items-center gap-2">
             <Download className="h-4 w-4" />
             {t('academics.syllabus')}
           </button>
-          <button className="btn-primary flex items-center gap-2">
+          <button className="btn-cta flex items-center gap-2">
             <BookOpen className="h-4 w-4" />
             {t('academics.viewMore')}
           </button>

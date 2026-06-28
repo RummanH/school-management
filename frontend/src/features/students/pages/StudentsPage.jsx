@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Loader2, GraduationCap, X, Save, CheckCircle, XCircle } from 'lucide-react';
 import { listStudents, createStudent, updateStudent, deleteStudent } from '../../../services/api/studentApi.js';
+import { listClasses } from '../../../services/api/academicApi.js';
 
 const GENDERS      = ['Male', 'Female', 'Other'];
 const BLOOD_GROUPS = ['A+', 'A−', 'B+', 'B−', 'O+', 'O−', 'AB+', 'AB−'];
@@ -8,6 +9,7 @@ const RELATIONS    = ['Father', 'Mother', 'Guardian', 'Other'];
 
 const EMPTY = {
   name: '', email: '', password: '', status: 'active',
+  classId: '',
   studentId: '', className: '', section: '', rollNumber: '',
   admissionDate: '', dateOfBirth: '', gender: '', bloodGroup: '',
   phone: '', address: '',
@@ -78,6 +80,7 @@ function StudentModal({ initial, onClose, onSaved }) {
   const isEdit = Boolean(initial?.userId);
   const [form, setForm] = useState(isEdit ? {
     name: initial.name, email: initial.email, password: '', status: initial.status,
+    classId: initial.classId || '',
     studentId: initial.studentId || '', className: initial.className || '',
     section: initial.section || '', rollNumber: initial.rollNumber || '',
     admissionDate: initial.admissionDate || '', dateOfBirth: initial.dateOfBirth || '',
@@ -86,8 +89,13 @@ function StudentModal({ initial, onClose, onSaved }) {
     guardianName: initial.guardianName || '', guardianPhone: initial.guardianPhone || '',
     guardianRelation: initial.guardianRelation || '',
   } : { ...EMPTY });
+  const [classes, setClasses] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    listClasses().then(c => setClasses(c.classes || [])).catch(() => {});
+  }, []);
 
   function set(field, value) { setForm(f => ({ ...f, [field]: value })); setError(''); }
 
@@ -152,6 +160,13 @@ function StudentModal({ initial, onClose, onSaved }) {
             {/* Academic */}
             <SectionDivider label="Academic" />
             <div className="grid gap-4 sm:grid-cols-3">
+              <div className="sm:col-span-3">
+                <FieldLabel>Enroll in Class</FieldLabel>
+                <Select value={form.classId} onChange={e => set('classId', e.target.value)}>
+                  <option value="">— Not assigned —</option>
+                  {classes.map(c => <option key={c.id} value={c.id}>{c.name}{c.section ? ` — ${c.section}` : ''}{c.academicYear ? ` (${c.academicYear})` : ''}</option>)}
+                </Select>
+              </div>
               <div>
                 <FieldLabel>Student ID</FieldLabel>
                 <Input value={form.studentId} onChange={e => set('studentId', e.target.value)} placeholder="e.g. STU-001" />

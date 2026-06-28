@@ -1,4 +1,5 @@
 export async function createSchema(pool) {
+  // Stage 1 — create tables (idempotent; won't modify existing tables)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS tenants (
       id               TEXT PRIMARY KEY,
@@ -14,8 +15,6 @@ export async function createSchema(pool) {
       created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
-    CREATE INDEX IF NOT EXISTS idx_tenants_slug ON tenants(slug);
-
     CREATE TABLE IF NOT EXISTS users (
       id            TEXT PRIMARY KEY,
       tenant_id     TEXT REFERENCES tenants(id) ON DELETE CASCADE,
@@ -28,9 +27,6 @@ export async function createSchema(pool) {
       updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_tenant
-      ON users(email, COALESCE(tenant_id, ''));
-
     CREATE TABLE IF NOT EXISTS user_sessions (
       id         TEXT PRIMARY KEY,
       user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -38,9 +34,6 @@ export async function createSchema(pool) {
       expires_at TIMESTAMPTZ NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-
-    CREATE INDEX IF NOT EXISTS idx_user_sessions_token_hash ON user_sessions(token_hash);
-    CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id   ON user_sessions(user_id);
 
     CREATE TABLE IF NOT EXISTS contact_messages (
       id         TEXT PRIMARY KEY,
@@ -51,31 +44,104 @@ export async function createSchema(pool) {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
-    CREATE INDEX IF NOT EXISTS idx_contact_messages_created_at ON contact_messages(created_at DESC);
-
-    CREATE TABLE IF NOT EXISTS student_profiles (
+    CREATE TABLE IF NOT EXISTS classes (
       id               TEXT PRIMARY KEY,
       tenant_id        TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-      user_id          TEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-      student_id       TEXT,
-      class_name       TEXT NOT NULL DEFAULT '',
+      name             TEXT NOT NULL,
       section          TEXT NOT NULL DEFAULT '',
-      roll_number      TEXT NOT NULL DEFAULT '',
-      admission_date   TEXT,
-      date_of_birth    TEXT,
-      gender           TEXT,
-      blood_group      TEXT,
-      phone            TEXT,
-      address          TEXT,
-      guardian_name    TEXT,
-      guardian_phone   TEXT,
-      guardian_relation TEXT,
-      created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      academic_year    TEXT NOT NULL DEFAULT '',
+      class_teacher_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+      description      TEXT,
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
-    CREATE INDEX IF NOT EXISTS idx_student_profiles_tenant_id ON student_profiles(tenant_id);
-    CREATE INDEX IF NOT EXISTS idx_student_profiles_user_id   ON student_profiles(user_id);
+    CREATE TABLE IF NOT EXISTS class_routines (
+      id            TEXT PRIMARY KEY,
+      tenant_id     TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      class_id      TEXT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+      day_of_week   TEXT NOT NULL,
+      period_number INTEGER NOT NULL,
+      subject       TEXT NOT NULL,
+      teacher_id    TEXT REFERENCES users(id) ON DELETE SET NULL,
+      start_time    TEXT NOT NULL DEFAULT '',
+      end_time      TEXT NOT NULL DEFAULT '',
+      room          TEXT NOT NULL DEFAULT '',
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(class_id, day_of_week, period_number)
+    );
+
+    CREATE TABLE IF NOT EXISTS syllabus_entries (
+      id            TEXT PRIMARY KEY,
+      tenant_id     TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      class_id      TEXT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+      subject       TEXT NOT NULL,
+      title         TEXT NOT NULL,
+      description   TEXT NOT NULL DEFAULT '',
+      chapter_count INTEGER NOT NULL DEFAULT 0,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS exam_schedules (
+      id          TEXT PRIMARY KEY,
+      tenant_id   TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      class_id    TEXT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+      exam_name   TEXT NOT NULL,
+      subject     TEXT NOT NULL,
+      exam_date   TEXT NOT NULL,
+      start_time  TEXT NOT NULL DEFAULT '',
+      end_time    TEXT NOT NULL DEFAULT '',
+      total_marks INTEGER NOT NULL DEFAULT 100,
+      room        TEXT NOT NULL DEFAULT '',
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS exam_results (
+      id               TEXT PRIMARY KEY,
+      tenant_id        TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      exam_schedule_id TEXT NOT NULL REFERENCES exam_schedules(id) ON DELETE CASCADE,
+      student_user_id  TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      marks_obtained   NUMERIC(6,2),
+      grade            TEXT NOT NULL DEFAULT '',
+      remarks          TEXT NOT NULL DEFAULT '',
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(exam_schedule_id, student_user_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS attendance_records (
+      id               TEXT PRIMARY KEY,
+      tenant_id        TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      class_id         TEXT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+      student_user_id  TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      attendance_date  TEXT NOT NULL,
+      status           TEXT NOT NULL DEFAULT 'present',
+      marked_by_id     TEXT REFERENCES users(id) ON DELETE SET NULL,
+      note             TEXT NOT NULL DEFAULT '',
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(class_id, student_user_id, attendance_date)
+    );
+
+    CREATE TABLE IF NOT EXISTS student_profiles (
+      id                TEXT PRIMARY KEY,
+      tenant_id         TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      user_id           TEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+      student_id        TEXT,
+      class_name        TEXT NOT NULL DEFAULT '',
+      section           TEXT NOT NULL DEFAULT '',
+      roll_number       TEXT NOT NULL DEFAULT '',
+      admission_date    TEXT,
+      date_of_birth     TEXT,
+      gender            TEXT,
+      blood_group       TEXT,
+      phone             TEXT,
+      address           TEXT,
+      guardian_name     TEXT,
+      guardian_phone    TEXT,
+      guardian_relation TEXT,
+      created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
 
     CREATE TABLE IF NOT EXISTS teacher_profiles (
       id            TEXT PRIMARY KEY,
@@ -95,11 +161,39 @@ export async function createSchema(pool) {
       created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+  `);
 
+  // Stage 2 — add columns that may be missing on existing databases
+  await pool.query(`
+    ALTER TABLE tenants          ADD COLUMN IF NOT EXISTS institution_type TEXT NOT NULL DEFAULT 'SCHOOL';
+    ALTER TABLE tenants          ADD COLUMN IF NOT EXISTS phone            TEXT;
+    ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS class_id         TEXT REFERENCES classes(id) ON DELETE SET NULL;
+  `);
+
+  // Stage 3 — create indexes (all referenced columns now guaranteed to exist)
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_tenant
+      ON users(email, COALESCE(tenant_id, ''));
+
+    CREATE INDEX IF NOT EXISTS idx_tenants_slug               ON tenants(slug);
+    CREATE INDEX IF NOT EXISTS idx_user_sessions_token_hash   ON user_sessions(token_hash);
+    CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id      ON user_sessions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_contact_messages_created_at ON contact_messages(created_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_classes_tenant_id          ON classes(tenant_id);
+    CREATE INDEX IF NOT EXISTS idx_class_routines_class_id    ON class_routines(class_id);
+    CREATE INDEX IF NOT EXISTS idx_syllabus_entries_class_id  ON syllabus_entries(class_id);
+    CREATE INDEX IF NOT EXISTS idx_exam_schedules_class_id    ON exam_schedules(class_id);
+    CREATE INDEX IF NOT EXISTS idx_exam_schedules_exam_date   ON exam_schedules(exam_date);
+    CREATE INDEX IF NOT EXISTS idx_exam_results_exam_schedule_id ON exam_results(exam_schedule_id);
+    CREATE INDEX IF NOT EXISTS idx_exam_results_student_user_id  ON exam_results(student_user_id);
+    CREATE INDEX IF NOT EXISTS idx_attendance_class_date      ON attendance_records(class_id, attendance_date);
+    CREATE INDEX IF NOT EXISTS idx_attendance_student         ON attendance_records(student_user_id);
+
+    CREATE INDEX IF NOT EXISTS idx_student_profiles_tenant_id ON student_profiles(tenant_id);
+    CREATE INDEX IF NOT EXISTS idx_student_profiles_user_id   ON student_profiles(user_id);
+    CREATE INDEX IF NOT EXISTS idx_student_profiles_class_id  ON student_profiles(class_id);
     CREATE INDEX IF NOT EXISTS idx_teacher_profiles_tenant_id ON teacher_profiles(tenant_id);
     CREATE INDEX IF NOT EXISTS idx_teacher_profiles_user_id   ON teacher_profiles(user_id);
-
-    ALTER TABLE tenants ADD COLUMN IF NOT EXISTS institution_type TEXT NOT NULL DEFAULT 'SCHOOL';
-    ALTER TABLE tenants ADD COLUMN IF NOT EXISTS phone TEXT;
   `);
 }

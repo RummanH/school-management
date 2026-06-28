@@ -5,22 +5,13 @@ export async function listTenants() {
 }
 
 export async function createTenant(data) {
-  return apiRequest('/platform/tenants', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+  return apiRequest('/platform/tenants', { method: 'POST', body: data });
 }
 
 export async function updateTenant(id, data) {
-  return apiRequest(`/platform/tenants/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
+  return apiRequest(`/platform/tenants/${id}`, { method: 'PUT', body: data });
 }
 
 export async function setTenantStatus(id, status) {
-  return apiRequest(`/platform/tenants/${id}/status`, {
-    method: 'PATCH',
-    body: JSON.stringify({ status }),
-  });
+  return apiRequest(`/platform/tenants/${id}/status`, { method: 'PATCH', body: { status } });
 }

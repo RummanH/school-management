@@ -7,22 +7,24 @@ import { TenantService } from "./services/tenantService.js";
 import { UserService } from "./services/userService.js";
 import { StudentService } from "./services/studentService.js";
 import { TeacherService } from "./services/teacherService.js";
+import { AcademicService } from "./services/academicService.js";
 import { createApp } from "./app.js";
 
 export async function createBackendApp() {
   const databaseManager = new DatabaseManager(env.DATABASE_URL);
   await bootstrapService.initialize(databaseManager, env);
 
-  const contactService = new ContactService(databaseManager);
-  const authService    = new AuthService(databaseManager, env);
-  const tenantService  = new TenantService(databaseManager);
-  const userService    = new UserService(databaseManager);
-  const studentService = new StudentService(databaseManager);
-  const teacherService = new TeacherService(databaseManager);
+  const contactService  = new ContactService(databaseManager);
+  const authService     = new AuthService(databaseManager, env);
+  const tenantService   = new TenantService(databaseManager);
+  const userService     = new UserService(databaseManager);
+  const studentService  = new StudentService(databaseManager);
+  const teacherService  = new TeacherService(databaseManager);
+  const academicService = new AcademicService(databaseManager);
 
   const app = createApp({
     env, contactService, authService, tenantService,
-    userService, studentService, teacherService, databaseManager,
+    userService, studentService, teacherService, academicService, databaseManager,
   });
   return { app, databaseManager, env };
 }

@@ -124,7 +124,7 @@ export default function ContactSection() {
               <button
                 type="submit"
                 disabled={status === 'loading'}
-                className="btn-primary w-full justify-center disabled:opacity-60"
+                className="btn-cta w-full justify-center disabled:opacity-60"
               >
                 <Send className="h-4 w-4" />
                 {status === 'loading' ? '...' : t('contact.form.submit')}

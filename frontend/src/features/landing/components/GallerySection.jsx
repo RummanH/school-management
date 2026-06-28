@@ -28,7 +28,7 @@ export default function GallerySection() {
         </div>
 
         <div className="mt-8 text-center">
-          <button className="btn-outline inline-flex items-center gap-2">
+          <button className="btn-cta-outline inline-flex items-center gap-2">
             <Images className="h-4 w-4" />
             {t('gallery.viewAll')}
           </button>

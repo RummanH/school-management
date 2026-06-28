@@ -58,6 +58,7 @@ export class StudentService {
         id: createId("sp"),
         tenantId: actor.tenantId,
         userId,
+        classId: input.classId || null,
         studentId: input.studentId,
         className: input.className,
         section: input.section,
@@ -105,6 +106,7 @@ export class StudentService {
       await updateUser(client, { id: userId, name, email, role: "student", status, passwordHash });
       await updateStudentProfile(client, {
         userId,
+        classId: input.classId || null,
         studentId: input.studentId,
         className: input.className,
         section: input.section,

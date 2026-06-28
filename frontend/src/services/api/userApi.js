@@ -5,11 +5,11 @@ export async function listUsers() {
 }
 
 export async function createUser(data) {
-  return apiRequest('/users', { method: 'POST', body: JSON.stringify(data) });
+  return apiRequest('/users', { method: 'POST', body: data });
 }
 
 export async function updateUser(id, data) {
-  return apiRequest(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  return apiRequest(`/users/${id}`, { method: 'PUT', body: data });
 }
 
 export async function deleteUser(id) {

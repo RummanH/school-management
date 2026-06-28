@@ -4,6 +4,7 @@ export function mapStudent(row) {
     id: row.id,
     tenantId: row.tenant_id,
     userId: row.user_id,
+    classId: row.class_id || null,
     // user account fields (from JOIN)
     name: row.name,
     email: row.email,
@@ -51,18 +52,18 @@ export async function findStudentByUserId(client, userId) {
 }
 
 export async function insertStudentProfile(client, {
-  id, tenantId, userId, studentId, className, section, rollNumber,
+  id, tenantId, userId, classId, studentId, className, section, rollNumber,
   admissionDate, dateOfBirth, gender, bloodGroup, phone, address,
   guardianName, guardianPhone, guardianRelation,
 }) {
   const result = await client.query(
     `INSERT INTO student_profiles
-       (id, tenant_id, user_id, student_id, class_name, section, roll_number,
+       (id, tenant_id, user_id, class_id, student_id, class_name, section, roll_number,
         admission_date, date_of_birth, gender, blood_group, phone, address,
         guardian_name, guardian_phone, guardian_relation)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
      RETURNING *`,
-    [id, tenantId, userId, studentId || null, className || '', section || '',
+    [id, tenantId, userId, classId || null, studentId || null, className || '', section || '',
      rollNumber || '', admissionDate || null, dateOfBirth || null,
      gender || null, bloodGroup || null, phone || null, address || null,
      guardianName || null, guardianPhone || null, guardianRelation || null],
@@ -71,18 +72,18 @@ export async function insertStudentProfile(client, {
 }
 
 export async function updateStudentProfile(client, {
-  userId, studentId, className, section, rollNumber,
+  userId, classId, studentId, className, section, rollNumber,
   admissionDate, dateOfBirth, gender, bloodGroup, phone, address,
   guardianName, guardianPhone, guardianRelation,
 }) {
   await client.query(
     `UPDATE student_profiles
-     SET student_id=$2, class_name=$3, section=$4, roll_number=$5,
-         admission_date=$6, date_of_birth=$7, gender=$8, blood_group=$9,
-         phone=$10, address=$11, guardian_name=$12, guardian_phone=$13,
-         guardian_relation=$14, updated_at=NOW()
+     SET class_id=$2, student_id=$3, class_name=$4, section=$5, roll_number=$6,
+         admission_date=$7, date_of_birth=$8, gender=$9, blood_group=$10,
+         phone=$11, address=$12, guardian_name=$13, guardian_phone=$14,
+         guardian_relation=$15, updated_at=NOW()
      WHERE user_id=$1`,
-    [userId, studentId || null, className || '', section || '',
+    [userId, classId || null, studentId || null, className || '', section || '',
      rollNumber || '', admissionDate || null, dateOfBirth || null,
      gender || null, bloodGroup || null, phone || null, address || null,
      guardianName || null, guardianPhone || null, guardianRelation || null],

@@ -6,6 +6,7 @@ import TenantsPage from '../../platform/pages/TenantsPage.jsx';
 import UsersPage from '../../platform/pages/UsersPage.jsx';
 import StudentsPage from '../../students/pages/StudentsPage.jsx';
 import TeachersPage from '../../teachers/pages/TeachersPage.jsx';
+import AcademicPage from '../../academic/pages/AcademicPage.jsx';
 import { getStats, getContacts, markContactRead } from '../../../services/api/adminApi.js';
 import { useAuth } from '../../../app/App.jsx';
 
@@ -145,12 +146,13 @@ function DashboardHome() {
 
 /* ─── Page titles per route ─── */
 const PAGE_TITLES = {
-  '/dashboard':          'Dashboard',
-  '/dashboard/contacts': 'Contact Messages',
-  '/dashboard/tenants':  'Organizations',
-  '/dashboard/users':    'Users',
-  '/dashboard/students': 'Students',
-  '/dashboard/teachers': 'Teachers',
+  '/dashboard':           'Dashboard',
+  '/dashboard/contacts':  'Contact Messages',
+  '/dashboard/tenants':   'Organizations',
+  '/dashboard/users':     'Users',
+  '/dashboard/students':  'Students',
+  '/dashboard/teachers':  'Teachers',
+  '/dashboard/academic':  'Academic Portal',
 };
 
 /* ─── Root layout ─── */
@@ -168,10 +170,11 @@ export default function DashboardPage() {
   const title = PAGE_TITLES[pathname] ?? 'Dashboard';
 
   function renderContent() {
-    if (pathname === '/dashboard/tenants')  return <TenantsPage />;
-    if (pathname === '/dashboard/users')    return <UsersPage />;
-    if (pathname === '/dashboard/students') return <StudentsPage />;
-    if (pathname === '/dashboard/teachers') return <TeachersPage />;
+    if (pathname === '/dashboard/tenants')           return <TenantsPage />;
+    if (pathname === '/dashboard/users')             return <UsersPage />;
+    if (pathname === '/dashboard/students')          return <StudentsPage />;
+    if (pathname === '/dashboard/teachers')          return <TeachersPage />;
+    if (pathname.startsWith('/dashboard/academic'))  return <AcademicPage />;
     return <DashboardHome />;
   }
 

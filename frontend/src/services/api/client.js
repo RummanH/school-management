@@ -8,13 +8,15 @@ export function buildQueryString(params = {}) {
 }
 
 export async function apiRequest(path, options = {}) {
+  const { body, headers, ...rest } = options;
   const response = await fetch(`/api${path}`, {
     cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
-      ...(options.headers || {}),
+      ...headers,
     },
-    ...options,
+    body: body != null ? JSON.stringify(body) : undefined,
+    ...rest,
   });
   const data = await response.json().catch(() => null);
   if (!response.ok) {
