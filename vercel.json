@@ -1,0 +1,14 @@
+{
+  "buildCommand": "npm run render-build",
+  "outputDirectory": "public",
+  "rewrites": [
+    {
+      "source": "/api",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index.js?path=:path*"
+    }
+  ]
+}

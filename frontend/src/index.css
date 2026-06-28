@@ -1,0 +1,218 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    --app-bg: #f2f2f2;
+    --app-bg-strong: #c4c5cd;
+    --surface: rgba(var(--white), 0.94);
+    --surface-strong: rgba(var(--white), 0.98);
+    --surface-line: rgba(var(--slate-900), 0.08);
+    --shadow-soft: 0 20px 55px rgba(var(--slate-900), 0.08);
+    --shadow-crisp: 0 12px 30px rgba(var(--slate-900), 0.07);
+    /* Brand = deep forest green */
+    --brand: #1a6b3c;
+    --brand-strong: #0d3d22;
+    --brand-soft: color-mix(in srgb, var(--brand) 12%, white);
+    --secondary: #2e8b57;
+    --secondary-strong: #1a6b3c;
+    --secondary-soft: color-mix(in srgb, var(--secondary) 12%, white);
+    --secondary-shadow: rgba(46, 139, 87, 0.24);
+    --secondary-shadow-strong: rgba(46, 139, 87, 0.3);
+    --bg-dark: #0d3d22;
+    --login-hero-bg: #e7f0ec;
+    --bg-grad-start: color-mix(in srgb, var(--brand) 3%, white);
+    --bg-grad-mid: color-mix(in srgb, var(--brand) 5%, white);
+    --bg-grad-end: color-mix(in srgb, var(--brand) 7%, white);
+    --chart-tooltip-title: #f8f8f9;
+    --chart-tooltip-body: #f6f6f6;
+    --chart-grid: rgba(148, 163, 184, 0.1);
+    --tick-color: #2f3347;
+    --success: #37a864;
+    --success-strong: color-mix(in srgb, var(--success) 75%, black);
+    --success-soft: rgba(55, 168, 100, 0.1);
+    --success-line: rgba(55, 168, 100, 0.24);
+    --warning: #f8aa17;
+    --warning-strong: #e79600;
+    --warning-soft: rgba(248, 170, 23, 0.1);
+    --warning-line: rgba(248, 170, 23, 0.24);
+    --danger: #f1454f;
+    --danger-strong: color-mix(in srgb, var(--danger) 75%, black);
+    --danger-soft: rgba(241, 69, 79, 0.08);
+    --danger-line: rgba(241, 69, 79, 0.2);
+    --accent-orange: #f5820f;
+    --accent-teal: #0d9488;
+    --purple: #9b44ad;
+    --teal: #0d9488;
+    --rose: #e11d48;
+    --surface-white: #f8f8f9;
+    --muted: #8c8f9e;
+    --highlight: #c4c5cd;
+    --text-strong: #0d3d22;
+    --text-soft: #4a6558;
+
+    --slate-50: 248 250 252;
+    --slate-100: 241 245 249;
+    --slate-200: 226 232 240;
+    --slate-300: 203 213 225;
+    --slate-400: 148 163 184;
+    --slate-500: 100 116 139;
+    --slate-600: 71 85 105;
+    --slate-700: 51 65 85;
+    --slate-800: 30 41 59;
+    --slate-900: 15 23 42;
+    --slate-950: 2 6 23;
+
+    --blue-50: 239 246 255;
+    --blue-100: 219 234 254;
+    --blue-200: 191 219 254;
+    --blue-300: 147 197 253;
+    --blue-400: 96 165 250;
+    --blue-500: 59 130 246;
+    --blue-600: 37 99 235;
+    --blue-700: 29 78 216;
+    --blue-800: 30 64 175;
+    --blue-900: 30 58 138;
+    --blue-950: 23 37 84;
+
+    --emerald-50: 236 253 245;
+    --emerald-100: 209 250 229;
+    --emerald-200: 167 243 208;
+    --emerald-300: 110 231 183;
+    --emerald-400: 52 211 153;
+    --emerald-500: 16 185 129;
+    --emerald-600: 5 150 105;
+    --emerald-700: 4 120 87;
+    --emerald-800: 6 95 70;
+    --emerald-900: 6 78 59;
+    --emerald-950: 2 44 34;
+
+    --amber-50: 255 251 235;
+    --amber-100: 254 243 199;
+    --amber-200: 253 230 138;
+    --amber-300: 252 211 77;
+    --amber-400: 251 191 36;
+    --amber-500: 245 158 11;
+    --amber-600: 217 119 6;
+    --amber-700: 180 83 9;
+    --amber-800: 146 64 14;
+    --amber-900: 120 53 15;
+    --amber-950: 69 26 3;
+
+    --indigo-50: 238 242 255;
+    --indigo-100: 224 231 255;
+    --indigo-200: 199 210 254;
+    --indigo-300: 165 180 252;
+    --indigo-400: 129 140 248;
+    --indigo-500: 99 102 241;
+    --indigo-600: 79 70 229;
+    --indigo-700: 67 56 202;
+    --indigo-800: 55 48 163;
+    --indigo-900: 49 46 129;
+    --indigo-950: 30 27 75;
+
+    --purple-50: 250 245 255;
+    --purple-100: 243 232 255;
+    --purple-200: 233 213 255;
+    --purple-300: 216 180 254;
+    --purple-400: 192 132 252;
+    --purple-500: 168 85 247;
+    --purple-600: 147 51 234;
+    --purple-700: 126 34 206;
+    --purple-800: 107 33 168;
+    --purple-900: 88 28 135;
+    --purple-950: 59 7 100;
+
+    --rose-50: 255 241 242;
+    --rose-100: 255 228 230;
+    --rose-200: 254 205 211;
+    --rose-300: 253 164 175;
+    --rose-400: 251 113 133;
+    --rose-500: 244 63 94;
+    --rose-600: 225 29 72;
+    --rose-700: 190 18 60;
+    --rose-800: 159 18 57;
+    --rose-900: 136 19 55;
+    --rose-950: 76 5 25;
+
+    --teal-50: 240 253 250;
+    --teal-100: 204 251 241;
+    --teal-200: 153 246 228;
+    --teal-300: 94 234 212;
+    --teal-400: 45 212 191;
+    --teal-500: 20 184 166;
+    --teal-600: 13 148 136;
+    --teal-700: 15 118 110;
+    --teal-800: 17 94 89;
+    --teal-900: 19 78 74;
+    --teal-950: 4 47 46;
+
+    --white: 255 255 255;
+    --black: 0 0 0;
+    --cyan-600: 8 145 178;
+  }
+
+  html {
+    height: 100%;
+    font-family: "Plus Jakarta Sans", "Noto Sans Bengali", "Segoe UI Variable", "Segoe UI", "Avenir Next", "Trebuchet MS", sans-serif;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    height: 100%;
+    background: #ffffff;
+    color: var(--text-strong);
+  }
+
+  #root {
+    height: 100%;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  ::selection {
+    background: var(--brand-soft);
+    color: var(--brand-strong);
+  }
+}
+
+@layer components {
+  .landing-container {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-title {
+    @apply text-3xl font-black tracking-tight text-[var(--brand-strong)] sm:text-4xl;
+  }
+
+  .section-subtitle {
+    @apply mt-3 text-base text-[var(--text-soft)] sm:text-lg;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[var(--brand-strong)] hover:shadow-lg active:translate-y-0;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center gap-2 rounded-full border-2 border-[var(--brand)] px-6 py-3 text-sm font-bold text-[var(--brand)] transition hover:bg-[var(--brand)] hover:text-white;
+  }
+
+  .card {
+    @apply rounded-2xl border border-slate-100 bg-white p-6 shadow-soft;
+  }
+}

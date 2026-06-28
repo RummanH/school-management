@@ -1,0 +1,15 @@
+{
+  "name": "school-management-root",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "install-client": "npm install --prefix frontend",
+    "install-server": "npm install --prefix backend",
+    "install": "npm run install-client && npm run install-server",
+    "client": "npm run dev --prefix frontend",
+    "server": "npm run dev --prefix backend",
+    "watch": "concurrently \"npm run client\" \"npm run server\"",
+    "render-build": "node scripts/render-build.mjs",
+    "start": "npm run start --prefix backend"
+  }
+}
