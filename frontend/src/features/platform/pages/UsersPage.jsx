@@ -21,9 +21,10 @@ const ROLE_COLORS = {
   guardian: 'bg-amber-100 text-amber-700',
 };
 
+// Teachers and students are created from their dedicated pages (with full profiles).
+// This Users page only manages admin and guardian accounts.
 function rolesFor(actorRole) {
-  // system_developer and admin can assign any tenant role
-  return ['admin', 'teacher', 'student', 'guardian'];
+  return ['admin', 'guardian'];
 }
 
 /* ─── Confirmation dialog ─── */
@@ -290,6 +291,11 @@ export default function UsersPage() {
 
   return (
     <div>
+      <div className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+        This page manages <strong>Admin</strong> and <strong>Guardian</strong> accounts only.
+        To create teachers or students, use the <strong>Teachers</strong> and <strong>Students</strong> pages — they create the login account and full profile together.
+      </div>
+
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-black text-slate-800">Users</h2>

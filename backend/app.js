@@ -6,14 +6,20 @@ import { backendDistPath, frontendDistPath } from "./config/paths.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { createApiRouter } from "./routes/api.js";
 
-export function createApp({ env, contactService, authService, tenantService, userService, databaseManager }) {
+export function createApp({
+  env, contactService, authService, tenantService,
+  userService, studentService, teacherService, databaseManager,
+}) {
   const app = express();
 
   app.set("trust proxy", 1);
   app.use(express.json());
   app.use(cookieParser());
 
-  app.use("/api", createApiRouter({ env, contactService, authService, tenantService, userService, databaseManager }));
+  app.use("/api", createApiRouter({
+    env, contactService, authService, tenantService,
+    userService, studentService, teacherService, databaseManager,
+  }));
 
   const staticRoot = fs.existsSync(backendDistPath) ? backendDistPath : frontendDistPath;
 

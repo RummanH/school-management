@@ -5,6 +5,8 @@ import { ContactService } from "./services/contactService.js";
 import { AuthService } from "./services/authService.js";
 import { TenantService } from "./services/tenantService.js";
 import { UserService } from "./services/userService.js";
+import { StudentService } from "./services/studentService.js";
+import { TeacherService } from "./services/teacherService.js";
 import { createApp } from "./app.js";
 
 export async function createBackendApp() {
@@ -12,10 +14,15 @@ export async function createBackendApp() {
   await bootstrapService.initialize(databaseManager, env);
 
   const contactService = new ContactService(databaseManager);
-  const authService = new AuthService(databaseManager, env);
-  const tenantService = new TenantService(databaseManager);
-  const userService = new UserService(databaseManager);
+  const authService    = new AuthService(databaseManager, env);
+  const tenantService  = new TenantService(databaseManager);
+  const userService    = new UserService(databaseManager);
+  const studentService = new StudentService(databaseManager);
+  const teacherService = new TeacherService(databaseManager);
 
-  const app = createApp({ env, contactService, authService, tenantService, userService, databaseManager });
+  const app = createApp({
+    env, contactService, authService, tenantService,
+    userService, studentService, teacherService, databaseManager,
+  });
   return { app, databaseManager, env };
 }

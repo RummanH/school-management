@@ -4,6 +4,8 @@ import DashboardSidebar from '../components/DashboardSidebar.jsx';
 import DashboardHeader from '../components/DashboardHeader.jsx';
 import TenantsPage from '../../platform/pages/TenantsPage.jsx';
 import UsersPage from '../../platform/pages/UsersPage.jsx';
+import StudentsPage from '../../students/pages/StudentsPage.jsx';
+import TeachersPage from '../../teachers/pages/TeachersPage.jsx';
 import { getStats, getContacts, markContactRead } from '../../../services/api/adminApi.js';
 import { useAuth } from '../../../app/App.jsx';
 
@@ -147,6 +149,8 @@ const PAGE_TITLES = {
   '/dashboard/contacts': 'Contact Messages',
   '/dashboard/tenants':  'Organizations',
   '/dashboard/users':    'Users',
+  '/dashboard/students': 'Students',
+  '/dashboard/teachers': 'Teachers',
 };
 
 /* ─── Root layout ─── */
@@ -164,8 +168,10 @@ export default function DashboardPage() {
   const title = PAGE_TITLES[pathname] ?? 'Dashboard';
 
   function renderContent() {
-    if (pathname === '/dashboard/tenants') return <TenantsPage />;
-    if (pathname === '/dashboard/users')   return <UsersPage />;
+    if (pathname === '/dashboard/tenants')  return <TenantsPage />;
+    if (pathname === '/dashboard/users')    return <UsersPage />;
+    if (pathname === '/dashboard/students') return <StudentsPage />;
+    if (pathname === '/dashboard/teachers') return <TeachersPage />;
     return <DashboardHome />;
   }
 

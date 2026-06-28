@@ -1,4 +1,4 @@
-import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, Globe, LogOut, X } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, BookOpen, Globe, LogOut, X } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 
 const SHARED_NAV = [
@@ -7,12 +7,14 @@ const SHARED_NAV = [
 ];
 
 const TENANT_ADMIN_NAV = [
+  { label: 'Teachers', icon: BookOpen, path: '/dashboard/teachers' },
+  { label: 'Students', icon: GraduationCap, path: '/dashboard/students' },
   { label: 'Users', icon: Users, path: '/dashboard/users' },
 ];
 
 const PLATFORM_NAV = [
   { label: 'Organizations', icon: Building2, path: '/dashboard/tenants' },
-  { label: 'All Users', icon: Users, path: '/dashboard/users' },
+  { label: 'All Users',     icon: Users,     path: '/dashboard/users' },
 ];
 
 const ADMIN_ROLES = ['system_developer', 'admin'];

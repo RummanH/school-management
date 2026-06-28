@@ -14,3 +14,7 @@ export async function logout() {
 export async function getMe() {
   return apiRequest('/auth/me');
 }
+
+export async function getMyProfile() {
+  return apiRequest('/me/profile');
+}

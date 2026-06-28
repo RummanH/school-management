@@ -4,6 +4,7 @@ import { getMe, logout as apiLogout } from '../services/api/authApi.js';
 import LandingPage from '../features/landing/pages/LandingPage.jsx';
 import LoginPage from '../features/auth/pages/LoginPage.jsx';
 import DashboardPage from '../features/dashboard/pages/DashboardPage.jsx';
+import PortalPage from '../features/portal/pages/PortalPage.jsx';
 
 const LanguageContext = createContext(null);
 const AuthContext = createContext(null);
@@ -14,6 +15,13 @@ export function useAuth() { return useContext(AuthContext); }
 export function navigate(path) {
   window.history.pushState(null, '', path);
   window.dispatchEvent(new PopStateEvent('popstate'));
+}
+
+// Roles that use the full admin dashboard
+const ADMIN_ROLES = ['system_developer', 'admin'];
+
+function homePathForRole(role) {
+  return ADMIN_ROLES.includes(role) ? '/dashboard' : '/portal';
 }
 
 export default function App() {
@@ -39,7 +47,7 @@ export default function App() {
   const login = useCallback((user, tenant) => {
     setCurrentUser(user);
     setCurrentTenant(tenant);
-    navigate('/dashboard');
+    navigate(homePathForRole(user?.role));
   }, []);
 
   const logout = useCallback(async () => {
@@ -67,15 +75,30 @@ export default function App() {
   }
 
   const isDashboard = pathname.startsWith('/dashboard');
-  const isLogin = pathname === '/login';
+  const isPortal    = pathname.startsWith('/portal');
+  const isLogin     = pathname === '/login';
 
-  if (isDashboard && !currentUser) { navigate('/login'); return null; }
-  if (isLogin && currentUser) { navigate('/dashboard'); return null; }
+  // Unauthenticated guards
+  if ((isDashboard || isPortal) && !currentUser) { navigate('/login'); return null; }
+
+  // Authenticated redirect from login
+  if (isLogin && currentUser) { navigate(homePathForRole(currentUser.role)); return null; }
+
+  // Cross-role guards: prevent non-admin accessing /dashboard and admin accessing /portal
+  if (isDashboard && currentUser && !ADMIN_ROLES.includes(currentUser.role)) {
+    navigate('/portal'); return null;
+  }
+  if (isPortal && currentUser && ADMIN_ROLES.includes(currentUser.role)) {
+    navigate('/dashboard'); return null;
+  }
 
   return (
     <LanguageContext.Provider value={{ language, switchLanguage, t }}>
       <AuthContext.Provider value={{ currentUser, currentTenant, login, logout }}>
-        {isDashboard ? <DashboardPage /> : isLogin ? <LoginPage /> : <LandingPage />}
+        {isDashboard ? <DashboardPage />
+          : isPortal  ? <PortalPage />
+          : isLogin   ? <LoginPage />
+          : <LandingPage />}
       </AuthContext.Provider>
     </LanguageContext.Provider>
   );

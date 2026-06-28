@@ -13,10 +13,13 @@ import {
 } from "../repositories/userRepository.js";
 import { findTenantById } from "../repositories/tenantRepository.js";
 
-// system_developer and admin can manage all tenant roles
+// Users page only manages admin + guardian.
+// Teachers and students must be created through their dedicated pages (which also create the profile).
+const USER_PAGE_ROLES = [USER_ROLES.ADMIN, USER_ROLES.GUARDIAN];
+
 function allowedRolesFor(actorRole) {
-  if (actorRole === USER_ROLES.SYSTEM_DEVELOPER) return TENANT_ROLE_VALUES;
-  if (actorRole === USER_ROLES.ADMIN) return TENANT_ROLE_VALUES;
+  if (actorRole === USER_ROLES.SYSTEM_DEVELOPER) return USER_PAGE_ROLES;
+  if (actorRole === USER_ROLES.ADMIN) return USER_PAGE_ROLES;
   return [];
 }
 
@@ -40,7 +43,7 @@ export class UserService {
     assert(name, "Name is required.", 400);
     assert(email, "Email is required.", 400);
     assert(password, "Password is required.", 400);
-    assert(TENANT_ROLE_VALUES.includes(role), "Invalid role.", 400);
+    assert(USER_PAGE_ROLES.includes(role), "Teachers and students must be created from their dedicated pages.", 400);
     assert(allowedRolesFor(actor.role).includes(role), "You cannot assign this role.", 403);
     assert(['active', 'inactive'].includes(status), "Invalid status.", 400);
 
