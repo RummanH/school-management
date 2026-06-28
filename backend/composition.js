@@ -4,6 +4,7 @@ import * as bootstrapService from "./services/bootstrapService.js";
 import { ContactService } from "./services/contactService.js";
 import { AuthService } from "./services/authService.js";
 import { TenantService } from "./services/tenantService.js";
+import { UserService } from "./services/userService.js";
 import { createApp } from "./app.js";
 
 export async function createBackendApp() {
@@ -13,7 +14,8 @@ export async function createBackendApp() {
   const contactService = new ContactService(databaseManager);
   const authService = new AuthService(databaseManager, env);
   const tenantService = new TenantService(databaseManager);
+  const userService = new UserService(databaseManager);
 
-  const app = createApp({ env, contactService, authService, tenantService, databaseManager });
+  const app = createApp({ env, contactService, authService, tenantService, userService, databaseManager });
   return { app, databaseManager, env };
 }

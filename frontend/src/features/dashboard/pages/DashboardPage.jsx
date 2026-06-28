@@ -3,6 +3,7 @@ import { MessageSquare, CheckCircle, Clock, InboxIcon } from 'lucide-react';
 import DashboardSidebar from '../components/DashboardSidebar.jsx';
 import DashboardHeader from '../components/DashboardHeader.jsx';
 import TenantsPage from '../../platform/pages/TenantsPage.jsx';
+import UsersPage from '../../platform/pages/UsersPage.jsx';
 import { getStats, getContacts, markContactRead } from '../../../services/api/adminApi.js';
 import { useAuth } from '../../../app/App.jsx';
 
@@ -145,6 +146,7 @@ const PAGE_TITLES = {
   '/dashboard':          'Dashboard',
   '/dashboard/contacts': 'Contact Messages',
   '/dashboard/tenants':  'Organizations',
+  '/dashboard/users':    'Users',
 };
 
 /* ─── Root layout ─── */
@@ -162,8 +164,8 @@ export default function DashboardPage() {
   const title = PAGE_TITLES[pathname] ?? 'Dashboard';
 
   function renderContent() {
-    if (pathname === '/dashboard/tenants')  return <TenantsPage />;
-    if (pathname === '/dashboard/contacts') return <DashboardHome />;
+    if (pathname === '/dashboard/tenants') return <TenantsPage />;
+    if (pathname === '/dashboard/users')   return <UsersPage />;
     return <DashboardHome />;
   }
 

@@ -1,4 +1,4 @@
-import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Globe, LogOut, X } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, Globe, LogOut, X } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 
 const SHARED_NAV = [
@@ -6,15 +6,34 @@ const SHARED_NAV = [
   { label: 'Contact Messages', icon: MessageSquare, path: '/dashboard/contacts' },
 ];
 
+const TENANT_ADMIN_NAV = [
+  { label: 'Users', icon: Users, path: '/dashboard/users' },
+];
+
 const PLATFORM_NAV = [
   { label: 'Organizations', icon: Building2, path: '/dashboard/tenants' },
+  { label: 'All Users', icon: Users, path: '/dashboard/users' },
 ];
+
+const ADMIN_ROLES = ['system_developer', 'admin'];
 
 export default function DashboardSidebar({ activePath, onClose }) {
   const { logout, currentUser } = useAuth();
-  const isPlatform = currentUser?.role === 'system_developer';
+  const role = currentUser?.role;
+  const isPlatform = role === 'system_developer';
+  const isAdmin = ADMIN_ROLES.includes(role);
 
-  const nav = isPlatform ? [...SHARED_NAV, ...PLATFORM_NAV] : SHARED_NAV;
+  // system_developer → full platform nav (orgs + all users)
+  // admin → tenant nav (contacts + users for their org)
+  // teacher / student / guardian → shared nav only
+  let nav;
+  if (isPlatform) {
+    nav = [...SHARED_NAV, ...PLATFORM_NAV];
+  } else if (role === 'admin') {
+    nav = [...SHARED_NAV, ...TENANT_ADMIN_NAV];
+  } else {
+    nav = SHARED_NAV;
+  }
 
   return (
     <aside className="flex h-full w-64 flex-col bg-[var(--brand-strong)] text-white">
@@ -38,7 +57,6 @@ export default function DashboardSidebar({ activePath, onClose }) {
 
       <div className="mx-4 h-px bg-white/10" />
 
-      {/* Platform section label */}
       {isPlatform && (
         <p className="mt-4 px-4 text-[10px] font-black uppercase tracking-widest text-white/30">Platform</p>
       )}
