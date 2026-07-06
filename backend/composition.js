@@ -9,6 +9,8 @@ import { StudentService } from "./services/studentService.js";
 import { TeacherService } from "./services/teacherService.js";
 import { AcademicService } from "./services/academicService.js";
 import { GuardianService } from "./services/guardianService.js";
+import { NoticeService } from "./services/noticeService.js";
+import { GalleryService } from "./services/galleryService.js";
 import { createApp } from "./app.js";
 
 export async function createBackendApp() {
@@ -23,10 +25,13 @@ export async function createBackendApp() {
   const teacherService  = new TeacherService(databaseManager);
   const academicService = new AcademicService(databaseManager);
   const guardianService = new GuardianService(databaseManager);
+  const noticeService   = new NoticeService(databaseManager);
+  const galleryService  = new GalleryService(databaseManager);
 
   const app = createApp({
     env, contactService, authService, tenantService,
-    userService, studentService, teacherService, academicService, guardianService, databaseManager,
+    userService, studentService, teacherService, academicService,
+    guardianService, noticeService, galleryService, databaseManager,
   });
   return { app, databaseManager, env };
 }

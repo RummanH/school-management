@@ -8,6 +8,8 @@ import { StudentController } from "../controllers/studentController.js";
 import { TeacherController } from "../controllers/teacherController.js";
 import { AcademicController } from "../controllers/academicController.js";
 import { GuardianController } from "../controllers/guardianController.js";
+import { NoticeController } from "../controllers/noticeController.js";
+import { GalleryController } from "../controllers/galleryController.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { findStudentByUserId } from "../repositories/studentRepository.js";
@@ -15,7 +17,7 @@ import { findTeacherByUserId } from "../repositories/teacherRepository.js";
 
 export function createApiRouter({
   env, contactService, authService, tenantService,
-  userService, studentService, teacherService, academicService, guardianService, databaseManager,
+  userService, studentService, teacherService, academicService, guardianService, noticeService, galleryService, databaseManager,
 }) {
   const router = Router();
 
@@ -28,6 +30,8 @@ export function createApiRouter({
   const teacherController  = new TeacherController(teacherService);
   const academicController = new AcademicController(academicService);
   const guardianController = new GuardianController(guardianService);
+  const noticeController   = new NoticeController(noticeService);
+  const galleryController  = new GalleryController(galleryService);
 
   const auth          = requireAuth(authService, env);
   const platformOnly  = [auth, requireRole("system_developer")];
@@ -39,6 +43,8 @@ export function createApiRouter({
 
   // Public
   router.post("/contact", contactController.submit);
+  router.get("/notices/public", noticeController.listPublic);
+  router.get("/gallery/public", galleryController.listPublic);
 
   // Auth
   router.post("/auth/login",  authController.login);
@@ -132,6 +138,24 @@ export function createApiRouter({
   router.get("/guardian/wards",                           ...guardianOnly, guardianController.myWards);
   router.get("/guardian/wards/:studentUserId/results",     ...guardianOnly, guardianController.wardResults);
   router.get("/guardian/wards/:studentUserId/attendance",  ...guardianOnly, guardianController.wardAttendance);
+
+  // ── Notices & News ───────────────────────────────────────────────────────
+
+  // Portal feed — any authenticated user sees notices for their role
+  router.get("/notices/feed", auth, noticeController.listFeed);
+
+  // Admin/teacher management (admin + teacher can create/edit, only admin deletes)
+  router.get("/admin/notices",         ...staffAndAdmin, noticeController.listAll);
+  router.post("/admin/notices",        ...staffAndAdmin, noticeController.create);
+  router.put("/admin/notices/:id",     ...staffAndAdmin, noticeController.update);
+  router.delete("/admin/notices/:id",  ...adminOnly, noticeController.remove);
+
+  // ── Gallery (website content management) ────────────────────────────────
+
+  router.get("/admin/gallery",         ...adminOnly, galleryController.listAll);
+  router.post("/admin/gallery",        ...adminOnly, galleryController.create);
+  router.put("/admin/gallery/:id",     ...adminOnly, galleryController.update);
+  router.delete("/admin/gallery/:id",  ...adminOnly, galleryController.remove);
 
   // Admin dashboard
   router.get("/admin/stats",               auth, adminController.getStats);

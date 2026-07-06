@@ -143,6 +143,28 @@ export async function createSchema(pool) {
       updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS notices (
+      id           TEXT PRIMARY KEY,
+      type         TEXT NOT NULL DEFAULT 'notice',
+      title        TEXT NOT NULL,
+      body         TEXT NOT NULL DEFAULT '',
+      audience     TEXT NOT NULL DEFAULT 'public',
+      is_published BOOLEAN NOT NULL DEFAULT true,
+      published_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_by   TEXT REFERENCES users(id) ON DELETE SET NULL,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS gallery_items (
+      id         TEXT PRIMARY KEY,
+      type       TEXT NOT NULL DEFAULT 'photo',
+      url        TEXT NOT NULL,
+      caption    TEXT NOT NULL DEFAULT '',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS guardian_students (
       id               TEXT PRIMARY KEY,
       tenant_id        TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -207,5 +229,10 @@ export async function createSchema(pool) {
 
     CREATE INDEX IF NOT EXISTS idx_guardian_students_guardian ON guardian_students(guardian_user_id);
     CREATE INDEX IF NOT EXISTS idx_guardian_students_student  ON guardian_students(student_user_id);
+
+    CREATE INDEX IF NOT EXISTS idx_notices_published ON notices(is_published, published_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_notices_type      ON notices(type);
+
+    CREATE INDEX IF NOT EXISTS idx_gallery_items_sort ON gallery_items(sort_order, created_at ASC);
   `);
 }

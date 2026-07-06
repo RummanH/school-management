@@ -81,7 +81,10 @@ several "Later" items below. Keep document upload minimal for v1 (e.g. one photo
 - Photo gallery
 - Video gallery (embed links, e.g. YouTube — no need to host video ourselves)
 
-**Status:** ⚙️ Partial — Photo gallery built. Video gallery not built.
+**Status:** ✅ Built — Photo and video gallery are both admin-managed
+(`gallery_items` table, Gallery admin page), rendered dynamically on the public
+Home page. Videos are embedded by pasting a normal YouTube share link (no video
+hosting needed).
 
 ---
 
@@ -152,13 +155,16 @@ is missing. Notice publication not built.
   general-purpose CMS)
 
 **Status:** ⚙️ Partial — Login/session, contact message management, student
-management, teacher management, and academic module management
-(classes/routine/syllabus/exams/results/attendance) are done for the `admin`
-role, all scoped per tenant. Also includes a platform-level `system_developer`
-layer for onboarding/managing tenant organizations (multi-school SaaS). Guardian
-management (linking is done; broader guardian account management still uses the
-shared Users page — fine as-is), admission management, notice/news management,
-basic reports, and website content management are not built.
+management, teacher management, academic module management
+(classes/routine/syllabus/exams/results/attendance), and notice/news management
+are done for the `admin` role, all scoped per tenant. Also includes a
+platform-level `system_developer` layer for onboarding/managing tenant
+organizations (multi-school SaaS). Website content management now covers
+notices/news and the gallery (both admin-editable, reflected live on the public
+site) — still not a general-purpose CMS for arbitrary home page text, which is
+fine per scope. Guardian management (linking is done; broader guardian account
+management still uses the shared Users page — fine as-is), admission
+management, and basic reports (attendance %/pass rate) are not built.
 
 ---
 
@@ -183,7 +189,7 @@ basic reports, and website content management are not built.
 | 2 | About Us | Core | ⚙️ Partial |
 | 3 | Academic Portal | Core | ✅ Done (admin/teacher back end + admin UI) |
 | 4 | Online Admission | Core | ❌ Pending |
-| 5 | Media Gallery | Core | ⚙️ Partial |
+| 5 | Media Gallery | Core | ✅ Done (photo + video, admin-managed) |
 | 6 | Student Portal | Core | ⚙️ Partial |
 | 7 | Guardian Portal | Core | ⚙️ Partial (linking, results/attendance/profile; notices & certificate pending) |
 | 8 | Teacher Portal | Core | ⚙️ Partial (profile only; **no teacher dashboard UI — biggest gap**) |
