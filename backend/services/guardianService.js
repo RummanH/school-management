@@ -3,6 +3,7 @@ import { createId } from "../lib/ids.js";
 import {
   listWardsForGuardian,
   listWardLinkIds,
+  listGuardiansForStudent,
   isWardOfGuardian,
   linkGuardianStudent,
   unlinkGuardianStudent,
@@ -75,6 +76,15 @@ export class GuardianService {
 
       await unlinkGuardianStudent(client, guardianUserId, studentUserId);
       return listWardLinkIds(client, guardianUserId);
+    });
+  }
+
+  // Reverse lookup — used by the student form's "Linked Guardian Account" picker
+  async listGuardiansForStudent(studentUserId, actor) {
+    return this.databaseManager.withClient(async (client) => {
+      const student = await findUserById(client, studentUserId);
+      assert(student && student.tenant_id === actor.tenantId && student.role === "student", "Student not found.", 404);
+      return listGuardiansForStudent(client, studentUserId);
     });
   }
 }

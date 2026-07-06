@@ -31,6 +31,18 @@ export async function listWardLinkIds(client, guardianUserId) {
   return result.rows.map((r) => r.student_user_id);
 }
 
+export async function listGuardiansForStudent(client, studentUserId) {
+  const result = await client.query(
+    `SELECT u.id, u.name, u.email
+       FROM guardian_students gs
+       JOIN users u ON u.id = gs.guardian_user_id
+      WHERE gs.student_user_id = $1
+      ORDER BY u.name ASC`,
+    [studentUserId],
+  );
+  return result.rows.map((r) => ({ id: r.id, name: r.name, email: r.email }));
+}
+
 export async function isWardOfGuardian(client, guardianUserId, studentUserId) {
   const result = await client.query(
     `SELECT 1 FROM guardian_students WHERE guardian_user_id = $1 AND student_user_id = $2 LIMIT 1`,

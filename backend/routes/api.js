@@ -69,6 +69,7 @@ export function createApiRouter({
   router.post("/students",        ...adminOnly, studentController.create);
   router.put("/students/:userId", ...adminOnly, studentController.update);
   router.delete("/students/:userId", ...adminOnly, studentController.remove);
+  router.get("/students/:studentUserId/guardians", ...adminOnly, guardianController.listGuardiansForStudent);
 
   // Teachers — admin only (tenant-scoped)
   router.get("/teachers",         ...adminOnly, teacherController.list);

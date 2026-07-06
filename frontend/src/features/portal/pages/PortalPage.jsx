@@ -7,48 +7,17 @@ import {
 import { useAuth, navigate } from '../../../app/App.jsx';
 import { getMyProfile } from '../../../services/api/authApi.js';
 import { getMyWards, getWardResults, getWardAttendance } from '../../../services/api/guardianApi.js';
-import { getMyResults, getMyAttendance, getRoutine } from '../../../services/api/academicApi.js';
 import { Card, InfoRow } from '../components/Card.jsx';
 import ResultsTable from '../components/ResultsTable.jsx';
 import AttendanceStats from '../components/AttendanceStats.jsx';
-import RoutineList from '../components/RoutineList.jsx';
 import NoticesFeed from '../components/NoticesFeed.jsx';
+import StudentDashboardPage from './StudentDashboardPage.jsx';
 
 const ROLE_CONFIG = {
   student:  { label: 'Student',  color: 'bg-purple-500',  Icon: GraduationCap },
   teacher:  { label: 'Teacher',  color: 'bg-emerald-500', Icon: BookOpen },
   guardian: { label: 'Guardian', color: 'bg-amber-500',   Icon: Users },
 };
-
-function StudentProfile({ profile }) {
-  return (
-    <>
-      <Card title="Academic">
-        <InfoRow icon={ClipboardList} label="Student ID"     value={profile.studentId} />
-        <InfoRow icon={BookMarked}   label="Class / Grade"   value={profile.className} />
-        <InfoRow icon={BookMarked}   label="Section"         value={profile.section} />
-        <InfoRow icon={ClipboardList} label="Roll Number"    value={profile.rollNumber} />
-        <InfoRow icon={Calendar}     label="Admission Date"  value={profile.admissionDate} />
-      </Card>
-
-      <Card title="Personal">
-        <InfoRow icon={Calendar}  label="Date of Birth" value={profile.dateOfBirth} />
-        <InfoRow icon={User}      label="Gender"        value={profile.gender} />
-        <InfoRow icon={Droplets}  label="Blood Group"   value={profile.bloodGroup} />
-        <InfoRow icon={Phone}     label="Phone"         value={profile.phone} />
-        <InfoRow icon={MapPin}    label="Address"       value={profile.address} />
-      </Card>
-
-      {(profile.guardianName || profile.guardianPhone) && (
-        <Card title="Guardian">
-          <InfoRow icon={User}  label="Name"     value={profile.guardianName} />
-          <InfoRow icon={Phone} label="Phone"    value={profile.guardianPhone} />
-          <InfoRow icon={Users} label="Relation" value={profile.guardianRelation} />
-        </Card>
-      )}
-    </>
-  );
-}
 
 function TeacherProfile({ profile }) {
   return (
@@ -193,10 +162,6 @@ export default function PortalPage() {
   const { currentUser, logout } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [results, setResults] = useState([]);
-  const [attendance, setAttendance] = useState(null);
-  const [routine, setRoutine] = useState([]);
-  const [academicLoading, setAcademicLoading] = useState(false);
 
   const role     = currentUser?.role || 'student';
   const config   = ROLE_CONFIG[role] || ROLE_CONFIG.student;
@@ -209,25 +174,11 @@ export default function PortalPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Student's own results/attendance/routine — the same academic data a
-  // teacher enters via the dashboard (Day 4), surfaced read-only here.
-  useEffect(() => {
-    if (role !== 'student' || !profile) return;
-    setAcademicLoading(true);
-    const classId = profile.classId;
-    Promise.all([
-      getMyResults(),
-      classId ? getMyAttendance(classId) : Promise.resolve({ summary: null }),
-      classId ? getRoutine(classId) : Promise.resolve({ routine: [] }),
-    ])
-      .then(([rd, ad, rt]) => {
-        setResults(rd.results || []);
-        setAttendance(ad.summary || null);
-        setRoutine(rt.routine || []);
-      })
-      .catch(() => {})
-      .finally(() => setAcademicLoading(false));
-  }, [role, profile]);
+  // Students get a full dashboard shell (sidebar + sections), not the
+  // single-page layout below — see StudentDashboardPage.jsx.
+  if (role === 'student') {
+    return <StudentDashboardPage />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -298,60 +249,9 @@ export default function PortalPage() {
             <p className="mt-1 text-xs">Contact your administrator to complete your profile.</p>
           </div>
         ) : (
-          <>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {role === 'student'  && <StudentProfile profile={profile} />}
-              {role === 'teacher'  && <TeacherProfile profile={profile} />}
-            </div>
-
-            {role === 'student' && (
-              <div className="mt-4 space-y-4">
-                <div className="flex items-center justify-end">
-                  <button onClick={() => navigate('/portal/report')} className="btn-secondary">
-                    <Printer className="h-4 w-4" /> Print Report
-                  </button>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Card title="Class Routine">
-                    {academicLoading ? (
-                      <div className="flex h-24 items-center justify-center">
-                        <Loader2 className="h-5 w-5 animate-spin text-[var(--brand)]" />
-                      </div>
-                    ) : (
-                      <RoutineList routine={routine} />
-                    )}
-                  </Card>
-
-                  <Card title="Attendance">
-                    {academicLoading ? (
-                      <div className="flex h-24 items-center justify-center">
-                        <Loader2 className="h-5 w-5 animate-spin text-[var(--brand)]" />
-                      </div>
-                    ) : attendance ? (
-                      <AttendanceStats summary={attendance} />
-                    ) : (
-                      <p className="py-6 text-center text-sm text-slate-400">Not assigned to a class yet.</p>
-                    )}
-                  </Card>
-                </div>
-
-                <Card title="Exam Results">
-                  {academicLoading ? (
-                    <div className="flex h-24 items-center justify-center">
-                      <Loader2 className="h-5 w-5 animate-spin text-[var(--brand)]" />
-                    </div>
-                  ) : (
-                    <ResultsTable results={results} />
-                  )}
-                </Card>
-
-                <Card title="Notices">
-                  <NoticesFeed />
-                </Card>
-              </div>
-            )}
-          </>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {role === 'teacher' && <TeacherProfile profile={profile} />}
+          </div>
         )}
       </main>
     </div>

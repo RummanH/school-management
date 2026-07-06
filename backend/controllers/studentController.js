@@ -11,8 +11,8 @@ export class StudentController {
 
   create = async (req, res, next) => {
     try {
-      const students = await this.studentService.create(req.body, req.currentUser);
-      res.status(201).json({ students });
+      const { students, userId } = await this.studentService.create(req.body, req.currentUser);
+      res.status(201).json({ students, userId });
     } catch (err) { next(err); }
   };
 

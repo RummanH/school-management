@@ -45,4 +45,12 @@ export class GuardianController {
       res.json({ studentUserIds });
     } catch (err) { next(err); }
   };
+
+  // Reverse lookup — for the student form's "Linked Guardian Account" picker
+  listGuardiansForStudent = async (req, res, next) => {
+    try {
+      const guardians = await this.guardianService.listGuardiansForStudent(req.params.studentUserId, req.currentUser);
+      res.json({ guardians });
+    } catch (err) { next(err); }
+  };
 }

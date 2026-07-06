@@ -96,12 +96,18 @@ hosting needed).
 - Attendance report
 - Certificate download
 
-**Status:** ✅ Built — Personal profile, exam results, attendance summary,
-class routine, and a notices feed are all live in the student portal. Shared
-rendering lives in `frontend/src/features/portal/components/` (`Card`,
-`ResultsTable`, `AttendanceStats`, `RoutineList`, `NoticesFeed`) — Guardian
-Portal and the new progress report page below all import the same components,
-no duplicated UI code anywhere. "Certificate download" is a print-to-PDF view
+**Status:** ✅ Built — Students now get a real dashboard shell
+(`StudentDashboardPage.jsx` + `StudentSidebar.jsx`), not a single scrolling
+page: Overview, Results, Attendance, Routine, Notices, and My Profile each
+have their own nav item and screen, matching the visual pattern of the
+admin/teacher `/dashboard` shell (same `DashboardHeader` component, reused
+as-is) but scoped to read-only content and far fewer sections. Data is
+fetched once at the shell level and handed down to whichever section is
+active — no re-fetching per nav click. Shared rendering lives in
+`frontend/src/features/portal/components/` (`Card`, `ResultsTable`,
+`AttendanceStats`, `RoutineList`, `NoticesFeed`, `StudentProfile`) — Guardian
+Portal and the progress report page below all import the same components, no
+duplicated UI code anywhere. "Certificate download" is a print-to-PDF view
 (`/portal/report`, `ProgressReportPage.jsx`) using the browser's native print
 dialog — a real PDF comes out the other end via "Save as PDF," but it's a
 clean data printout, not a designed certificate template. Upgrade later with a
@@ -175,9 +181,12 @@ platform-level `system_developer` layer for onboarding/managing tenant
 organizations (multi-school SaaS). Website content management now covers
 notices/news and the gallery (both admin-editable, reflected live on the public
 site) — still not a general-purpose CMS for arbitrary home page text, which is
-fine per scope. Guardian management (linking is done; broader guardian account
-management still uses the shared Users page — fine as-is), admission
-management, and basic reports (attendance %/pass rate) are not built.
+fine per scope. Guardian management: linking is done two ways now — the
+original "Manage Wards" action on the Users page (pick students for a given
+guardian), plus a "Linked Guardian Account" dropdown directly on the
+Student form (pick a guardian while creating/editing a student — the two
+write to the same `guardian_students` table, so they stay in sync). Admission
+management and basic reports (attendance %/pass rate) are not built.
 
 ---
 

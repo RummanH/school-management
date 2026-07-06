@@ -74,7 +74,7 @@ export class StudentService {
         guardianRelation: input.guardianRelation,
       });
 
-      return listStudents(client, actor.tenantId);
+      return { students: await listStudents(client, actor.tenantId), userId };
     });
   }
 

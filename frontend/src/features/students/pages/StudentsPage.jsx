@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Loader2, GraduationCap, X, Save, CheckCircle, XCircle } from 'lucide-react';
 import { listStudents, createStudent, updateStudent, deleteStudent } from '../../../services/api/studentApi.js';
 import { listClasses } from '../../../services/api/academicApi.js';
+import { listUsers } from '../../../services/api/userApi.js';
+import { listGuardiansForStudent, linkWard, unlinkWard } from '../../../services/api/guardianApi.js';
 
 const GENDERS      = ['Male', 'Female', 'Other'];
 const BLOOD_GROUPS = ['A+', 'A−', 'B+', 'B−', 'O+', 'O−', 'AB+', 'AB−'];
@@ -90,11 +92,24 @@ function StudentModal({ initial, onClose, onSaved }) {
     guardianRelation: initial.guardianRelation || '',
   } : { ...EMPTY });
   const [classes, setClasses] = useState([]);
+  const [guardians, setGuardians] = useState([]);
+  const [selectedGuardianId, setSelectedGuardianId] = useState('');
+  const [previousGuardianId, setPreviousGuardianId] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     listClasses().then(c => setClasses(c.classes || [])).catch(() => {});
+    listUsers().then(d => setGuardians((d.users || []).filter(u => u.role === 'guardian'))).catch(() => {});
+    if (isEdit) {
+      listGuardiansForStudent(initial.userId)
+        .then(d => {
+          const linked = (d.guardians || [])[0]?.id || '';
+          setSelectedGuardianId(linked);
+          setPreviousGuardianId(linked);
+        })
+        .catch(() => {});
+    }
   }, []);
 
   function set(field, value) { setForm(f => ({ ...f, [field]: value })); setError(''); }
@@ -108,6 +123,18 @@ function StudentModal({ initial, onClose, onSaved }) {
       const result = isEdit
         ? await updateStudent(initial.userId, payload)
         : await createStudent(payload);
+
+      const studentUserId = isEdit ? initial.userId : result.userId;
+      if (selectedGuardianId !== previousGuardianId) {
+        try {
+          if (previousGuardianId) await unlinkWard(previousGuardianId, studentUserId);
+          if (selectedGuardianId) await linkWard(selectedGuardianId, studentUserId);
+        } catch (linkErr) {
+          onSaved(result.students);
+          alert(`Student saved, but linking the guardian account failed: ${linkErr.message || 'Unknown error'}. You can link it later from Users → Manage Wards.`);
+          return;
+        }
+      }
       onSaved(result.students);
     } catch (err) {
       setError(err.message || 'Something went wrong.');
@@ -237,6 +264,17 @@ function StudentModal({ initial, onClose, onSaved }) {
                   <option value="">Select…</option>
                   {RELATIONS.map(r => <option key={r} value={r}>{r}</option>)}
                 </Select>
+              </div>
+              <div className="sm:col-span-3">
+                <FieldLabel>Linked Guardian Account</FieldLabel>
+                <Select value={selectedGuardianId} onChange={e => setSelectedGuardianId(e.target.value)}>
+                  <option value="">— No linked account —</option>
+                  {guardians.map(g => <option key={g.id} value={g.id}>{g.name} ({g.email})</option>)}
+                </Select>
+                <p className="mt-1 text-xs text-slate-400">
+                  Optional — link an existing guardian login so they can see this student's results,
+                  attendance, and notices in the Guardian Portal. Guardian accounts are created from the Users page.
+                </p>
               </div>
             </div>
           </div>
