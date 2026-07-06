@@ -5,6 +5,7 @@ import LandingPage from '../features/landing/pages/LandingPage.jsx';
 import LoginPage from '../features/auth/pages/LoginPage.jsx';
 import DashboardPage from '../features/dashboard/pages/DashboardPage.jsx';
 import PortalPage from '../features/portal/pages/PortalPage.jsx';
+import ProgressReportPage from '../features/portal/pages/ProgressReportPage.jsx';
 
 const LanguageContext = createContext(null);
 const AuthContext = createContext(null);
@@ -81,6 +82,7 @@ export default function App() {
 
   const isDashboard = pathname.startsWith('/dashboard');
   const isPortal    = pathname.startsWith('/portal');
+  const isReport    = pathname.startsWith('/portal/report');
   const isLogin     = pathname === '/login';
 
   // Unauthenticated guards
@@ -103,6 +105,7 @@ export default function App() {
     <LanguageContext.Provider value={{ language, switchLanguage, t }}>
       <AuthContext.Provider value={{ currentUser, currentTenant, login, logout }}>
         {isDashboard ? <DashboardPage />
+          : isReport  ? <ProgressReportPage />
           : isPortal  ? <PortalPage />
           : isLogin   ? <LoginPage />
           : <LandingPage />}

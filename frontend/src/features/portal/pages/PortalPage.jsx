@@ -2,41 +2,23 @@ import { useState, useEffect } from 'react';
 import {
   GraduationCap, BookOpen, Users, LogOut, Globe, Loader2,
   User, Mail, Phone, MapPin, Calendar, Droplets, Baby,
-  BookMarked, ClipboardList, Building2, Award, LayoutDashboard,
+  BookMarked, ClipboardList, Building2, Award, LayoutDashboard, Printer,
 } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 import { getMyProfile } from '../../../services/api/authApi.js';
 import { getMyWards, getWardResults, getWardAttendance } from '../../../services/api/guardianApi.js';
+import { getMyResults, getMyAttendance, getRoutine } from '../../../services/api/academicApi.js';
+import { Card, InfoRow } from '../components/Card.jsx';
+import ResultsTable from '../components/ResultsTable.jsx';
+import AttendanceStats from '../components/AttendanceStats.jsx';
+import RoutineList from '../components/RoutineList.jsx';
+import NoticesFeed from '../components/NoticesFeed.jsx';
 
 const ROLE_CONFIG = {
   student:  { label: 'Student',  color: 'bg-purple-500',  Icon: GraduationCap },
   teacher:  { label: 'Teacher',  color: 'bg-emerald-500', Icon: BookOpen },
   guardian: { label: 'Guardian', color: 'bg-amber-500',   Icon: Users },
 };
-
-function InfoRow({ icon: Icon, label, value }) {
-  if (!value) return null;
-  return (
-    <div className="flex items-start gap-3 py-2.5 border-b border-slate-50 last:border-0">
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
-        <Icon className="h-3.5 w-3.5" />
-      </span>
-      <div className="min-w-0">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
-        <p className="mt-0.5 text-sm font-semibold text-slate-700 break-words">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-function Card({ title, children }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
-      <h3 className="mb-3 text-[11px] font-black uppercase tracking-widest text-slate-400">{title}</h3>
-      {children}
-    </div>
-  );
-}
 
 function StudentProfile({ profile }) {
   return (
@@ -88,57 +70,6 @@ function TeacherProfile({ profile }) {
         <InfoRow icon={MapPin}    label="Address"       value={profile.address} />
       </Card>
     </>
-  );
-}
-
-function WardResultsTable({ results }) {
-  if (!results.length) {
-    return <p className="py-6 text-center text-sm text-slate-400">No exam results yet.</p>;
-  }
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            <th className="py-2 pr-3">Exam</th>
-            <th className="py-2 pr-3">Subject</th>
-            <th className="py-2 pr-3">Date</th>
-            <th className="py-2 pr-3">Marks</th>
-            <th className="py-2">Grade</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-50">
-          {results.map((r) => (
-            <tr key={r.id}>
-              <td className="py-2 pr-3 font-semibold text-slate-700">{r.examName}</td>
-              <td className="py-2 pr-3 text-slate-500">{r.subject}</td>
-              <td className="py-2 pr-3 text-slate-500">{r.examDate}</td>
-              <td className="py-2 pr-3 text-slate-500">{r.marksObtained ?? '—'} / {r.totalMarks}</td>
-              <td className="py-2 font-bold text-slate-700">{r.grade || '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function WardAttendanceStats({ summary }) {
-  const stats = [
-    { label: 'Present', value: summary.presentCount, color: 'text-emerald-600' },
-    { label: 'Absent',  value: summary.absentCount,  color: 'text-red-500' },
-    { label: 'Late',    value: summary.lateCount,    color: 'text-amber-500' },
-    { label: 'Total',   value: summary.totalCount,   color: 'text-slate-700' },
-  ];
-  return (
-    <div className="grid grid-cols-4 gap-3">
-      {stats.map((s) => (
-        <div key={s.label} className="rounded-xl border border-slate-100 py-3 text-center">
-          <p className={`text-xl font-black ${s.color}`}>{s.value}</p>
-          <p className="mt-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">{s.label}</p>
-        </div>
-      ))}
-    </div>
   );
 }
 
@@ -214,31 +145,46 @@ function GuardianPortal() {
       )}
 
       {selectedWard && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Card title="Ward Profile">
-            <InfoRow icon={GraduationCap} label="Name"        value={selectedWard.name} />
-            <InfoRow icon={BookMarked}    label="Class"       value={selectedWard.className} />
-            <InfoRow icon={BookMarked}    label="Section"     value={selectedWard.section} />
-            <InfoRow icon={ClipboardList} label="Roll Number" value={selectedWard.rollNumber} />
-          </Card>
+        <>
+          <div className="flex items-center justify-end">
+            <button
+              onClick={() => navigate(`/portal/report?student=${selectedWard.userId}`)}
+              className="btn-secondary"
+            >
+              <Printer className="h-4 w-4" /> Print Report
+            </button>
+          </div>
 
-          {detailLoading ? (
-            <div className="flex h-32 items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-[var(--brand)]" />
-            </div>
-          ) : (
-            <Card title="Attendance">
-              {attendance && <WardAttendanceStats summary={attendance} />}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Card title="Ward Profile">
+              <InfoRow icon={GraduationCap} label="Name"        value={selectedWard.name} />
+              <InfoRow icon={BookMarked}    label="Class"       value={selectedWard.className} />
+              <InfoRow icon={BookMarked}    label="Section"     value={selectedWard.section} />
+              <InfoRow icon={ClipboardList} label="Roll Number" value={selectedWard.rollNumber} />
             </Card>
-          )}
-        </div>
+
+            {detailLoading ? (
+              <div className="flex h-32 items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-[var(--brand)]" />
+              </div>
+            ) : (
+              <Card title="Attendance">
+                {attendance && <AttendanceStats summary={attendance} />}
+              </Card>
+            )}
+          </div>
+        </>
       )}
 
       {!detailLoading && (
         <Card title="Exam Results">
-          <WardResultsTable results={results} />
+          <ResultsTable results={results} />
         </Card>
       )}
+
+      <Card title="Notices">
+        <NoticesFeed />
+      </Card>
     </div>
   );
 }
@@ -247,6 +193,10 @@ export default function PortalPage() {
   const { currentUser, logout } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [results, setResults] = useState([]);
+  const [attendance, setAttendance] = useState(null);
+  const [routine, setRoutine] = useState([]);
+  const [academicLoading, setAcademicLoading] = useState(false);
 
   const role     = currentUser?.role || 'student';
   const config   = ROLE_CONFIG[role] || ROLE_CONFIG.student;
@@ -258,6 +208,26 @@ export default function PortalPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  // Student's own results/attendance/routine — the same academic data a
+  // teacher enters via the dashboard (Day 4), surfaced read-only here.
+  useEffect(() => {
+    if (role !== 'student' || !profile) return;
+    setAcademicLoading(true);
+    const classId = profile.classId;
+    Promise.all([
+      getMyResults(),
+      classId ? getMyAttendance(classId) : Promise.resolve({ summary: null }),
+      classId ? getRoutine(classId) : Promise.resolve({ routine: [] }),
+    ])
+      .then(([rd, ad, rt]) => {
+        setResults(rd.results || []);
+        setAttendance(ad.summary || null);
+        setRoutine(rt.routine || []);
+      })
+      .catch(() => {})
+      .finally(() => setAcademicLoading(false));
+  }, [role, profile]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -328,10 +298,60 @@ export default function PortalPage() {
             <p className="mt-1 text-xs">Contact your administrator to complete your profile.</p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {role === 'student'  && <StudentProfile profile={profile} />}
-            {role === 'teacher'  && <TeacherProfile profile={profile} />}
-          </div>
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {role === 'student'  && <StudentProfile profile={profile} />}
+              {role === 'teacher'  && <TeacherProfile profile={profile} />}
+            </div>
+
+            {role === 'student' && (
+              <div className="mt-4 space-y-4">
+                <div className="flex items-center justify-end">
+                  <button onClick={() => navigate('/portal/report')} className="btn-secondary">
+                    <Printer className="h-4 w-4" /> Print Report
+                  </button>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Card title="Class Routine">
+                    {academicLoading ? (
+                      <div className="flex h-24 items-center justify-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-[var(--brand)]" />
+                      </div>
+                    ) : (
+                      <RoutineList routine={routine} />
+                    )}
+                  </Card>
+
+                  <Card title="Attendance">
+                    {academicLoading ? (
+                      <div className="flex h-24 items-center justify-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-[var(--brand)]" />
+                      </div>
+                    ) : attendance ? (
+                      <AttendanceStats summary={attendance} />
+                    ) : (
+                      <p className="py-6 text-center text-sm text-slate-400">Not assigned to a class yet.</p>
+                    )}
+                  </Card>
+                </div>
+
+                <Card title="Exam Results">
+                  {academicLoading ? (
+                    <div className="flex h-24 items-center justify-center">
+                      <Loader2 className="h-5 w-5 animate-spin text-[var(--brand)]" />
+                    </div>
+                  ) : (
+                    <ResultsTable results={results} />
+                  )}
+                </Card>
+
+                <Card title="Notices">
+                  <NoticesFeed />
+                </Card>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>

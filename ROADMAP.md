@@ -27,8 +27,8 @@ platform serving many schools' public sites.
 - [x] Day 2 — Notices/News admin UI + Home page wiring + video gallery
 - [x] Day 3 — Teacher dashboard UI, part 1 (nav, classes, routine, syllabus)
 - [x] Day 4 — Teacher dashboard UI, part 2 (attendance, results, notices)
-- [ ] Day 5 — Student Portal completion
-- [ ] Day 6 — Guardian Portal completion + shared progress report
+- [x] Day 5 — Student Portal completion
+- [x] Day 6 — Guardian Portal completion + shared progress report
 - [ ] Day 7 — Online Admission (backend)
 - [ ] Day 8 — Online Admission (frontend)
 - [ ] Day 9 — Basic reports + About Us faculty grid

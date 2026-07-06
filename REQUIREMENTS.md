@@ -96,11 +96,16 @@ hosting needed).
 - Attendance report
 - Certificate download
 
-**Status:** ⚙️ Partial — Personal profile view built (`PortalPage`). Backend
-endpoints for own results (`/academic/me/results`) and own attendance
-(`/academic/me/attendance`) exist but aren't wired into the portal UI yet
-(same UI work already done for Guardian Portal wards can be reused here almost
-directly). Class routine view and certificate download not built.
+**Status:** ✅ Built — Personal profile, exam results, attendance summary,
+class routine, and a notices feed are all live in the student portal. Shared
+rendering lives in `frontend/src/features/portal/components/` (`Card`,
+`ResultsTable`, `AttendanceStats`, `RoutineList`, `NoticesFeed`) — Guardian
+Portal and the new progress report page below all import the same components,
+no duplicated UI code anywhere. "Certificate download" is a print-to-PDF view
+(`/portal/report`, `ProgressReportPage.jsx`) using the browser's native print
+dialog — a real PDF comes out the other end via "Save as PDF," but it's a
+clean data printout, not a designed certificate template. Upgrade later with a
+proper template/PDF library if a customer needs an official-looking document.
 
 ---
 
@@ -112,11 +117,12 @@ directly). Class routine view and certificate download not built.
 - Receive notices and announcements
 - Download ward's progress report / certificate
 
-**Status:** ⚙️ Partial — Admin can link a guardian account to one or more
+**Status:** ✅ Built — Admin can link a guardian account to one or more
 students (`guardian_students` table, "Manage Wards" action on the Users page).
-Guardian portal shows a ward switcher, ward profile summary, exam results, and
-attendance summary. Notices/announcements view and certificate download not
-built yet.
+Guardian portal shows a ward switcher, ward profile summary, exam results,
+attendance summary, a notices feed (filtered server-side to
+guardian-relevant audiences), and a "Print Report" button per ward using the
+same print-to-PDF progress report as the Student Portal.
 
 > Scoped down from the original spec: two-way messaging with teachers/admin has
 > been dropped from Core. For a school this size, a one-way notice board
@@ -197,8 +203,8 @@ management, and basic reports (attendance %/pass rate) are not built.
 | 3 | Academic Portal | Core | ✅ Done (admin/teacher back end + admin UI) |
 | 4 | Online Admission | Core | ❌ Pending |
 | 5 | Media Gallery | Core | ✅ Done (photo + video, admin-managed) |
-| 6 | Student Portal | Core | ⚙️ Partial |
-| 7 | Guardian Portal | Core | ⚙️ Partial (linking, results/attendance/profile; notices & certificate pending) |
+| 6 | Student Portal | Core | ✅ Done (profile/results/attendance/routine/notices/print report) |
+| 7 | Guardian Portal | Core | ✅ Done (linking, results/attendance/profile/notices/print report) |
 | 8 | Teacher Portal | Core | ✅ Done (classes/routine/syllabus/attendance/results/notice publication) |
 | 9 | Admin Dashboard | Core | ⚙️ Partial |
 | 10 | Contact Us | Core | ✅ Done |
