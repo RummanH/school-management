@@ -1,6 +1,6 @@
 import { assert } from "../lib/errors.js";
 import {
-  listClasses, findClassById, insertClass, updateClass, deleteClass,
+  listClasses, listClassesPublic, findClassById, insertClass, updateClass, deleteClass,
   listRoutineByClass, upsertRoutineEntry, deleteRoutineEntry,
   listSyllabusByClass, insertSyllabusEntry, updateSyllabusEntry, deleteSyllabusEntry,
   listExamsByClass, findExamById, insertExam, updateExam, deleteExam,
@@ -32,6 +32,11 @@ export class AcademicService {
 
   async listClasses(tenantId) {
     return this.databaseManager.withClient(c => listClasses(c, tenantId));
+  }
+
+  // Public — for the admission form's "Applying for Class" dropdown
+  async listClassesPublic() {
+    return this.databaseManager.withClient(c => listClassesPublic(c));
   }
 
   async createClass(input, actor) {

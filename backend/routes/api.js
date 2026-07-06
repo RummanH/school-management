@@ -50,6 +50,7 @@ export function createApiRouter({
   router.get("/gallery/public", galleryController.listPublic);
   router.post("/admission/apply",  admissionController.apply);
   router.get("/admission/status",  admissionController.checkStatus);
+  router.get("/academic/classes/public", academicController.listClassesPublic);
 
   // Auth
   router.post("/auth/login",  authController.login);

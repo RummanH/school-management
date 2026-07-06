@@ -39,14 +39,17 @@ export async function findApplicationById(client, id) {
   return mapApplication(result.rows[0]);
 }
 
-// Public status check — deliberately excludes photo_data and admin-only notes.
-export async function findApplicationByReferenceAndPhone(client, referenceCode, guardianPhone) {
+// Public status check — reference code alone is the shared secret (a
+// six-character code from a 32-symbol alphabet, ~1 billion combinations,
+// shared with the applicant once at submission time). Deliberately excludes
+// photo_data and admin-only notes.
+export async function findApplicationByReference(client, referenceCode) {
   const result = await client.query(
     `SELECT id, reference_code, applicant_name, applying_for_class, status, admission_test_date, created_at
        FROM admission_applications
-      WHERE reference_code = $1 AND guardian_phone = $2
+      WHERE reference_code = $1
       LIMIT 1`,
-    [referenceCode, guardianPhone],
+    [referenceCode],
   );
   return mapApplication(result.rows[0]);
 }

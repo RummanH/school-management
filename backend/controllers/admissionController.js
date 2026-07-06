@@ -12,7 +12,7 @@ export class AdmissionController {
 
   checkStatus = async (req, res, next) => {
     try {
-      const application = await this.admissionService.checkStatus(req.query.referenceCode, req.query.guardianPhone);
+      const application = await this.admissionService.checkStatus(req.query.referenceCode);
       res.json({ application });
     } catch (err) { next(err); }
   };

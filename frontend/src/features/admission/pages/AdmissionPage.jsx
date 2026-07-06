@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GraduationCap, CheckCircle, Copy, Check, Search, Loader2, ArrowLeft } from 'lucide-react';
 import { navigate } from '../../../app/App.jsx';
 import { applyForAdmission, checkAdmissionStatus } from '../../../services/api/admissionApi.js';
+import { listClassesPublic } from '../../../services/api/academicApi.js';
 import { STATUS_LABELS, STATUS_COLORS } from '../constants.js';
 
 const GENDERS = ['Male', 'Female', 'Other'];
@@ -48,6 +49,15 @@ function ApplyForm({ onSubmitted }) {
   const [photoPreview, setPhotoPreview] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [classes, setClasses] = useState([]);
+  const [classesLoading, setClassesLoading] = useState(true);
+
+  useEffect(() => {
+    listClassesPublic()
+      .then((d) => setClasses(d.classes || []))
+      .catch(() => {})
+      .finally(() => setClassesLoading(false));
+  }, []);
 
   function set(field, value) { setForm((f) => ({ ...f, [field]: value })); setError(''); }
 
@@ -104,8 +114,20 @@ function ApplyForm({ onSubmitted }) {
         </div>
         <div className="sm:col-span-2">
           <label className="label-sm">Applying For Class *</label>
-          <input className="input" value={form.applyingForClass} onChange={(e) => set('applyingForClass', e.target.value)}
-            placeholder="e.g. Class 6" required />
+          {classesLoading ? (
+            <div className="input flex items-center text-slate-400"><Loader2 className="h-4 w-4 animate-spin" /></div>
+          ) : classes.length > 0 ? (
+            <select className="input" value={form.applyingForClass} onChange={(e) => set('applyingForClass', e.target.value)} required>
+              <option value="">Select a class…</option>
+              {classes.map((c) => {
+                const label = c.section ? `${c.name} - ${c.section}` : c.name;
+                return <option key={c.id} value={label}>{label}</option>;
+              })}
+            </select>
+          ) : (
+            <input className="input" value={form.applyingForClass} onChange={(e) => set('applyingForClass', e.target.value)}
+              placeholder="e.g. Class 6" required />
+          )}
         </div>
         <div className="sm:col-span-2">
           <label className="label-sm">Previous School</label>
@@ -165,8 +187,7 @@ function SuccessScreen({ referenceCode }) {
       </div>
       <h2 className="text-lg font-black text-slate-800">Application Submitted!</h2>
       <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
-        Save this reference code — you'll need it together with your guardian phone number
-        to check your application status.
+        Save this reference code — you'll need it to check your application status.
       </p>
       <div className="mx-auto mt-5 flex max-w-xs items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
         <code className="text-lg font-black tracking-widest text-slate-800">{referenceCode}</code>
@@ -182,7 +203,6 @@ function SuccessScreen({ referenceCode }) {
 
 function StatusCheck() {
   const [referenceCode, setReferenceCode] = useState('');
-  const [guardianPhone, setGuardianPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [application, setApplication] = useState(null);
@@ -193,7 +213,7 @@ function StatusCheck() {
     setError('');
     setApplication(null);
     try {
-      const result = await checkAdmissionStatus(referenceCode.trim(), guardianPhone.trim());
+      const result = await checkAdmissionStatus(referenceCode.trim());
       setApplication(result.application);
     } catch (err) {
       setError(err.message || 'No matching application found.');
@@ -209,11 +229,6 @@ function StatusCheck() {
           <label className="label-sm">Reference Code *</label>
           <input className="input uppercase" value={referenceCode} onChange={(e) => setReferenceCode(e.target.value)}
             placeholder="ADM-XXXXXX" required />
-        </div>
-        <div>
-          <label className="label-sm">Guardian Phone *</label>
-          <input className="input" value={guardianPhone} onChange={(e) => setGuardianPhone(e.target.value)}
-            placeholder="+880 1700-000000" required />
         </div>
         {error && (
           <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>

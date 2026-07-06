@@ -30,7 +30,7 @@ platform serving many schools' public sites.
 - [x] Day 5 — Student Portal completion
 - [x] Day 6 — Guardian Portal completion + shared progress report
 - [x] Day 7 — Online Admission (backend)
-- [ ] Day 8 — Online Admission (frontend)
+- [x] Day 8 — Online Admission (frontend)
 - [ ] Day 9 — Basic reports + About Us faculty grid
 - [ ] Day 10 — End-to-end QA, bug fixes, docs
 

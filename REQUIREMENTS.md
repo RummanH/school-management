@@ -69,20 +69,34 @@ are not yet surfaced in the student-facing portal UI (see Student Portal below).
 - Admission test information
 - Admission result publication
 
-**Status:** ⚙️ Partial — Backend is done: `admission_applications` table,
-public `POST /admission/apply` (returns a short human-readable reference code
-like `ADM-K5AXXE`, avoiding the visually ambiguous `0/O/1/I` characters) and
-public `GET /admission/status` (requires *both* the reference code and the
-guardian phone number that were submitted — looking up by reference code
-alone would let a stranger enumerate other applicants' status), plus
-admin-only list/detail/status-update endpoints. Applicant photo is stored as
-base64 in the `photo_data` column rather than written to local disk — this
-app deploys to Vercel, where local filesystem writes don't persist between
-invocations — capped at ~1.5MB decoded server-side as a safety net (the
-public form is expected to resize/compress client-side, not rely on this
-limit). Required bumping `express.json()`'s default 100kb body limit to 2mb
-to fit the encoded photo. No public application form or admin review UI yet —
-that's next.
+**Status:** ✅ Built — Public application form at `/admission` (linked from
+the Home page's "Apply Now") covers applicant + guardian details and an
+optional photo, resized/compressed client-side on a `<canvas>` before
+base64 encoding (~480px, JPEG quality 0.75) so uploads stay well under the
+backend's size caps without the applicant needing to think about file size.
+"Applying For Class" is a dropdown populated live from the school's actual
+configured classes (new public `GET /academic/classes/public` endpoint,
+no auth) — falls back to a free-text input if the school hasn't set up any
+classes yet, so the form never dead-ends. Submitting shows the reference code
+prominently with "save this" messaging and a copy button.
+
+The "Check Status" tab (also linked from the Home page) looks up an
+application by **reference code alone** — by product decision, this was
+simplified from the original "code + guardian phone" two-factor design.
+Security note: this means the code itself (six characters from a 32-symbol
+alphabet, ~1 billion combinations, shared with the applicant once at
+submission) is the only thing standing between a stranger and that
+application's status/test-date. Low sensitivity (no address/DOB/photo is
+exposed via status-check) and reasonable entropy make this an acceptable
+trade-off for the simpler UX, but it's a deliberate downgrade from the
+original design worth knowing about — add rate-limiting on `/admission/status`
+if abuse ever becomes a concern.
+
+Admin gets a full "Admissions" page (tenant nav) — filterable list, a detail
+modal showing the photo and all submitted fields, and status/notes/test-date
+editing. Document upload beyond the single photo (e.g. separate birth
+certificate/transfer certificate scans) is not built — the single photo
+covers the "keep it minimal for v1" scope decision from the roadmap.
 
 ---
 
@@ -220,7 +234,7 @@ management and basic reports (attendance %/pass rate) are not built.
 | 1 | Home Page | Core | ✅ Done |
 | 2 | About Us | Core | ⚙️ Partial |
 | 3 | Academic Portal | Core | ✅ Done (admin/teacher back end + admin UI) |
-| 4 | Online Admission | Core | ⚙️ Partial (backend done; public form + admin UI pending) |
+| 4 | Online Admission | Core | ✅ Done (public form/status-check + admin review UI) |
 | 5 | Media Gallery | Core | ✅ Done (photo + video, admin-managed) |
 | 6 | Student Portal | Core | ✅ Done (profile/results/attendance/routine/notices/print report) |
 | 7 | Guardian Portal | Core | ✅ Done (linking, results/attendance/profile/notices/print report) |

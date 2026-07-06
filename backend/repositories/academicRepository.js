@@ -102,6 +102,24 @@ export async function listClasses(client, tenantId) {
   return result.rows.map(mapClass);
 }
 
+// Public (unauthenticated) — used by the online admission form's "Applying
+// for Class" dropdown. No tenant filter: this deployment is single-school in
+// practice (same simplification already used for notices/gallery/contact) —
+// revisit if this becomes a shared multi-tenant public site.
+export async function listClassesPublic(client) {
+  const result = await client.query(
+    `SELECT id, name, section, academic_year
+       FROM classes
+      ORDER BY name ASC, section ASC`,
+  );
+  return result.rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    section: row.section || '',
+    academicYear: row.academic_year || '',
+  }));
+}
+
 export async function findClassById(client, id) {
   const result = await client.query('SELECT * FROM classes WHERE id = $1', [id]);
   return result.rows[0] || null;

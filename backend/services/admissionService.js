@@ -3,7 +3,7 @@ import { createId } from "../lib/ids.js";
 import {
   listApplications,
   findApplicationById,
-  findApplicationByReferenceAndPhone,
+  findApplicationByReference,
   referenceCodeExists,
   insertApplication,
   updateApplicationStatus,
@@ -65,14 +65,13 @@ export class AdmissionService {
     });
   }
 
-  async checkStatus(referenceCode, guardianPhone) {
+  async checkStatus(referenceCode) {
     const cleanCode = (referenceCode || "").trim().toUpperCase();
-    const cleanPhone = (guardianPhone || "").trim();
-    assert(cleanCode && cleanPhone, "Reference code and guardian phone are required.", 400);
+    assert(cleanCode, "Reference code is required.", 400);
 
     return this.databaseManager.withClient(async (client) => {
-      const application = await findApplicationByReferenceAndPhone(client, cleanCode, cleanPhone);
-      assert(application, "No matching application found. Check your reference code and phone number.", 404);
+      const application = await findApplicationByReference(client, cleanCode);
+      assert(application, "No application found with that reference code.", 404);
       return application;
     });
   }

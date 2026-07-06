@@ -12,6 +12,13 @@ export class AcademicController {
     } catch (err) { next(err); }
   };
 
+  listClassesPublic = async (req, res, next) => {
+    try {
+      const classes = await this.academicService.listClassesPublic();
+      res.json({ classes });
+    } catch (err) { next(err); }
+  };
+
   createClass = async (req, res, next) => {
     try {
       const classes = await this.academicService.createClass(req.body, req.currentUser);
