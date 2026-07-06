@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Loader2, Users, X, Save, GraduationCap } from 'lucide-react';
+import { useAuth } from '../../../app/App.jsx';
 import { listClasses, createClass, updateClass, deleteClass } from '../../../services/api/academicApi.js';
 import { listTeachersForAcademic } from '../../../services/api/academicApi.js';
+
+// Class create/edit/delete are adminOnly on the backend — teachers get a
+// read-only view (they still see routine/syllabus edit rights, gated in
+// those tabs instead).
+const CAN_MANAGE_ROLES = ['system_developer', 'admin'];
 
 function Modal({ title, onClose, onSave, saving, children }) {
   return (
@@ -27,6 +33,9 @@ function Modal({ title, onClose, onSave, saving, children }) {
 const EMPTY = { name: '', section: '', academicYear: '', classTeacherId: '', description: '' };
 
 export default function ClassesTab() {
+  const { currentUser } = useAuth();
+  const canManage = CAN_MANAGE_ROLES.includes(currentUser?.role);
+
   const [classes, setClasses]   = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading]   = useState(true);
@@ -72,14 +81,16 @@ export default function ClassesTab() {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <p className="text-sm text-slate-500">{classes.length} class{classes.length !== 1 ? 'es' : ''}</p>
-        <button onClick={openCreate} className="btn-primary flex items-center gap-2"><Plus className="h-4 w-4" /> New Class</button>
+        {canManage && (
+          <button onClick={openCreate} className="btn-primary flex items-center gap-2"><Plus className="h-4 w-4" /> New Class</button>
+        )}
       </div>
 
       {classes.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-slate-200 py-16 text-center text-slate-400">
           <GraduationCap className="mx-auto mb-3 h-10 w-10" />
           <p className="text-sm font-medium">No classes yet</p>
-          <p className="mt-1 text-xs">Create a class to get started</p>
+          <p className="mt-1 text-xs">{canManage ? 'Create a class to get started' : 'Ask your administrator to create a class'}</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -90,12 +101,14 @@ export default function ClassesTab() {
                   <p className="font-black text-slate-800">{cls.name}{cls.section && ` — ${cls.section}`}</p>
                   {cls.academicYear && <p className="text-xs text-slate-400">Year: {cls.academicYear}</p>}
                 </div>
-                <div className="flex gap-1">
-                  <button onClick={() => openEdit(cls)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><Pencil className="h-3.5 w-3.5" /></button>
-                  <button onClick={() => handleDelete(cls.id)} disabled={deleting === cls.id} className="rounded-lg p-1.5 text-red-400 hover:bg-red-50">
-                    {deleting === cls.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                  </button>
-                </div>
+                {canManage && (
+                  <div className="flex gap-1">
+                    <button onClick={() => openEdit(cls)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><Pencil className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => handleDelete(cls.id)} disabled={deleting === cls.id} className="rounded-lg p-1.5 text-red-400 hover:bg-red-50">
+                      {deleting === cls.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
                 <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{cls.studentCount} students</span>

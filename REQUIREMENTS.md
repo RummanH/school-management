@@ -133,13 +133,20 @@ built yet.
 - Student evaluation (simple remarks per student, not a formal appraisal system)
 - Notice publication
 
-**Status:** ⚙️ Partial — Personal profile view built. Backend already authorizes
-teachers (`staffAndAdmin` role) to mark attendance, enter results, and edit
-routine/syllabus, but **no teacher-facing dashboard UI exists yet** to use these
-— the sidebar currently only gives teachers the shared nav (Dashboard, Contact
-Messages), not the Academic/Students screens. This is the biggest real gap
-blocking a usable v1: the backend work is done, only the teacher-facing nav/UI
-is missing. Notice publication not built.
+**Status:** ✅ Built — Teachers have a real dashboard: logging in lands them on
+`/dashboard` with an "Academic" section covering classes (view only), routine
+and syllabus (edit; delete restricted to admin), attendance (full mark/save),
+and results (full entry, including the per-student `remarks` field — this *is*
+"student evaluation," not a separate appraisal feature), plus a "My Profile"
+link back to their existing `/portal` profile view. Notice publication is a
+"Publish Notice" quick action on the teacher's dashboard home, restricted to
+non-public audiences (students/teachers/guardians/all-portal) — only admins
+can post to the public website, enforced both in the UI (dropdown never offers
+"Public") and the backend (`noticeService` rejects it even if attempted
+directly). Exam *schedule* management (creating/editing/deleting exam dates,
+rooms, total marks) intentionally stays admin-only, matching the backend's
+`adminOnly` route — teachers pick from existing exams to enter results, they
+don't schedule them.
 
 ---
 
@@ -192,7 +199,7 @@ management, and basic reports (attendance %/pass rate) are not built.
 | 5 | Media Gallery | Core | ✅ Done (photo + video, admin-managed) |
 | 6 | Student Portal | Core | ⚙️ Partial |
 | 7 | Guardian Portal | Core | ⚙️ Partial (linking, results/attendance/profile; notices & certificate pending) |
-| 8 | Teacher Portal | Core | ⚙️ Partial (profile only; **no teacher dashboard UI — biggest gap**) |
+| 8 | Teacher Portal | Core | ✅ Done (classes/routine/syllabus/attendance/results/notice publication) |
 | 9 | Admin Dashboard | Core | ⚙️ Partial |
 | 10 | Contact Us | Core | ✅ Done |
 

@@ -1,4 +1,4 @@
-import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, BookOpen, Globe, LogOut, X, BookMarked, Bell, Images } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, BookOpen, Globe, LogOut, X, BookMarked, Bell, Images, User } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 
 const SHARED_NAV = [
@@ -20,22 +20,35 @@ const PLATFORM_NAV = [
   { label: 'All Users',     icon: Users,     path: '/dashboard/users' },
 ];
 
-const ADMIN_ROLES = ['system_developer', 'admin'];
+// Teachers get academic management here, plus a link back to their portal
+// profile (they're the only dashboard role that also has a /portal profile).
+const TEACHER_NAV = [
+  { label: 'Academic',   icon: BookMarked, path: '/dashboard/academic' },
+  { label: 'My Profile', icon: User,       path: '/portal' },
+];
+
+function panelLabelFor(role) {
+  if (role === 'system_developer') return 'Platform Panel';
+  if (role === 'teacher') return 'Teacher Panel';
+  return 'Admin Panel';
+}
 
 export default function DashboardSidebar({ activePath, onClose }) {
   const { logout, currentUser } = useAuth();
   const role = currentUser?.role;
   const isPlatform = role === 'system_developer';
-  const isAdmin = ADMIN_ROLES.includes(role);
 
   // system_developer → full platform nav (orgs + all users)
-  // admin → tenant nav (contacts + users for their org)
-  // teacher / student / guardian → shared nav only
+  // admin → tenant nav (academic, teachers, students, users, notices, gallery)
+  // teacher → academic management + link to their own portal profile
+  // student / guardian never reach this sidebar (they live on /portal)
   let nav;
   if (isPlatform) {
     nav = [...SHARED_NAV, ...PLATFORM_NAV];
   } else if (role === 'admin') {
     nav = [...SHARED_NAV, ...TENANT_ADMIN_NAV];
+  } else if (role === 'teacher') {
+    nav = [...SHARED_NAV, ...TEACHER_NAV];
   } else {
     nav = SHARED_NAV;
   }
@@ -49,7 +62,7 @@ export default function DashboardSidebar({ activePath, onClose }) {
             <GraduationCap className="h-5 w-5" />
           </span>
           <div>
-            <p className="text-sm font-black leading-none">Admin Panel</p>
+            <p className="text-sm font-black leading-none">{panelLabelFor(role)}</p>
             <p className="mt-0.5 text-[10px] text-white/50 capitalize">{currentUser?.role?.replace(/_/g, ' ')}</p>
           </div>
         </div>

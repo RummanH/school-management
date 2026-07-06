@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, CheckCircle, Clock, InboxIcon } from 'lucide-react';
+import { MessageSquare, CheckCircle, Clock, InboxIcon, Megaphone, X, Loader2, Send } from 'lucide-react';
 import DashboardSidebar from '../components/DashboardSidebar.jsx';
 import DashboardHeader from '../components/DashboardHeader.jsx';
 import TenantsPage from '../../platform/pages/TenantsPage.jsx';
@@ -10,7 +10,8 @@ import AcademicPage from '../../academic/pages/AcademicPage.jsx';
 import NoticesPage from '../../notices/pages/NoticesPage.jsx';
 import GalleryPage from '../../gallery/pages/GalleryPage.jsx';
 import { getStats, getContacts, markContactRead } from '../../../services/api/adminApi.js';
-import { useAuth } from '../../../app/App.jsx';
+import { createNotice } from '../../../services/api/noticeApi.js';
+import { useAuth, navigate } from '../../../app/App.jsx';
 
 /* ─── Shared sub-components ─── */
 
@@ -87,13 +88,138 @@ function ContactsTable({ contacts, onMarkRead }) {
   );
 }
 
+/* ─── Publish notice (teacher quick action) ───
+   Teachers can publish notices/news (backend already authorizes `staffAndAdmin`
+   for POST /admin/notices), but — unlike admin — must not be able to post to
+   the public website. The audience list here deliberately omits 'public'; the
+   backend also enforces this (noticeService rejects a teacher posting with
+   audience 'public'), so this is belt-and-suspenders, not the only guard. */
+const TEACHER_NOTICE_AUDIENCES = {
+  student:    'Students',
+  teacher:    'Teachers',
+  guardian:   'Guardians',
+  all_portal: 'All portal users',
+};
+
+function PublishNoticeModal({ onClose }) {
+  const [form, setForm] = useState({ title: '', body: '', type: 'notice', audience: 'student' });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [done, setDone] = useState(false);
+
+  function set(field, value) {
+    setForm((f) => ({ ...f, [field]: value }));
+    setError('');
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+    try {
+      await createNotice({
+        title: form.title.trim(),
+        body: form.body.trim(),
+        type: form.type,
+        audience: form.audience,
+        isPublished: true,
+      });
+      setDone(true);
+    } catch (err) {
+      setError(err.message || 'Something went wrong.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          <h2 className="text-base font-bold text-slate-800">Publish Notice</h2>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600"><X className="h-4 w-4" /></button>
+        </div>
+
+        {done ? (
+          <div className="space-y-4 p-8 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+              <CheckCircle className="h-6 w-6" />
+            </div>
+            <p className="text-sm font-semibold text-slate-700">Notice published.</p>
+            <button onClick={onClose} className="btn-primary mx-auto">Done</button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4 p-6">
+            {error && (
+              <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+            )}
+
+            <div>
+              <label className="mb-1 block text-xs font-bold text-slate-600">Title *</label>
+              <input
+                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/20"
+                value={form.title} onChange={(e) => set('title', e.target.value)}
+                placeholder="e.g. Homework reminder" required />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-bold text-slate-600">Body</label>
+              <textarea
+                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/20"
+                rows={4}
+                value={form.body} onChange={(e) => set('body', e.target.value)}
+                placeholder="Details..." />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-600">Type</label>
+                <select
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/20"
+                  value={form.type} onChange={(e) => set('type', e.target.value)}>
+                  <option value="notice">Notice</option>
+                  <option value="news">News</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-600">Audience</label>
+                <select
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/20"
+                  value={form.audience} onChange={(e) => set('audience', e.target.value)}>
+                  {Object.entries(TEACHER_NOTICE_AUDIENCES).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+              <button type="button" onClick={onClose} disabled={saving}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50">
+                Cancel
+              </button>
+              <button type="submit" disabled={saving} className="btn-primary disabled:opacity-60">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {saving ? 'Publishing…' : 'Publish'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Home view ─── */
 
 function DashboardHome() {
   const { currentUser } = useAuth();
+  const isTeacher = currentUser?.role === 'teacher';
   const [stats, setStats] = useState(null);
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [noticeModalOpen, setNoticeModalOpen] = useState(false);
 
   useEffect(() => {
     Promise.all([getStats(), getContacts({ limit: 20 })])
@@ -118,12 +244,22 @@ function DashboardHome() {
 
   return (
     <>
-      <div className="mb-6 rounded-2xl bg-gradient-to-r from-[var(--brand-strong)] to-[var(--brand)] px-6 py-5 text-white">
-        <p className="text-xs font-bold uppercase tracking-widest text-white/60">Welcome back</p>
-        <h2 className="mt-1 text-xl font-black">{currentUser?.name}</h2>
-        <p className="mt-1 text-sm text-white/70">
-          {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-gradient-to-r from-[var(--brand-strong)] to-[var(--brand)] px-6 py-5 text-white">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-white/60">Welcome back</p>
+          <h2 className="mt-1 text-xl font-black">{currentUser?.name}</h2>
+          <p className="mt-1 text-sm text-white/70">
+            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+        </div>
+        {isTeacher && (
+          <button
+            onClick={() => setNoticeModalOpen(true)}
+            className="flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/25"
+          >
+            <Megaphone className="h-4 w-4" /> Publish Notice
+          </button>
+        )}
       </div>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -142,6 +278,8 @@ function DashboardHome() {
         </div>
         <ContactsTable contacts={contacts} onMarkRead={handleMarkRead} />
       </div>
+
+      {noticeModalOpen && <PublishNoticeModal onClose={() => setNoticeModalOpen(false)} />}
     </>
   );
 }
@@ -159,9 +297,16 @@ const PAGE_TITLES = {
   '/dashboard/gallery':   'Gallery',
 };
 
+// Teachers only get the shared dashboard home/contacts plus Academic — every
+// other sub-route (Students, Teachers, Users, Tenants, Notices, Gallery) is
+// admin/system_developer only on the backend, so the UI must not even try to
+// render them for a teacher (URL bar access, not just hidden nav links).
+const TEACHER_ALLOWED_PATHS = ['/dashboard', '/dashboard/contacts', '/dashboard/academic'];
+
 /* ─── Root layout ─── */
 
 export default function DashboardPage() {
+  const { currentUser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pathname, setPathname] = useState(window.location.pathname);
 
@@ -172,6 +317,13 @@ export default function DashboardPage() {
   }, []);
 
   const title = PAGE_TITLES[pathname] ?? 'Dashboard';
+
+  const isTeacher = currentUser?.role === 'teacher';
+  const teacherAllowed = TEACHER_ALLOWED_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
+  if (isTeacher && !teacherAllowed) {
+    navigate('/dashboard/academic');
+    return null;
+  }
 
   function renderContent() {
     if (pathname === '/dashboard/tenants')           return <TenantsPage />;

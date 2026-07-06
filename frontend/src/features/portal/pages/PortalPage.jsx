@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   GraduationCap, BookOpen, Users, LogOut, Globe, Loader2,
   User, Mail, Phone, MapPin, Calendar, Droplets, Baby,
-  BookMarked, ClipboardList, Building2, Award,
+  BookMarked, ClipboardList, Building2, Award, LayoutDashboard,
 } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 import { getMyProfile } from '../../../services/api/authApi.js';
@@ -274,6 +274,14 @@ export default function PortalPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {role === 'teacher' && (
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="hidden items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 sm:flex"
+              >
+                <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
+              </button>
+            )}
             <button
               onClick={() => navigate('/')}
               className="hidden items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 sm:flex"

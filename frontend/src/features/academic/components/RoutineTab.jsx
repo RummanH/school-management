@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Loader2, X, Save, Calendar } from 'lucide-react';
+import { useAuth } from '../../../app/App.jsx';
 import { listClasses, getRoutine, saveRoutineEntry, deleteRoutineEntry, listTeachersForAcademic } from '../../../services/api/academicApi.js';
+
+// Deleting a routine entry is adminOnly on the backend — admin/teacher can
+// both add/edit periods (POST is staffAndAdmin), only admin can delete.
+const CAN_DELETE_ROLES = ['system_developer', 'admin'];
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const DAY_COLORS = {
@@ -12,6 +17,9 @@ const DAY_COLORS = {
 const EMPTY_FORM = { dayOfWeek: 'Monday', periodNumber: 1, subject: '', teacherId: '', startTime: '', endTime: '', room: '' };
 
 export default function RoutineTab() {
+  const { currentUser } = useAuth();
+  const canDelete = CAN_DELETE_ROLES.includes(currentUser?.role);
+
   const [classes, setClasses]   = useState([]);
   const [classId, setClassId]   = useState('');
   const [routine, setRoutine]   = useState([]);
@@ -112,9 +120,11 @@ export default function RoutineTab() {
                       </div>
                       <div className="flex gap-1 shrink-0">
                         <button onClick={() => openEdit(e)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><Pencil className="h-3.5 w-3.5" /></button>
-                        <button onClick={() => handleDelete(e.id)} disabled={deleting === e.id} className="rounded-lg p-1.5 text-red-400 hover:bg-red-50">
-                          {deleting === e.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                        </button>
+                        {canDelete && (
+                          <button onClick={() => handleDelete(e.id)} disabled={deleting === e.id} className="rounded-lg p-1.5 text-red-400 hover:bg-red-50">
+                            {deleting === e.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

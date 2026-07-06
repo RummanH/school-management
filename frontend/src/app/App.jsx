@@ -17,11 +17,16 @@ export function navigate(path) {
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
-// Roles that use the full admin dashboard
-const ADMIN_ROLES = ['system_developer', 'admin'];
+// Roles that land in the admin dashboard shell.
+// Teachers use the dashboard for academic management (classes/routine/syllabus/
+// attendance/results) but also keep access to /portal for their own profile —
+// see the cross-role guards below, where only system_developer/admin are fully
+// barred from /portal.
+const DASHBOARD_ROLES = ['system_developer', 'admin', 'teacher'];
+const DASHBOARD_ONLY_ROLES = ['system_developer', 'admin'];
 
 function homePathForRole(role) {
-  return ADMIN_ROLES.includes(role) ? '/dashboard' : '/portal';
+  return DASHBOARD_ROLES.includes(role) ? '/dashboard' : '/portal';
 }
 
 export default function App() {
@@ -84,11 +89,13 @@ export default function App() {
   // Authenticated redirect from login
   if (isLogin && currentUser) { navigate(homePathForRole(currentUser.role)); return null; }
 
-  // Cross-role guards: prevent non-admin accessing /dashboard and admin accessing /portal
-  if (isDashboard && currentUser && !ADMIN_ROLES.includes(currentUser.role)) {
+  // Cross-role guards: students/guardians never see the dashboard; system_developer/admin
+  // never see the portal (they have no student/teacher profile to show there). Teachers are
+  // allowed on both — /dashboard for academic management, /portal for their own profile.
+  if (isDashboard && currentUser && !DASHBOARD_ROLES.includes(currentUser.role)) {
     navigate('/portal'); return null;
   }
-  if (isPortal && currentUser && ADMIN_ROLES.includes(currentUser.role)) {
+  if (isPortal && currentUser && DASHBOARD_ONLY_ROLES.includes(currentUser.role)) {
     navigate('/dashboard'); return null;
   }
 
