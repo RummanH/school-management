@@ -9,6 +9,7 @@ import TeachersPage from '../../teachers/pages/TeachersPage.jsx';
 import AcademicPage from '../../academic/pages/AcademicPage.jsx';
 import NoticesPage from '../../notices/pages/NoticesPage.jsx';
 import GalleryPage from '../../gallery/pages/GalleryPage.jsx';
+import AdmissionsPage from '../../admission/pages/AdmissionsPage.jsx';
 import { getStats, getContacts, markContactRead } from '../../../services/api/adminApi.js';
 import { createNotice } from '../../../services/api/noticeApi.js';
 import { useAuth, navigate } from '../../../app/App.jsx';
@@ -295,6 +296,7 @@ const PAGE_TITLES = {
   '/dashboard/academic':  'Academic Portal',
   '/dashboard/notices':   'Notices & News',
   '/dashboard/gallery':   'Gallery',
+  '/dashboard/admissions':'Admissions',
 };
 
 // Teachers only get the shared dashboard home/contacts plus Academic — every
@@ -333,6 +335,7 @@ export default function DashboardPage() {
     if (pathname.startsWith('/dashboard/academic'))  return <AcademicPage />;
     if (pathname === '/dashboard/notices')           return <NoticesPage />;
     if (pathname === '/dashboard/gallery')           return <GalleryPage />;
+    if (pathname === '/dashboard/admissions')        return <AdmissionsPage />;
     return <DashboardHome />;
   }
 

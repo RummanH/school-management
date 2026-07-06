@@ -1,4 +1,4 @@
-import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, BookOpen, Globe, LogOut, X, BookMarked, Bell, Images, User } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, BookOpen, Globe, LogOut, X, BookMarked, Bell, Images, User, UserPlus } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 
 const SHARED_NAV = [
@@ -7,12 +7,13 @@ const SHARED_NAV = [
 ];
 
 const TENANT_ADMIN_NAV = [
-  { label: 'Academic', icon: BookMarked,   path: '/dashboard/academic' },
-  { label: 'Teachers', icon: BookOpen,     path: '/dashboard/teachers' },
-  { label: 'Students', icon: GraduationCap,path: '/dashboard/students' },
-  { label: 'Users',    icon: Users,        path: '/dashboard/users' },
-  { label: 'Notices',  icon: Bell,         path: '/dashboard/notices' },
-  { label: 'Gallery',  icon: Images,       path: '/dashboard/gallery' },
+  { label: 'Academic',   icon: BookMarked,   path: '/dashboard/academic' },
+  { label: 'Teachers',   icon: BookOpen,     path: '/dashboard/teachers' },
+  { label: 'Students',   icon: GraduationCap,path: '/dashboard/students' },
+  { label: 'Admissions', icon: UserPlus,     path: '/dashboard/admissions' },
+  { label: 'Users',      icon: Users,        path: '/dashboard/users' },
+  { label: 'Notices',    icon: Bell,         path: '/dashboard/notices' },
+  { label: 'Gallery',    icon: Images,       path: '/dashboard/gallery' },
 ];
 
 const PLATFORM_NAV = [

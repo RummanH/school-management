@@ -1,5 +1,5 @@
-import { CheckCircle, Calendar, FileText, ArrowRight } from 'lucide-react';
-import { useLanguage } from '../../../app/App.jsx';
+import { CheckCircle, Calendar, FileText, ArrowRight, Search } from 'lucide-react';
+import { useLanguage, navigate } from '../../../app/App.jsx';
 import { ADMISSION_DOCS } from '../constants.js';
 
 const DATE_KEYS = ['date1', 'date2', 'date3', 'date4'];
@@ -16,15 +16,18 @@ export default function AdmissionSection() {
           <h2 className="mt-3 text-3xl font-black sm:text-4xl">{t('admission.title')}</h2>
           <p className="mt-4 max-w-2xl text-white/75">{t('admission.announcement')}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              href="#contact"
+            <button
+              onClick={() => navigate('/admission')}
               className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-[var(--brand-strong)] shadow-md transition hover:-translate-y-0.5"
             >
               {t('admission.applyNow')} <ArrowRight className="h-4 w-4" />
-            </a>
-            <button className="inline-flex items-center gap-2 rounded-full border border-white/30 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10">
-              <FileText className="h-4 w-4" />
-              {t('admission.downloadForm')}
+            </button>
+            <button
+              onClick={() => navigate('/admission?tab=status')}
+              className="inline-flex items-center gap-2 rounded-full border border-white/30 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
+            >
+              <Search className="h-4 w-4" />
+              {t('admission.checkStatus')}
             </button>
           </div>
         </div>

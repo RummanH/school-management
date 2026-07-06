@@ -11,27 +11,29 @@ import { AcademicService } from "./services/academicService.js";
 import { GuardianService } from "./services/guardianService.js";
 import { NoticeService } from "./services/noticeService.js";
 import { GalleryService } from "./services/galleryService.js";
+import { AdmissionService } from "./services/admissionService.js";
 import { createApp } from "./app.js";
 
 export async function createBackendApp() {
   const databaseManager = new DatabaseManager(env.DATABASE_URL);
   await bootstrapService.initialize(databaseManager, env);
 
-  const contactService  = new ContactService(databaseManager);
-  const authService     = new AuthService(databaseManager, env);
-  const tenantService   = new TenantService(databaseManager);
-  const userService     = new UserService(databaseManager);
-  const studentService  = new StudentService(databaseManager);
-  const teacherService  = new TeacherService(databaseManager);
-  const academicService = new AcademicService(databaseManager);
-  const guardianService = new GuardianService(databaseManager);
-  const noticeService   = new NoticeService(databaseManager);
-  const galleryService  = new GalleryService(databaseManager);
+  const contactService   = new ContactService(databaseManager);
+  const authService      = new AuthService(databaseManager, env);
+  const tenantService    = new TenantService(databaseManager);
+  const userService      = new UserService(databaseManager);
+  const studentService   = new StudentService(databaseManager);
+  const teacherService   = new TeacherService(databaseManager);
+  const academicService  = new AcademicService(databaseManager);
+  const guardianService  = new GuardianService(databaseManager);
+  const noticeService    = new NoticeService(databaseManager);
+  const galleryService   = new GalleryService(databaseManager);
+  const admissionService = new AdmissionService(databaseManager);
 
   const app = createApp({
     env, contactService, authService, tenantService,
     userService, studentService, teacherService, academicService,
-    guardianService, noticeService, galleryService, databaseManager,
+    guardianService, noticeService, galleryService, admissionService, databaseManager,
   });
   return { app, databaseManager, env };
 }

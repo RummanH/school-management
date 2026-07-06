@@ -10,6 +10,7 @@ import { AcademicController } from "../controllers/academicController.js";
 import { GuardianController } from "../controllers/guardianController.js";
 import { NoticeController } from "../controllers/noticeController.js";
 import { GalleryController } from "../controllers/galleryController.js";
+import { AdmissionController } from "../controllers/admissionController.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { findStudentByUserId } from "../repositories/studentRepository.js";
@@ -17,21 +18,23 @@ import { findTeacherByUserId } from "../repositories/teacherRepository.js";
 
 export function createApiRouter({
   env, contactService, authService, tenantService,
-  userService, studentService, teacherService, academicService, guardianService, noticeService, galleryService, databaseManager,
+  userService, studentService, teacherService, academicService,
+  guardianService, noticeService, galleryService, admissionService, databaseManager,
 }) {
   const router = Router();
 
-  const contactController  = new ContactController(contactService);
-  const authController     = new AuthController(authService, env);
-  const adminController    = new AdminController(databaseManager);
-  const tenantController   = new TenantController(tenantService);
-  const userController     = new UserController(userService);
-  const studentController  = new StudentController(studentService);
-  const teacherController  = new TeacherController(teacherService);
-  const academicController = new AcademicController(academicService);
-  const guardianController = new GuardianController(guardianService);
-  const noticeController   = new NoticeController(noticeService);
-  const galleryController  = new GalleryController(galleryService);
+  const contactController   = new ContactController(contactService);
+  const authController      = new AuthController(authService, env);
+  const adminController     = new AdminController(databaseManager);
+  const tenantController    = new TenantController(tenantService);
+  const userController      = new UserController(userService);
+  const studentController   = new StudentController(studentService);
+  const teacherController   = new TeacherController(teacherService);
+  const academicController  = new AcademicController(academicService);
+  const guardianController  = new GuardianController(guardianService);
+  const noticeController    = new NoticeController(noticeService);
+  const galleryController   = new GalleryController(galleryService);
+  const admissionController = new AdmissionController(admissionService);
 
   const auth          = requireAuth(authService, env);
   const platformOnly  = [auth, requireRole("system_developer")];
@@ -45,6 +48,8 @@ export function createApiRouter({
   router.post("/contact", contactController.submit);
   router.get("/notices/public", noticeController.listPublic);
   router.get("/gallery/public", galleryController.listPublic);
+  router.post("/admission/apply",  admissionController.apply);
+  router.get("/admission/status",  admissionController.checkStatus);
 
   // Auth
   router.post("/auth/login",  authController.login);
@@ -157,6 +162,12 @@ export function createApiRouter({
   router.post("/admin/gallery",        ...adminOnly, galleryController.create);
   router.put("/admin/gallery/:id",     ...adminOnly, galleryController.update);
   router.delete("/admin/gallery/:id",  ...adminOnly, galleryController.remove);
+
+  // ── Online Admission ─────────────────────────────────────────────────────
+
+  router.get("/admin/admissions",     ...adminOnly, admissionController.listAll);
+  router.get("/admin/admissions/:id", ...adminOnly, admissionController.getById);
+  router.put("/admin/admissions/:id", ...adminOnly, admissionController.updateStatus);
 
   // Admin dashboard
   router.get("/admin/stats",               auth, adminController.getStats);

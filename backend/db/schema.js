@@ -174,6 +174,25 @@ export async function createSchema(pool) {
       UNIQUE(guardian_user_id, student_user_id)
     );
 
+    CREATE TABLE IF NOT EXISTS admission_applications (
+      id                   TEXT PRIMARY KEY,
+      reference_code       TEXT NOT NULL UNIQUE,
+      applicant_name       TEXT NOT NULL,
+      date_of_birth        TEXT,
+      gender               TEXT,
+      applying_for_class   TEXT NOT NULL DEFAULT '',
+      guardian_name        TEXT NOT NULL,
+      guardian_phone       TEXT NOT NULL,
+      guardian_email       TEXT,
+      previous_school      TEXT,
+      photo_data           TEXT,
+      status               TEXT NOT NULL DEFAULT 'submitted',
+      admission_test_date  TEXT,
+      notes                TEXT NOT NULL DEFAULT '',
+      created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS teacher_profiles (
       id            TEXT PRIMARY KEY,
       tenant_id     TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -234,5 +253,8 @@ export async function createSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_notices_type      ON notices(type);
 
     CREATE INDEX IF NOT EXISTS idx_gallery_items_sort ON gallery_items(sort_order, created_at ASC);
+
+    CREATE INDEX IF NOT EXISTS idx_admission_applications_reference ON admission_applications(reference_code);
+    CREATE INDEX IF NOT EXISTS idx_admission_applications_status    ON admission_applications(status, created_at DESC);
   `);
 }

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check src/i18n/locales/en.js)",
+      "Bash(node --check src/i18n/locales/bn.js)",
+      "Bash(npx --no-install esbuild --bundle --outfile=/tmp/landing.js src/features/landing/pages/LandingPage.jsx)"
+    ]
+  }
+}

@@ -69,10 +69,20 @@ are not yet surfaced in the student-facing portal UI (see Student Portal below).
 - Admission test information
 - Admission result publication
 
-**Status:** ❌ Not built. This is often the single most valuable page on the
-public website for a prospective-parent audience — worth prioritizing over
-several "Later" items below. Keep document upload minimal for v1 (e.g. one photo
-+ one ID/birth-certificate scan) rather than a generic multi-file uploader.
+**Status:** ⚙️ Partial — Backend is done: `admission_applications` table,
+public `POST /admission/apply` (returns a short human-readable reference code
+like `ADM-K5AXXE`, avoiding the visually ambiguous `0/O/1/I` characters) and
+public `GET /admission/status` (requires *both* the reference code and the
+guardian phone number that were submitted — looking up by reference code
+alone would let a stranger enumerate other applicants' status), plus
+admin-only list/detail/status-update endpoints. Applicant photo is stored as
+base64 in the `photo_data` column rather than written to local disk — this
+app deploys to Vercel, where local filesystem writes don't persist between
+invocations — capped at ~1.5MB decoded server-side as a safety net (the
+public form is expected to resize/compress client-side, not rely on this
+limit). Required bumping `express.json()`'s default 100kb body limit to 2mb
+to fit the encoded photo. No public application form or admin review UI yet —
+that's next.
 
 ---
 
@@ -210,7 +220,7 @@ management and basic reports (attendance %/pass rate) are not built.
 | 1 | Home Page | Core | ✅ Done |
 | 2 | About Us | Core | ⚙️ Partial |
 | 3 | Academic Portal | Core | ✅ Done (admin/teacher back end + admin UI) |
-| 4 | Online Admission | Core | ❌ Pending |
+| 4 | Online Admission | Core | ⚙️ Partial (backend done; public form + admin UI pending) |
 | 5 | Media Gallery | Core | ✅ Done (photo + video, admin-managed) |
 | 6 | Student Portal | Core | ✅ Done (profile/results/attendance/routine/notices/print report) |
 | 7 | Guardian Portal | Core | ✅ Done (linking, results/attendance/profile/notices/print report) |

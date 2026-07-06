@@ -82,6 +82,7 @@ export default {
     announcement: 'Admissions are now open for the academic session 2026. Limited seats available across all classes. Apply early to secure your place.',
     applyNow: 'Apply Now',
     downloadForm: 'Download Form',
+    checkStatus: 'Check Status',
     importantDates: 'Important Dates',
     date1: 'Application Start: 1 January 2026',
     date2: 'Last Date to Apply: 31 January 2026',
