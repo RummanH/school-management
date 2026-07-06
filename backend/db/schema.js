@@ -143,6 +143,15 @@ export async function createSchema(pool) {
       updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS guardian_students (
+      id               TEXT PRIMARY KEY,
+      tenant_id        TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      guardian_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      student_user_id  TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(guardian_user_id, student_user_id)
+    );
+
     CREATE TABLE IF NOT EXISTS teacher_profiles (
       id            TEXT PRIMARY KEY,
       tenant_id     TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -195,5 +204,8 @@ export async function createSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_student_profiles_class_id  ON student_profiles(class_id);
     CREATE INDEX IF NOT EXISTS idx_teacher_profiles_tenant_id ON teacher_profiles(tenant_id);
     CREATE INDEX IF NOT EXISTS idx_teacher_profiles_user_id   ON teacher_profiles(user_id);
+
+    CREATE INDEX IF NOT EXISTS idx_guardian_students_guardian ON guardian_students(guardian_user_id);
+    CREATE INDEX IF NOT EXISTS idx_guardian_students_student  ON guardian_students(student_user_id);
   `);
 }

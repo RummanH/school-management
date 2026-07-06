@@ -8,7 +8,7 @@ import { createApiRouter } from "./routes/api.js";
 
 export function createApp({
   env, contactService, authService, tenantService,
-  userService, studentService, teacherService, academicService, databaseManager,
+  userService, studentService, teacherService, academicService, guardianService, databaseManager,
 }) {
   const app = express();
 
@@ -18,7 +18,7 @@ export function createApp({
 
   app.use("/api", createApiRouter({
     env, contactService, authService, tenantService,
-    userService, studentService, teacherService, academicService, databaseManager,
+    userService, studentService, teacherService, academicService, guardianService, databaseManager,
   }));
 
   const staticRoot = fs.existsSync(backendDistPath) ? backendDistPath : frontendDistPath;

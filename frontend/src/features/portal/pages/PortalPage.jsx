@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 import { getMyProfile } from '../../../services/api/authApi.js';
+import { getMyWards, getWardResults, getWardAttendance } from '../../../services/api/guardianApi.js';
 
 const ROLE_CONFIG = {
   student:  { label: 'Student',  color: 'bg-purple-500',  Icon: GraduationCap },
@@ -90,6 +91,158 @@ function TeacherProfile({ profile }) {
   );
 }
 
+function WardResultsTable({ results }) {
+  if (!results.length) {
+    return <p className="py-6 text-center text-sm text-slate-400">No exam results yet.</p>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <th className="py-2 pr-3">Exam</th>
+            <th className="py-2 pr-3">Subject</th>
+            <th className="py-2 pr-3">Date</th>
+            <th className="py-2 pr-3">Marks</th>
+            <th className="py-2">Grade</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-50">
+          {results.map((r) => (
+            <tr key={r.id}>
+              <td className="py-2 pr-3 font-semibold text-slate-700">{r.examName}</td>
+              <td className="py-2 pr-3 text-slate-500">{r.subject}</td>
+              <td className="py-2 pr-3 text-slate-500">{r.examDate}</td>
+              <td className="py-2 pr-3 text-slate-500">{r.marksObtained ?? '—'} / {r.totalMarks}</td>
+              <td className="py-2 font-bold text-slate-700">{r.grade || '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function WardAttendanceStats({ summary }) {
+  const stats = [
+    { label: 'Present', value: summary.presentCount, color: 'text-emerald-600' },
+    { label: 'Absent',  value: summary.absentCount,  color: 'text-red-500' },
+    { label: 'Late',    value: summary.lateCount,    color: 'text-amber-500' },
+    { label: 'Total',   value: summary.totalCount,   color: 'text-slate-700' },
+  ];
+  return (
+    <div className="grid grid-cols-4 gap-3">
+      {stats.map((s) => (
+        <div key={s.label} className="rounded-xl border border-slate-100 py-3 text-center">
+          <p className={`text-xl font-black ${s.color}`}>{s.value}</p>
+          <p className="mt-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">{s.label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GuardianPortal() {
+  const [wards, setWards] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState(null);
+  const [results, setResults] = useState([]);
+  const [attendance, setAttendance] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  useEffect(() => {
+    getMyWards()
+      .then((d) => {
+        const list = d.wards || [];
+        setWards(list);
+        if (list.length) setSelectedId(list[0].userId);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    setDetailLoading(true);
+    Promise.all([getWardResults(selectedId), getWardAttendance(selectedId)])
+      .then(([rd, ad]) => {
+        setResults(rd.results || []);
+        setAttendance(ad.summary || null);
+      })
+      .catch(() => { setResults([]); setAttendance(null); })
+      .finally(() => setDetailLoading(false));
+  }, [selectedId]);
+
+  if (loading) {
+    return (
+      <div className="flex h-48 items-center justify-center">
+        <Loader2 className="h-7 w-7 animate-spin text-[var(--brand)]" />
+      </div>
+    );
+  }
+
+  if (!wards.length) {
+    return (
+      <div className="rounded-2xl border-2 border-dashed border-slate-200 py-16 text-center text-slate-400">
+        <Baby className="mx-auto mb-3 h-10 w-10" />
+        <p className="text-sm font-medium">No students linked yet.</p>
+        <p className="mt-1 text-xs">Contact your administrator to link your ward's account.</p>
+      </div>
+    );
+  }
+
+  const selectedWard = wards.find((w) => w.userId === selectedId);
+
+  return (
+    <div className="space-y-4">
+      {wards.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          {wards.map((w) => (
+            <button
+              key={w.userId}
+              onClick={() => setSelectedId(w.userId)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                selectedId === w.userId
+                  ? 'bg-[var(--brand)] text-white'
+                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+              }`}
+            >
+              {w.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {selectedWard && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Card title="Ward Profile">
+            <InfoRow icon={GraduationCap} label="Name"        value={selectedWard.name} />
+            <InfoRow icon={BookMarked}    label="Class"       value={selectedWard.className} />
+            <InfoRow icon={BookMarked}    label="Section"     value={selectedWard.section} />
+            <InfoRow icon={ClipboardList} label="Roll Number" value={selectedWard.rollNumber} />
+          </Card>
+
+          {detailLoading ? (
+            <div className="flex h-32 items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-[var(--brand)]" />
+            </div>
+          ) : (
+            <Card title="Attendance">
+              {attendance && <WardAttendanceStats summary={attendance} />}
+            </Card>
+          )}
+        </div>
+      )}
+
+      {!detailLoading && (
+        <Card title="Exam Results">
+          <WardResultsTable results={results} />
+        </Card>
+      )}
+    </div>
+  );
+}
+
 export default function PortalPage() {
   const { currentUser, logout } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -154,7 +307,9 @@ export default function PortalPage() {
           </div>
         </div>
 
-        {loading ? (
+        {role === 'guardian' ? (
+          <GuardianPortal />
+        ) : loading ? (
           <div className="flex h-48 items-center justify-center">
             <Loader2 className="h-7 w-7 animate-spin text-[var(--brand)]" />
           </div>

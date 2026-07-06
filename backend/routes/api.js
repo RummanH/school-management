@@ -7,6 +7,7 @@ import { UserController } from "../controllers/userController.js";
 import { StudentController } from "../controllers/studentController.js";
 import { TeacherController } from "../controllers/teacherController.js";
 import { AcademicController } from "../controllers/academicController.js";
+import { GuardianController } from "../controllers/guardianController.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { findStudentByUserId } from "../repositories/studentRepository.js";
@@ -14,7 +15,7 @@ import { findTeacherByUserId } from "../repositories/teacherRepository.js";
 
 export function createApiRouter({
   env, contactService, authService, tenantService,
-  userService, studentService, teacherService, academicService, databaseManager,
+  userService, studentService, teacherService, academicService, guardianService, databaseManager,
 }) {
   const router = Router();
 
@@ -26,11 +27,13 @@ export function createApiRouter({
   const studentController  = new StudentController(studentService);
   const teacherController  = new TeacherController(teacherService);
   const academicController = new AcademicController(academicService);
+  const guardianController = new GuardianController(guardianService);
 
   const auth          = requireAuth(authService, env);
   const platformOnly  = [auth, requireRole("system_developer")];
   const adminOnly     = [auth, requireRole("system_developer", "admin")];
   const staffAndAdmin = [auth, requireRole("system_developer", "admin", "teacher")];
+  const guardianOnly  = [auth, requireRole("guardian")];
 
   router.get("/health", (_req, res) => res.json({ status: "ok" }));
 
@@ -117,6 +120,18 @@ export function createApiRouter({
   router.get("/academic/classes/:classId/attendance",  ...staffAndAdmin, academicController.getAttendance);
   router.post("/academic/classes/:classId/attendance", ...staffAndAdmin, academicController.saveAttendance);
   router.get("/academic/me/attendance",                auth, academicController.getMyAttendanceSummary);
+
+  // ── Guardian Portal ──────────────────────────────────────────────────────
+
+  // Admin manages guardian ↔ student links (tenant-scoped)
+  router.get("/guardians/:guardianId/wards",              ...adminOnly, guardianController.listWardLinks);
+  router.post("/guardians/:guardianId/wards",              ...adminOnly, guardianController.linkWard);
+  router.delete("/guardians/:guardianId/wards/:studentUserId", ...adminOnly, guardianController.unlinkWard);
+
+  // Guardian's own wards
+  router.get("/guardian/wards",                           ...guardianOnly, guardianController.myWards);
+  router.get("/guardian/wards/:studentUserId/results",     ...guardianOnly, guardianController.wardResults);
+  router.get("/guardian/wards/:studentUserId/attendance",  ...guardianOnly, guardianController.wardAttendance);
 
   // Admin dashboard
   router.get("/admin/stats",               auth, adminController.getStats);

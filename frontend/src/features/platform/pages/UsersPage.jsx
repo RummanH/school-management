@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Plus, Pencil, Trash2, KeyRound, Loader2, Users, X, Save, Copy, Check,
-  CheckCircle, XCircle,
+  CheckCircle, XCircle, Link2,
 } from 'lucide-react';
 import { useAuth } from '../../../app/App.jsx';
 import { listUsers, createUser, updateUser, deleteUser, resetUserPassword } from '../../../services/api/userApi.js';
 import { listTenants } from '../../../services/api/tenantApi.js';
+import { listStudents } from '../../../services/api/studentApi.js';
+import { listWardLinks, linkWard, unlinkWard } from '../../../services/api/guardianApi.js';
 
 const ROLE_LABELS = {
   admin:    'Admin',
@@ -85,6 +87,94 @@ function TempPasswordDialog({ name, password, onClose }) {
               {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Manage wards modal ─── */
+function WardsModal({ guardian, onClose }) {
+  const [students, setStudents] = useState([]);
+  const [linkedIds, setLinkedIds] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [toggling, setToggling] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    Promise.all([listStudents(), listWardLinks(guardian.id)])
+      .then(([sd, wd]) => {
+        setStudents(sd.students || []);
+        setLinkedIds(wd.studentUserIds || []);
+      })
+      .catch((err) => setError(err.message || 'Failed to load.'))
+      .finally(() => setLoading(false));
+  }, [guardian.id]);
+
+  async function toggle(student) {
+    const isLinked = linkedIds.includes(student.userId);
+    setToggling(student.userId);
+    setError('');
+    try {
+      const result = isLinked
+        ? await unlinkWard(guardian.id, student.userId)
+        : await linkWard(guardian.id, student.userId);
+      setLinkedIds(result.studentUserIds || []);
+    } catch (err) {
+      setError(err.message || 'Something went wrong.');
+    } finally {
+      setToggling(null);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          <div>
+            <h2 className="text-base font-bold text-slate-800">Manage Wards</h2>
+            <p className="text-xs text-slate-400">{guardian.name}</p>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-50"><X className="h-4 w-4" /></button>
+        </div>
+
+        <div className="max-h-[60vh] overflow-y-auto p-6">
+          {error && (
+            <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+          )}
+          {loading ? (
+            <div className="flex h-32 items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-[var(--brand)]" />
+            </div>
+          ) : students.length === 0 ? (
+            <p className="py-8 text-center text-sm text-slate-400">No students yet. Create students first from the Students page.</p>
+          ) : (
+            <ul className="space-y-1.5">
+              {students.map((s) => {
+                const checked = linkedIds.includes(s.userId);
+                return (
+                  <li key={s.userId}>
+                    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-100 px-3 py-2.5 hover:bg-slate-50">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-700">{s.name}</p>
+                        <p className="text-xs text-slate-400">
+                          {[s.className, s.section].filter(Boolean).join(' - ') || '—'}
+                          {s.rollNumber ? ` · Roll ${s.rollNumber}` : ''}
+                        </p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={toggling === s.userId}
+                        onChange={() => toggle(s)}
+                        className="h-4 w-4 shrink-0 accent-[var(--brand)]"
+                      />
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       </div>
     </div>
@@ -240,6 +330,7 @@ export default function UsersPage() {
   const [confirm, setConfirm] = useState(null);     // null | { type, user }
   const [tempPw, setTempPw] = useState(null);       // null | { name, password }
   const [actionId, setActionId] = useState(null);
+  const [wardsModal, setWardsModal] = useState(null); // null | guardian user object
 
   useEffect(() => {
     const fetches = [listUsers()];
@@ -376,6 +467,12 @@ export default function UsersPage() {
                         className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
                         <Pencil className="h-4 w-4" />
                       </button>
+                      {user.role === 'guardian' && actor?.role === 'admin' && (
+                        <button onClick={() => setWardsModal(user)} title="Manage wards"
+                          className="rounded-lg p-1.5 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600">
+                          <Link2 className="h-4 w-4" />
+                        </button>
+                      )}
                       <button onClick={() => handleResetPassword(user)} title="Reset password"
                         disabled={actionId === user.id + '-reset'}
                         className="rounded-lg p-1.5 text-slate-400 transition hover:bg-amber-50 hover:text-amber-600 disabled:opacity-40">
@@ -435,6 +532,10 @@ export default function UsersPage() {
 
       {tempPw && (
         <TempPasswordDialog name={tempPw.name} password={tempPw.password} onClose={() => setTempPw(null)} />
+      )}
+
+      {wardsModal && (
+        <WardsModal guardian={wardsModal} onClose={() => setWardsModal(null)} />
       )}
     </div>
   );

@@ -1,6 +1,20 @@
-# School / College Website & Management System — Requirements
+# School / Madrasha Website & Management System — Requirements
 
-## 1. 🏠 Home Page
+## Target Market & Scope
+
+Selling to **individual, medium-size schools and madrashas — up to ~1,000 students
+per institution**. This is not an enterprise/multi-thousand-student deployment, so
+the priority is a solid, reliable core feature set per school rather than
+heavyweight analytics, BI, or scale-oriented engineering. Each module below is
+tagged **Core** (needed for a sellable v1) or **Later** (real, but defer until
+core is solid — don't gold-plate this before the basics are done).
+
+Online payment gateway integration (bKash/Nagad/Rocket/bank) has been pulled out
+of active scope per product decision — see "Deferred" section at the bottom.
+
+---
+
+## 1. 🏠 Home Page — Core
 
 - Attractive and modern banner slider
 - Institution overview
@@ -15,7 +29,7 @@
 
 ---
 
-## 2. 📖 About Us
+## 2. 📖 About Us — Core
 
 - Established year, history
 - Vision & Mission
@@ -23,11 +37,13 @@
 - Faculty and Staff profiles
 - Organizational structure
 
-**Status:** ⚙️ Partial — Vision/Mission done on Home page. Profiles & org structure not built.
+**Status:** ⚙️ Partial — Vision/Mission done on Home page. Faculty/staff profiles
+and org structure not built. Keep this simple: a photo + name + designation grid
+is enough for this market — no need for an interactive org chart.
 
 ---
 
-## 3. 🎓 Academic Portal
+## 3. 🎓 Academic Portal — Core
 
 - Class / Department information
 - Class routine
@@ -37,11 +53,15 @@
 - Examination results
 - Online attendance
 
-**Status:** ❌ Not built
+**Status:** ✅ Built (admin dashboard side) — Classes, routine, syllabus, exam
+schedules, exam results, and attendance all have full backend
+(controller/service/repository) and admin/teacher UI. Backend also exposes
+`/academic/me/results` and `/academic/me/attendance` for self-service, but these
+are not yet surfaced in the student-facing portal UI (see Student Portal below).
 
 ---
 
-## 4. 📝 Online Admission
+## 4. 📝 Online Admission — Core
 
 - Digital admission application form
 - Application status tracking
@@ -49,86 +69,100 @@
 - Admission test information
 - Admission result publication
 
-**Status:** ❌ Not built
+**Status:** ❌ Not built. This is often the single most valuable page on the
+public website for a prospective-parent audience — worth prioritizing over
+several "Later" items below. Keep document upload minimal for v1 (e.g. one photo
++ one ID/birth-certificate scan) rather than a generic multi-file uploader.
 
 ---
 
-## 5. 💳 Online Payment System
-
-- Admission fee payment
-- Monthly tuition fee payment
-- Donation / Contribution payment
-- Support for bKash, Nagad, Rocket, and Bank transfers
-- Payment receipt download
-
-**Status:** ❌ Not built
-
----
-
-## 6. 🖼️ Media Gallery
+## 5. 🖼️ Media Gallery — Core
 
 - Photo gallery
-- Video gallery
+- Video gallery (embed links, e.g. YouTube — no need to host video ourselves)
 
 **Status:** ⚙️ Partial — Photo gallery built. Video gallery not built.
 
 ---
 
-## 7. 📚 Student Portal
+## 6. 📚 Student Portal — Core
 
 - Personal profile
 - View examination results
 - Class routine
-- Fee / payment status
 - Attendance report
 - Certificate download
 
-**Status:** ❌ Not built
+**Status:** ⚙️ Partial — Personal profile view built (`PortalPage`). Backend
+endpoints for own results (`/academic/me/results`) and own attendance
+(`/academic/me/attendance`) exist but aren't wired into the portal UI yet
+(same UI work already done for Guardian Portal wards can be reused here almost
+directly). Class routine view and certificate download not built.
 
 ---
 
-## 8. 👪 Guardian Portal
+## 7. 👪 Guardian Portal — Core
 
 - Guardian login linked to one or more students
 - View ward's examination results
 - View ward's attendance report
-- View ward's fee / payment status
 - Receive notices and announcements
-- Communicate with teachers / admin via messaging
 - Download ward's progress report / certificate
 
-**Status:** ❌ Not built
+**Status:** ⚙️ Partial — Admin can link a guardian account to one or more
+students (`guardian_students` table, "Manage Wards" action on the Users page).
+Guardian portal shows a ward switcher, ward profile summary, exam results, and
+attendance summary. Notices/announcements view and certificate download not
+built yet.
+
+> Scoped down from the original spec: two-way messaging with teachers/admin has
+> been dropped from Core. For a school this size, a one-way notice board
+> (admin/teacher posts, guardian reads) covers the real need at a fraction of the
+> build cost — see "Later" section.
 
 ---
 
-## 9. 👨‍🏫 Teacher Portal
+## 8. 👨‍🏫 Teacher Portal — Core
 
 - Class management
 - Attendance management
 - Result upload
-- Student evaluation
+- Student evaluation (simple remarks per student, not a formal appraisal system)
 - Notice publication
 
-**Status:** ❌ Not built
+**Status:** ⚙️ Partial — Personal profile view built. Backend already authorizes
+teachers (`staffAndAdmin` role) to mark attendance, enter results, and edit
+routine/syllabus, but **no teacher-facing dashboard UI exists yet** to use these
+— the sidebar currently only gives teachers the shared nav (Dashboard, Contact
+Messages), not the Academic/Students screens. This is the biggest real gap
+blocking a usable v1: the backend work is done, only the teacher-facing nav/UI
+is missing. Notice publication not built.
 
 ---
 
-## 10. ⚙️ Admin Dashboard
+## 9. ⚙️ Admin Dashboard — Core
 
 - Student management
 - Teacher management
 - Guardian management
 - Admission management
-- Payment and accounting management
 - Notice and news management
-- Reports and analytics
-- Website content management
+- Basic reports (headcounts, attendance %, pass rate — not a BI suite)
+- Website content management (edit home page text/notices/gallery — not a
+  general-purpose CMS)
 
-**Status:** ⚙️ Partial — Login, session, contact message management done. Full management modules not built.
+**Status:** ⚙️ Partial — Login/session, contact message management, student
+management, teacher management, and academic module management
+(classes/routine/syllabus/exams/results/attendance) are done for the `admin`
+role, all scoped per tenant. Also includes a platform-level `system_developer`
+layer for onboarding/managing tenant organizations (multi-school SaaS). Guardian
+management (linking is done; broader guardian account management still uses the
+shared Users page — fine as-is), admission management, notice/news management,
+basic reports, and website content management are not built.
 
 ---
 
-## 11. 📞 Contact Us
+## 10. 📞 Contact Us — Core
 
 - Institution address
 - Google Maps location
@@ -143,16 +177,54 @@
 
 ## Build Progress Summary
 
-| # | Module | Status |
-|---|--------|--------|
-| 1 | Home Page | ✅ Done |
-| 2 | About Us | ⚙️ Partial |
-| 3 | Academic Portal | ❌ Pending |
-| 4 | Online Admission | ❌ Pending |
-| 5 | Online Payment System | ❌ Pending |
-| 6 | Media Gallery | ⚙️ Partial |
-| 7 | Student Portal | ❌ Pending |
-| 8 | Guardian Portal | ❌ Pending |
-| 9 | Teacher Portal | ❌ Pending |
-| 10 | Admin Dashboard | ⚙️ Partial |
-| 11 | Contact Us | ✅ Done |
+| # | Module | Priority | Status |
+|---|--------|----------|--------|
+| 1 | Home Page | Core | ✅ Done |
+| 2 | About Us | Core | ⚙️ Partial |
+| 3 | Academic Portal | Core | ✅ Done (admin/teacher back end + admin UI) |
+| 4 | Online Admission | Core | ❌ Pending |
+| 5 | Media Gallery | Core | ⚙️ Partial |
+| 6 | Student Portal | Core | ⚙️ Partial |
+| 7 | Guardian Portal | Core | ⚙️ Partial (linking, results/attendance/profile; notices & certificate pending) |
+| 8 | Teacher Portal | Core | ⚙️ Partial (profile only; **no teacher dashboard UI — biggest gap**) |
+| 9 | Admin Dashboard | Core | ⚙️ Partial |
+| 10 | Contact Us | Core | ✅ Done |
+
+---
+
+## Platform / Multi-Tenancy (already built, appropriately sized for this market)
+
+- Every tenant (school/madrasha) is an isolated organization: `tenants` table,
+  `tenant_id` scoping on all domain tables, unique slug per org.
+- `system_developer` platform role can create/list/update tenants and toggle
+  active/inactive status (`/platform/tenants/*`), independent of any single
+  school's `admin`.
+- `institutionType` already models `SCHOOL`, `COLLEGE`, `UNIVERSITY`, `MADRASA` —
+  the data model is ready for madrasha customers today.
+
+**Status:** ✅ Built. This is sized correctly for the target market — a single
+Postgres instance with tenant-scoped rows comfortably handles many schools at
+≤1,000 students each. No need to invest further here (e.g. per-tenant database
+isolation, sharding) unless a customer's scale genuinely demands it later.
+
+---
+
+## Later (real requirements, deliberately deferred — not dropped)
+
+- **Online Payment System** — Admission fee, monthly tuition, donations via
+  bKash/Nagad/Rocket/bank transfer, receipt download. Pulled from Core per
+  product decision (2026-07-06): build out the rest of the core product first,
+  revisit once there's a paying pilot school ready to use it.
+- **Guardian/teacher messaging** — two-way chat between guardians and
+  teachers/admin. Downgraded from Core to Later; a one-way notice board is the
+  Core substitute (see Guardian Portal above).
+- **Madrasha-specific content** — Arabic/Hifz-track subjects, bilingual
+  Bangla/Arabic UI beyond the existing `bn`/`en` i18n scaffold, Islamic calendar
+  for terms/exams. Worth doing once you have a real madrasha pilot customer to
+  validate the specifics with, rather than guessing upfront.
+- **Advanced reports & analytics** (trend charts, predictive insights, exports)
+  — basic counts/summaries are Core; anything beyond that isn't needed at this
+  scale.
+- **Full website CMS** (drag-and-drop page builder, custom themes) — editing
+  existing sections (notices, gallery, home page text) is Core; a general
+  page-builder is not needed for a single-site-per-tenant product.
