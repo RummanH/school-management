@@ -318,6 +318,90 @@ export async function createSchema(pool) {
       read_at           TIMESTAMPTZ,
       created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS staff_profiles (
+      id             TEXT PRIMARY KEY,
+      tenant_id      TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      staff_type     TEXT NOT NULL DEFAULT 'non_teaching',
+      name           TEXT NOT NULL,
+      employee_id    TEXT,
+      designation    TEXT NOT NULL DEFAULT '',
+      department     TEXT NOT NULL DEFAULT '',
+      qualification  TEXT NOT NULL DEFAULT '',
+      phone          TEXT,
+      email          TEXT,
+      address        TEXT,
+      joining_date   TEXT,
+      contract_type  TEXT NOT NULL DEFAULT 'permanent',
+      base_salary    NUMERIC(10,2) NOT NULL DEFAULT 0,
+      status         TEXT NOT NULL DEFAULT 'active',
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS staff_attendance (
+      id              TEXT PRIMARY KEY,
+      tenant_id       TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      staff_id        TEXT NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
+      attendance_date TEXT NOT NULL,
+      status          TEXT NOT NULL DEFAULT 'present',
+      note            TEXT NOT NULL DEFAULT '',
+      marked_by       TEXT REFERENCES users(id) ON DELETE SET NULL,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(staff_id, attendance_date)
+    );
+
+    CREATE TABLE IF NOT EXISTS staff_leave_requests (
+      id          TEXT PRIMARY KEY,
+      tenant_id   TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      staff_id    TEXT NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
+      leave_type  TEXT NOT NULL DEFAULT 'casual',
+      start_date  TEXT NOT NULL,
+      end_date    TEXT NOT NULL,
+      reason      TEXT NOT NULL DEFAULT '',
+      status      TEXT NOT NULL DEFAULT 'pending',
+      reviewed_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+      reviewed_at TIMESTAMPTZ,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS staff_payroll_records (
+      id           TEXT PRIMARY KEY,
+      tenant_id    TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      staff_id     TEXT NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
+      period       TEXT NOT NULL,
+      base_salary  NUMERIC(10,2) NOT NULL DEFAULT 0,
+      allowances   NUMERIC(10,2) NOT NULL DEFAULT 0,
+      deductions   NUMERIC(10,2) NOT NULL DEFAULT 0,
+      net_salary   NUMERIC(10,2) NOT NULL DEFAULT 0,
+      status       TEXT NOT NULL DEFAULT 'draft',
+      paid_at      TEXT,
+      notes        TEXT NOT NULL DEFAULT '',
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(staff_id, period)
+    );
+
+    CREATE TABLE IF NOT EXISTS staff_documents (
+      id            TEXT PRIMARY KEY,
+      tenant_id     TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      staff_id      TEXT NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
+      document_type TEXT NOT NULL DEFAULT 'joining',
+      title         TEXT NOT NULL,
+      file_url      TEXT NOT NULL DEFAULT '',
+      notes         TEXT NOT NULL DEFAULT '',
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS staff_performance_notes (
+      id         TEXT PRIMARY KEY,
+      tenant_id  TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      staff_id   TEXT NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
+      note       TEXT NOT NULL,
+      rating     INTEGER,
+      created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
     CREATE TABLE IF NOT EXISTS expenses (
       id            TEXT PRIMARY KEY,
       tenant_id     TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -387,6 +471,10 @@ export async function createSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_fee_payments_invoice      ON fee_payments(invoice_id);
     CREATE INDEX IF NOT EXISTS idx_fee_payments_student      ON fee_payments(student_user_id, payment_date DESC);
     CREATE INDEX IF NOT EXISTS idx_expenses_tenant_date      ON expenses(tenant_id, expense_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_staff_profiles_tenant    ON staff_profiles(tenant_id, status);
+    CREATE INDEX IF NOT EXISTS idx_staff_attendance_date    ON staff_attendance(tenant_id, attendance_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_staff_leave_status      ON staff_leave_requests(tenant_id, status);
+    CREATE INDEX IF NOT EXISTS idx_staff_payroll_period    ON staff_payroll_records(tenant_id, period);
     CREATE INDEX IF NOT EXISTS idx_comm_threads_tenant       ON communication_threads(tenant_id, updated_at DESC);
     CREATE INDEX IF NOT EXISTS idx_comm_messages_thread      ON communication_messages(thread_id, created_at ASC);
     CREATE INDEX IF NOT EXISTS idx_comm_messages_recipient   ON communication_messages(recipient_user_id, read_at, created_at DESC);

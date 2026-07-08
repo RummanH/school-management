@@ -1,0 +1,10 @@
+import { apiRequest } from './client.js';
+export const getHrOverview = () => apiRequest('/hr');
+export const saveStaff = (data) => apiRequest('/hr/staff', { method:'POST', body:data });
+export const deleteStaff = (id) => apiRequest(`/hr/staff/${id}`, { method:'DELETE' });
+export const markStaffAttendance = (data) => apiRequest('/hr/attendance', { method:'POST', body:data });
+export const requestStaffLeave = (data) => apiRequest('/hr/leaves', { method:'POST', body:data });
+export const reviewStaffLeave = (id, status) => apiRequest(`/hr/leaves/${id}`, { method:'PATCH', body:{ status } });
+export const savePayroll = (data) => apiRequest('/hr/payroll', { method:'POST', body:data });
+export const addStaffDocument = (data) => apiRequest('/hr/documents', { method:'POST', body:data });
+export const addPerformanceNote = (data) => apiRequest('/hr/notes', { method:'POST', body:data });

@@ -13,6 +13,7 @@ import { GalleryController } from "../controllers/galleryController.js";
 import { AdmissionController } from "../controllers/admissionController.js";
 import { FeeController } from "../controllers/feeController.js";
 import { CommunicationController } from "../controllers/communicationController.js";
+import { HrController } from "../controllers/hrController.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { findStudentByUserId } from "../repositories/studentRepository.js";
@@ -21,7 +22,7 @@ import { findTeacherByUserId } from "../repositories/teacherRepository.js";
 export function createApiRouter({
   env, contactService, authService, tenantService,
   userService, studentService, teacherService, academicService,
-  guardianService, noticeService, galleryService, admissionService, feeService, communicationService, databaseManager,
+  guardianService, noticeService, galleryService, admissionService, feeService, communicationService, hrService, databaseManager,
 }) {
   const router = Router();
 
@@ -39,6 +40,7 @@ export function createApiRouter({
   const admissionController = new AdmissionController(admissionService);
   const feeController       = new FeeController(feeService);
   const communicationController = new CommunicationController(communicationService);
+  const hrController = new HrController(hrService);
 
   const auth          = requireAuth(authService, env);
   const platformOnly  = [auth, requireRole("system_developer")];
@@ -152,6 +154,17 @@ export function createApiRouter({
   router.get("/guardian/wards",                           ...guardianOnly, guardianController.myWards);
   router.get("/guardian/wards/:studentUserId/results",     ...guardianOnly, guardianController.wardResults);
   router.get("/guardian/wards/:studentUserId/attendance",  ...guardianOnly, guardianController.wardAttendance);
+
+  // HR & Staff Management
+  router.get("/hr", ...adminOnly, hrController.overview);
+  router.post("/hr/staff", ...adminOnly, hrController.saveStaff);
+  router.delete("/hr/staff/:id", ...adminOnly, hrController.removeStaff);
+  router.post("/hr/attendance", ...adminOnly, hrController.markAttendance);
+  router.post("/hr/leaves", ...adminOnly, hrController.requestLeave);
+  router.patch("/hr/leaves/:id", ...adminOnly, hrController.reviewLeave);
+  router.post("/hr/payroll", ...adminOnly, hrController.savePayroll);
+  router.post("/hr/documents", ...adminOnly, hrController.addDocument);
+  router.post("/hr/notes", ...adminOnly, hrController.addNote);
 
   // Communication
   router.get("/communication/threads",          ...communicationUsers, communicationController.listThreads);

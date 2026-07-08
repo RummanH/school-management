@@ -12,6 +12,7 @@ import GalleryPage from '../../gallery/pages/GalleryPage.jsx';
 import AdmissionsPage from '../../admission/pages/AdmissionsPage.jsx';
 import FeesPage from '../../fees/pages/FeesPage.jsx';
 import MessagesPage from '../../communication/pages/MessagesPage.jsx';
+import HrPage from '../../hr/pages/HrPage.jsx';
 import ReportsPage from '../../reports/pages/ReportsPage.jsx';
 import { getStats, getContacts, markContactRead } from '../../../services/api/adminApi.js';
 import { createNotice } from '../../../services/api/noticeApi.js';
@@ -297,6 +298,7 @@ const PAGE_TITLES = {
   '/dashboard/users':     'Users',
   '/dashboard/students':  'Students',
   '/dashboard/teachers':  'Teachers',
+  '/dashboard/hr':        'HR & Staff',
   '/dashboard/academic':  'Academic Portal',
   '/dashboard/notices':   'Notices & News',
   '/dashboard/gallery':   'Gallery',
@@ -339,6 +341,7 @@ export default function DashboardPage() {
     if (pathname === '/dashboard/users')             return <UsersPage />;
     if (pathname === '/dashboard/students')          return <StudentsPage />;
     if (pathname === '/dashboard/teachers')          return <TeachersPage />;
+    if (pathname === '/dashboard/hr')                return <HrPage />;
     if (pathname.startsWith('/dashboard/academic'))  return <AcademicPage />;
     if (pathname === '/dashboard/notices')           return <NoticesPage />;
     if (pathname === '/dashboard/gallery')           return <GalleryPage />;
