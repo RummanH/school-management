@@ -19,3 +19,26 @@ export const DEPARTMENTS = [
 ];
 
 export const ADMISSION_DOCS = ['doc1', 'doc2', 'doc3', 'doc4', 'doc5'];
+
+// Shared accent-tint rotation for icon badges across the landing page —
+// keeps the brand green as the dominant color while giving feature/info
+// cards some visual variety. Same rotation pattern already used elsewhere
+// in the app (e.g. RoutineTab's DAY_COLORS, ResultsTab's GRADE_COLORS).
+export const ACCENT_COLORS = [
+  { bg: 'bg-emerald-50', text: 'text-emerald-600' },
+  { bg: 'bg-blue-50',    text: 'text-blue-600' },
+  { bg: 'bg-amber-50',   text: 'text-amber-600' },
+  { bg: 'bg-purple-50',  text: 'text-purple-600' },
+];
+
+// Placeholder campus photo for the hero — swap for real photography when
+// available (same "placeholder now, replace later" convention this file
+// previously used for the photo gallery before it became DB-driven).
+export const HERO_IMAGE = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80';
+
+export const WHY_CHOOSE_US = [
+  { key: 'facultyTitle', descKey: 'facultyDesc', icon: '👩‍🏫' },
+  { key: 'curriculumTitle', descKey: 'curriculumDesc', icon: '📘' },
+  { key: 'campusTitle', descKey: 'campusDesc', icon: '🛡️' },
+  { key: 'portalTitle', descKey: 'portalDesc', icon: '💻' },
+];

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight, GraduationCap, Users, Award } from 'lucide-react';
 import { useLanguage } from '../../../app/App.jsx';
+import { HERO_IMAGE } from '../constants.js';
 
 const SLIDES = ['slide1', 'slide2', 'slide3'];
 
@@ -80,23 +81,60 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* Right: info card */}
-          <div className="rounded-3xl border border-white/10 bg-white/10 p-8 backdrop-blur-md">
-            <p className="text-sm font-black uppercase tracking-widest text-white/60">{t('school.established')}</p>
-            <h2 className="mt-2 text-2xl font-black text-white">{t('school.name')}</h2>
-            <p className="mt-2 text-white/70">{t('school.tagline')}</p>
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              {[
-                { label: '2,400+', sub: t('stats.students') },
-                { label: '80+', sub: t('stats.teachers') },
-                { label: '6', sub: t('stats.departments') },
-                { label: '27', sub: t('stats.yearsOfExcellence') },
-              ].map(({ label, sub }) => (
-                <div key={sub} className="rounded-2xl bg-white/10 p-4 text-white">
-                  <p className="text-2xl font-black">{label}</p>
-                  <p className="mt-0.5 text-xs text-white/70">{sub}</p>
+          {/* Right: photo + floating stat badges */}
+          <div className="relative mx-auto mt-6 max-w-md pb-6 pl-4 pr-2 lg:mt-0 lg:max-w-none">
+            {/* Decorative diagonal accent, sits behind the photo */}
+            <div
+              className="pointer-events-none absolute -right-3 -top-8 h-32 w-32 bg-white/10"
+              style={{ clipPath: 'polygon(35% 0, 100% 0, 100% 65%)' }}
+            />
+
+            <div className="relative rounded-3xl border border-white/10 bg-white/5 p-3 shadow-2xl">
+              <img
+                src={HERO_IMAGE}
+                alt={t('school.name')}
+                className="h-72 w-full rounded-2xl object-cover sm:h-80"
+                loading="lazy"
+              />
+
+              {/* Identity chip */}
+              <div className="absolute -top-5 left-4 rounded-2xl bg-white px-4 py-2.5 shadow-lg">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('school.established')}</p>
+                <p className="text-sm font-black text-[var(--brand-strong)]">{t('school.name')}</p>
+              </div>
+
+              {/* Students */}
+              <div className="absolute -bottom-5 -left-4 flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-lg">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                  <GraduationCap className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-base font-black leading-none text-slate-800">2,400+</p>
+                  <p className="mt-1 text-[11px] leading-none text-slate-400">{t('stats.students')}</p>
                 </div>
-              ))}
+              </div>
+
+              {/* Teachers */}
+              <div className="absolute right-0 top-1/3 flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-lg">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <Users className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-base font-black leading-none text-slate-800">80+</p>
+                  <p className="mt-1 text-[11px] leading-none text-slate-400">{t('stats.teachers')}</p>
+                </div>
+              </div>
+
+              {/* Years of excellence */}
+              <div className="absolute -bottom-5 right-2 flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-lg">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                  <Award className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-base font-black leading-none text-slate-800">27</p>
+                  <p className="mt-1 text-[11px] leading-none text-slate-400">{t('stats.yearsOfExcellence')}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

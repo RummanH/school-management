@@ -1,11 +1,12 @@
 import { Eye, Target } from 'lucide-react';
 import { useLanguage } from '../../../app/App.jsx';
+import { ACCENT_COLORS } from '../constants.js';
 
 export default function AboutSection() {
   const { t } = useLanguage();
 
   return (
-    <section id="about" className="bg-white py-20">
+    <section id="about" className="dot-pattern bg-white py-20">
       <div className="landing-container">
         <div className="text-center">
           <h2 className="section-title">{t('about.title')}</h2>
@@ -15,7 +16,7 @@ export default function AboutSection() {
         {/* Vision + Mission */}
         <div className="mt-14 grid gap-6 sm:grid-cols-2">
           <div className="card flex gap-4">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-[var(--brand)]">
+            <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${ACCENT_COLORS[0].bg} ${ACCENT_COLORS[0].text}`}>
               <Eye className="h-6 w-6" />
             </span>
             <div>
@@ -24,7 +25,7 @@ export default function AboutSection() {
             </div>
           </div>
           <div className="card flex gap-4">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-[var(--brand)]">
+            <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${ACCENT_COLORS[1].bg} ${ACCENT_COLORS[1].text}`}>
               <Target className="h-6 w-6" />
             </span>
             <div>

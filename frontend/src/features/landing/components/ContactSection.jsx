@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { MapPin, Phone, Mail, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../../../app/App.jsx';
 import { submitContact } from '../../../services/api/contactApi.js';
-import { SCHOOL_ADDRESS, SCHOOL_EMAIL, SCHOOL_PHONE } from '../constants.js';
+import { SCHOOL_ADDRESS, SCHOOL_EMAIL, SCHOOL_PHONE, ACCENT_COLORS } from '../constants.js';
 
 export default function ContactSection() {
   const { t } = useLanguage();
@@ -41,14 +41,17 @@ export default function ContactSection() {
                 { icon: MapPin, value: SCHOOL_ADDRESS },
                 { icon: Phone, value: SCHOOL_PHONE },
                 { icon: Mail, value: SCHOOL_EMAIL },
-              ].map(({ icon: Icon, value }) => (
-                <div key={value} className="flex items-start gap-3">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-[var(--brand)]">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <p className="text-sm leading-relaxed text-slate-700">{value}</p>
-                </div>
-              ))}
+              ].map(({ icon: Icon, value }, i) => {
+                const accent = ACCENT_COLORS[i % ACCENT_COLORS.length];
+                return (
+                  <div key={value} className="flex items-start gap-3">
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${accent.bg} ${accent.text}`}>
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <p className="text-sm leading-relaxed text-slate-700">{value}</p>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Map placeholder */}

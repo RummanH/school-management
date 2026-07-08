@@ -228,6 +228,12 @@
     @apply mt-3 text-base text-[var(--text-soft)] sm:text-lg;
   }
 
+  /* Subtle decorative dot-grid background, reused across a few landing sections */
+  .dot-pattern {
+    background-image: radial-gradient(rgba(15, 23, 42, 0.08) 1.5px, transparent 1.5px);
+    background-size: 22px 22px;
+  }
+
   /* ── Landing page CTA buttons (large pill style) ── */
   .btn-cta {
     @apply inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[var(--brand-strong)] hover:shadow-lg active:translate-y-0;

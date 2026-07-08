@@ -1,5 +1,6 @@
 import LandingHeader from '../components/LandingHeader.jsx';
 import HeroSection from '../components/HeroSection.jsx';
+import WhyChooseUsSection from '../components/WhyChooseUsSection.jsx';
 import AboutSection from '../components/AboutSection.jsx';
 import StatsSection from '../components/StatsSection.jsx';
 import NoticeSection from '../components/NoticeSection.jsx';
@@ -14,6 +15,7 @@ export default function LandingPage() {
     <div className="min-h-screen overflow-x-hidden bg-white">
       <LandingHeader />
       <HeroSection />
+      <WhyChooseUsSection />
       <AboutSection />
       <StatsSection />
       <NoticeSection />

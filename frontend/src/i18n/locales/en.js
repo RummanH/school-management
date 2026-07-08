@@ -62,6 +62,18 @@ export default {
     news2: 'New Computer Lab inaugurated with 40 modern workstations',
     news3: 'Results: 98% pass rate in SSC 2025 — highest in the district',
   },
+  whyChooseUs: {
+    title: 'Why Choose Us',
+    subtitle: 'What makes Greenfield Academy the right choice for your child.',
+    facultyTitle: 'Experienced Faculty',
+    facultyDesc: 'A caring, qualified teaching staff dedicated to every student\'s growth.',
+    curriculumTitle: 'Modern Curriculum',
+    curriculumDesc: 'A balanced blend of academics, science labs, arts, and sports.',
+    campusTitle: 'Safe Campus',
+    campusDesc: 'A secure, disciplined environment where students can focus and thrive.',
+    portalTitle: 'Digital Parent Portal',
+    portalDesc: 'Parents and students track results, attendance, and notices online, anytime.',
+  },
   academics: {
     title: 'Academic Programs',
     subtitle: 'Comprehensive curricula from Pre-Primary to Higher Secondary.',
