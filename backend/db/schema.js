@@ -210,6 +210,8 @@ export async function createSchema(pool) {
       address       TEXT,
       created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS fee_categories (
       id             TEXT PRIMARY KEY,
       tenant_id      TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,

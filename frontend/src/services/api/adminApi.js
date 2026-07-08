@@ -1,7 +1,11 @@
-import { apiRequest } from './client.js';
+import { apiRequest, buildQueryString } from './client.js';
 
 export async function getStats() {
   return apiRequest('/admin/stats');
+}
+
+export async function getReports(params = {}) {
+  return apiRequest(`/admin/reports${buildQueryString(params)}`);
 }
 
 export async function getContacts({ limit = 20, offset = 0, status = '' } = {}) {

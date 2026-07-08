@@ -1,4 +1,4 @@
-import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, BookOpen, Globe, LogOut, X, BookMarked, Bell, Images, User, UserPlus, BadgeDollarSign } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, BookOpen, Globe, LogOut, X, BookMarked, Bell, Images, User, UserPlus, BadgeDollarSign, BarChart3 } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 
 const SHARED_NAV = [
@@ -12,6 +12,7 @@ const TENANT_ADMIN_NAV = [
   { label: 'Students',   icon: GraduationCap,path: '/dashboard/students' },
   { label: 'Admissions', icon: UserPlus,     path: '/dashboard/admissions' },
   { label: 'Fees',       icon: BadgeDollarSign,path: '/dashboard/fees' },
+  { label: 'Reports',    icon: BarChart3,    path: '/dashboard/reports' },
   { label: 'Users',      icon: Users,        path: '/dashboard/users' },
   { label: 'Notices',    icon: Bell,         path: '/dashboard/notices' },
   { label: 'Gallery',    icon: Images,       path: '/dashboard/gallery' },

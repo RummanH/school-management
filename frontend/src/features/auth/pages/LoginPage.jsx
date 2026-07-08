@@ -5,7 +5,7 @@ import { useAuth, navigate } from '../../../app/App.jsx';
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [form, setForm] = useState({ email: '', password: '', orgSlug: '' });
+  const [form, setForm] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -51,9 +51,6 @@ export default function LoginPage() {
 
         <div className="rounded-3xl border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur-xl">
           <h2 className="text-lg font-bold text-white">Sign in</h2>
-          <p className="mt-1 text-sm text-white/60">
-            System developers leave org code blank. Tenant users enter their org code.
-          </p>
 
           {error && (
             <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/20 px-4 py-3 text-sm text-red-200">
@@ -62,18 +59,6 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <div>
-              <label className="mb-1.5 block text-xs font-bold text-white/70">Organization Code <span className="font-normal text-white/40">(optional)</span></label>
-              <input
-                type="text"
-                name="orgSlug"
-                value={form.orgSlug}
-                onChange={handleChange}
-                placeholder="e.g. greenfield-academy"
-                autoComplete="organization"
-                className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white placeholder-white/30 outline-none transition focus:border-white/40 focus:ring-2 focus:ring-white/20"
-              />
-            </div>
 
             <div>
               <label className="mb-1.5 block text-xs font-bold text-white/70">Email address</label>

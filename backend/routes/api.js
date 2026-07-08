@@ -199,6 +199,7 @@ export function createApiRouter({
 
   // Admin dashboard
   router.get("/admin/stats",               auth, adminController.getStats);
+  router.get("/admin/reports",             ...adminOnly, adminController.getReports);
   router.get("/admin/contacts",            auth, adminController.getContacts);
   router.patch("/admin/contacts/:id/read", auth, adminController.markRead);
 

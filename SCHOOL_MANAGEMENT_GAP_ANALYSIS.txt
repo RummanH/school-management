@@ -49,7 +49,7 @@ Needed features:
 - Expense tracking
 
 
-2. Real Admin Reports
+2. Real Admin Reports - Next
 
 The current admin stats are very limited and mainly count contact messages.
 A school administrator needs operational reports.
