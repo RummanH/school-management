@@ -294,6 +294,30 @@ export async function createSchema(pool) {
       created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+
+    CREATE TABLE IF NOT EXISTS communication_threads (
+      id              TEXT PRIMARY KEY,
+      tenant_id       TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      topic           TEXT NOT NULL DEFAULT '',
+      student_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+      guardian_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+      teacher_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+      admin_user_id   TEXT REFERENCES users(id) ON DELETE SET NULL,
+      created_by      TEXT REFERENCES users(id) ON DELETE SET NULL,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS communication_messages (
+      id                TEXT PRIMARY KEY,
+      thread_id         TEXT NOT NULL REFERENCES communication_threads(id) ON DELETE CASCADE,
+      tenant_id         TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      sender_user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      recipient_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      body              TEXT NOT NULL,
+      read_at           TIMESTAMPTZ,
+      created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
     CREATE TABLE IF NOT EXISTS expenses (
       id            TEXT PRIMARY KEY,
       tenant_id     TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -363,6 +387,9 @@ export async function createSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_fee_payments_invoice      ON fee_payments(invoice_id);
     CREATE INDEX IF NOT EXISTS idx_fee_payments_student      ON fee_payments(student_user_id, payment_date DESC);
     CREATE INDEX IF NOT EXISTS idx_expenses_tenant_date      ON expenses(tenant_id, expense_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_comm_threads_tenant       ON communication_threads(tenant_id, updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_comm_messages_thread      ON communication_messages(thread_id, created_at ASC);
+    CREATE INDEX IF NOT EXISTS idx_comm_messages_recipient   ON communication_messages(recipient_user_id, read_at, created_at DESC);
   `);
 }
 

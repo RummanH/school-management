@@ -11,6 +11,7 @@ import NoticesPage from '../../notices/pages/NoticesPage.jsx';
 import GalleryPage from '../../gallery/pages/GalleryPage.jsx';
 import AdmissionsPage from '../../admission/pages/AdmissionsPage.jsx';
 import FeesPage from '../../fees/pages/FeesPage.jsx';
+import MessagesPage from '../../communication/pages/MessagesPage.jsx';
 import ReportsPage from '../../reports/pages/ReportsPage.jsx';
 import { getStats, getContacts, markContactRead } from '../../../services/api/adminApi.js';
 import { createNotice } from '../../../services/api/noticeApi.js';
@@ -291,6 +292,7 @@ function DashboardHome() {
 const PAGE_TITLES = {
   '/dashboard':           'Dashboard',
   '/dashboard/contacts':  'Contact Messages',
+  '/dashboard/messages':  'Messages',
   '/dashboard/tenants':   'Organizations',
   '/dashboard/users':     'Users',
   '/dashboard/students':  'Students',
@@ -307,7 +309,7 @@ const PAGE_TITLES = {
 // other sub-route (Students, Teachers, Users, Tenants, Notices, Gallery) is
 // admin/system_developer only on the backend, so the UI must not even try to
 // render them for a teacher (URL bar access, not just hidden nav links).
-const TEACHER_ALLOWED_PATHS = ['/dashboard', '/dashboard/contacts', '/dashboard/academic'];
+const TEACHER_ALLOWED_PATHS = ['/dashboard', '/dashboard/contacts', '/dashboard/messages', '/dashboard/academic'];
 
 /* Root layout */
 
@@ -332,6 +334,7 @@ export default function DashboardPage() {
   }
 
   function renderContent() {
+    if (pathname === '/dashboard/messages')          return <MessagesPage />;
     if (pathname === '/dashboard/tenants')           return <TenantsPage />;
     if (pathname === '/dashboard/users')             return <UsersPage />;
     if (pathname === '/dashboard/students')          return <StudentsPage />;

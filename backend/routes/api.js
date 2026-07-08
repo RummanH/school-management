@@ -12,6 +12,7 @@ import { NoticeController } from "../controllers/noticeController.js";
 import { GalleryController } from "../controllers/galleryController.js";
 import { AdmissionController } from "../controllers/admissionController.js";
 import { FeeController } from "../controllers/feeController.js";
+import { CommunicationController } from "../controllers/communicationController.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { findStudentByUserId } from "../repositories/studentRepository.js";
@@ -20,7 +21,7 @@ import { findTeacherByUserId } from "../repositories/teacherRepository.js";
 export function createApiRouter({
   env, contactService, authService, tenantService,
   userService, studentService, teacherService, academicService,
-  guardianService, noticeService, galleryService, admissionService, feeService, databaseManager,
+  guardianService, noticeService, galleryService, admissionService, feeService, communicationService, databaseManager,
 }) {
   const router = Router();
 
@@ -37,6 +38,7 @@ export function createApiRouter({
   const galleryController   = new GalleryController(galleryService);
   const admissionController = new AdmissionController(admissionService);
   const feeController       = new FeeController(feeService);
+  const communicationController = new CommunicationController(communicationService);
 
   const auth          = requireAuth(authService, env);
   const platformOnly  = [auth, requireRole("system_developer")];
@@ -44,6 +46,7 @@ export function createApiRouter({
   const staffAndAdmin = [auth, requireRole("system_developer", "admin", "teacher")];
   const guardianOnly  = [auth, requireRole("guardian")];
   const financeAdmin  = [auth, requireRole("system_developer", "admin")];
+  const communicationUsers = [auth, requireRole("system_developer", "admin", "teacher", "guardian")];
 
   router.get("/health", (_req, res) => res.json({ status: "ok" }));
 
@@ -149,6 +152,13 @@ export function createApiRouter({
   router.get("/guardian/wards",                           ...guardianOnly, guardianController.myWards);
   router.get("/guardian/wards/:studentUserId/results",     ...guardianOnly, guardianController.wardResults);
   router.get("/guardian/wards/:studentUserId/attendance",  ...guardianOnly, guardianController.wardAttendance);
+
+  // Communication
+  router.get("/communication/threads",          ...communicationUsers, communicationController.listThreads);
+  router.post("/communication/threads",         ...communicationUsers, communicationController.createThread);
+  router.get("/communication/threads/:threadId", ...communicationUsers, communicationController.getThread);
+  router.post("/communication/threads/:threadId/messages", ...communicationUsers, communicationController.reply);
+  router.get("/communication/recipients",       ...communicationUsers, communicationController.recipients);
 
   // Notices & News
 

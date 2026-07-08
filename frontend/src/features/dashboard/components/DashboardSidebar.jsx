@@ -7,6 +7,7 @@ const SHARED_NAV = [
 ];
 
 const TENANT_ADMIN_NAV = [
+  { label: 'Messages',   icon: MessageSquare, path: '/dashboard/messages' },
   { label: 'Academic',   icon: BookMarked,   path: '/dashboard/academic' },
   { label: 'Teachers',   icon: BookOpen,     path: '/dashboard/teachers' },
   { label: 'Students',   icon: GraduationCap,path: '/dashboard/students' },
@@ -26,6 +27,7 @@ const PLATFORM_NAV = [
 // Teachers get academic management here, plus a link back to their portal
 // profile (they're the only dashboard role that also has a /portal profile).
 const TEACHER_NAV = [
+  { label: 'Messages',   icon: MessageSquare, path: '/dashboard/messages' },
   { label: 'Academic',   icon: BookMarked, path: '/dashboard/academic' },
   { label: 'My Profile', icon: User,       path: '/portal' },
 ];

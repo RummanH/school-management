@@ -1,4 +1,4 @@
-import { GraduationCap, LayoutDashboard, Award, Users, Calendar, Bell, User, FileText, BadgeDollarSign, Globe, LogOut, X } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, Award, Users, Calendar, Bell, User, FileText, MessageSquare, BadgeDollarSign, Globe, LogOut, X } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 
 const NAV = [
@@ -7,6 +7,7 @@ const NAV = [
   { label: 'Attendance', icon: Users,           path: '/portal/attendance' },
   { label: 'Routine',    icon: Calendar,        path: '/portal/routine' },
   { label: 'Notices',    icon: Bell,            path: '/portal/notices' },
+  { label: 'Messages',   icon: MessageSquare,   path: '/portal/messages' },
   { label: 'Fees',       icon: BadgeDollarSign,path: '/portal/fees' },
   { label: 'Documents',  icon: FileText,       path: '/portal/documents' },
   { label: 'My Profile', icon: User,            path: '/portal/profile' },

@@ -9,6 +9,7 @@ import AttendanceStats from '../components/AttendanceStats.jsx';
 import RoutineList from '../components/RoutineList.jsx';
 import NoticesFeed from '../components/NoticesFeed.jsx';
 import FeeLedger from '../components/FeeLedger.jsx';
+import MessagesPage from '../../communication/pages/MessagesPage.jsx';
 import { getMyProfile } from '../../../services/api/authApi.js';
 import { getMyResults, getMyAttendance, getRoutine } from '../../../services/api/academicApi.js';
 
@@ -18,6 +19,7 @@ const PAGE_TITLES = {
   '/portal/attendance': 'Attendance',
   '/portal/routine':    'Class Routine',
   '/portal/notices':    'Notices',
+  '/portal/messages':   'Messages',
   '/portal/fees':       'Fees',
   '/portal/documents':  'Documents',
   '/portal/profile':    'My Profile',
@@ -174,6 +176,9 @@ export default function StudentDashboardPage() {
           <NoticesFeed />
         </Card>
       );
+    }
+    if (pathname === '/portal/messages') {
+      return <MessagesPage />;
     }
     if (pathname === '/portal/fees') {
       return (

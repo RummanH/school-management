@@ -13,6 +13,7 @@ import AttendanceStats from '../components/AttendanceStats.jsx';
 import NoticesFeed from '../components/NoticesFeed.jsx';
 import FeeLedger from '../components/FeeLedger.jsx';
 import StudentDashboardPage from './StudentDashboardPage.jsx';
+import MessagesPage from '../../communication/pages/MessagesPage.jsx';
 
 const ROLE_CONFIG = {
   student:  { label: 'Student',  color: 'bg-purple-500',  Icon: GraduationCap },
@@ -165,6 +166,8 @@ function GuardianPortal() {
       <Card title="Fees & Payments">
         <FeeLedger studentUserId={selectedId} />
       </Card>
+
+      <MessagesPage />
 
       <Card title="Notices">
         <NoticesFeed />
