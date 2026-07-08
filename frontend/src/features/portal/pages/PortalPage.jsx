@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   GraduationCap, BookOpen, Users, LogOut, Globe, Loader2,
   User, Mail, Phone, MapPin, Calendar, Droplets, Baby,
-  BookMarked, ClipboardList, Building2, Award, LayoutDashboard, Printer,
+  BookMarked, ClipboardList, Building2, Award, LayoutDashboard, Printer, FileText, BadgeCheck, IdCard, CreditCard, Send,
 } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 import { getMyProfile } from '../../../services/api/authApi.js';
@@ -116,13 +116,23 @@ function GuardianPortal() {
 
       {selectedWard && (
         <>
-          <div className="flex items-center justify-end">
-            <button
-              onClick={() => navigate(`/portal/report?student=${selectedWard.userId}`)}
-              className="btn-secondary"
-            >
-              <Printer className="h-4 w-4" /> Print Report
-            </button>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {[
+              ['report-card', 'Report Card', Printer],
+              ['certificate', 'Certificate', BadgeCheck],
+              ['transfer-certificate', 'Transfer', Send],
+              ['admit-card', 'Admit Card', FileText],
+              ['id-card', 'ID Card', IdCard],
+              ['fee-receipt', 'Receipt', CreditCard],
+            ].map(([type, label, Icon]) => (
+              <button
+                key={type}
+                onClick={() => navigate(`/portal/document?type=${type}&student=${selectedWard.userId}`)}
+                className="btn-secondary"
+              >
+                <Icon className="h-4 w-4" /> {label}
+              </button>
+            ))}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

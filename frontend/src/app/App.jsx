@@ -6,6 +6,7 @@ import LoginPage from '../features/auth/pages/LoginPage.jsx';
 import DashboardPage from '../features/dashboard/pages/DashboardPage.jsx';
 import PortalPage from '../features/portal/pages/PortalPage.jsx';
 import ProgressReportPage from '../features/portal/pages/ProgressReportPage.jsx';
+import DocumentPage from '../features/portal/pages/DocumentPage.jsx';
 import AdmissionPage from '../features/admission/pages/AdmissionPage.jsx';
 
 const LanguageContext = createContext(null);
@@ -84,6 +85,7 @@ export default function App() {
   const isDashboard = pathname.startsWith('/dashboard');
   const isPortal    = pathname.startsWith('/portal');
   const isReport    = pathname.startsWith('/portal/report');
+  const isDocument  = pathname.startsWith('/portal/document');
   const isAdmission = pathname.startsWith('/admission');
   const isLogin     = pathname === '/login';
 
@@ -107,6 +109,7 @@ export default function App() {
     <LanguageContext.Provider value={{ language, switchLanguage, t }}>
       <AuthContext.Provider value={{ currentUser, currentTenant, login, logout }}>
         {isDashboard ? <DashboardPage />
+          : isDocument  ? <DocumentPage />
           : isReport    ? <ProgressReportPage />
           : isPortal    ? <PortalPage />
           : isAdmission ? <AdmissionPage />

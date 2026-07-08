@@ -70,7 +70,11 @@ export function findActiveUserBySessionTokenHash(client, tokenHash) {
     `SELECT u.id, u.tenant_id, u.name, u.email, u.role, u.status,
             t.name  AS tenant_name,
             t.slug  AS tenant_slug,
-            t.status AS tenant_status
+            t.status AS tenant_status,
+            t.logo_url AS tenant_logo_url,
+            t.address AS tenant_address,
+            t.phone AS tenant_phone,
+            t.email AS tenant_email
      FROM user_sessions s
      JOIN users u ON u.id = s.user_id
      LEFT JOIN tenants t ON t.id = u.tenant_id

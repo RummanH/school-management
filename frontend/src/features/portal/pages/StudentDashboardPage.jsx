@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Loader2, ClipboardList, BookMarked, Calendar } from 'lucide-react';
+import { Loader2, ClipboardList, BookMarked, Calendar, FileText, Award, CreditCard, BadgeCheck, IdCard, Send } from 'lucide-react';
 import DashboardHeader from '../../dashboard/components/DashboardHeader.jsx';
 import StudentSidebar from '../components/StudentSidebar.jsx';
 import { Card, InfoRow } from '../components/Card.jsx';
@@ -19,6 +19,7 @@ const PAGE_TITLES = {
   '/portal/routine':    'Class Routine',
   '/portal/notices':    'Notices',
   '/portal/fees':       'Fees',
+  '/portal/documents':  'Documents',
   '/portal/profile':    'My Profile',
 };
 
@@ -26,6 +27,36 @@ function SectionSpinner() {
   return (
     <div className="flex h-24 items-center justify-center">
       <Loader2 className="h-5 w-5 animate-spin text-[var(--brand)]" />
+    </div>
+  );
+}
+
+const DOCUMENTS = [
+  { type: 'report-card', title: 'Designed Report Card', desc: 'Formal academic report with results, attendance, school header, and signatures.', icon: Award },
+  { type: 'certificate', title: 'Certificate', desc: 'Enrollment and character certificate with official signature areas.', icon: BadgeCheck },
+  { type: 'transfer-certificate', title: 'Transfer Certificate', desc: 'School leaving certificate with student register details and clearance notes.', icon: Send },
+  { type: 'admit-card', title: 'Admit Card', desc: 'Exam admit card with student details, photo slot, rules, and authorization.', icon: FileText },
+  { type: 'id-card', title: 'Student ID Card', desc: 'Compact identity card template with school branding and signature block.', icon: IdCard },
+  { type: 'fee-receipt', title: 'Fee Receipt', desc: 'Printable receipt for the latest recorded payment.', icon: CreditCard },
+];
+
+function DocumentsCenter() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {DOCUMENTS.map(({ type, title, desc, icon: Icon }) => (
+        <button
+          key={type}
+          onClick={() => navigate(`/portal/document?type=${type}`)}
+          className="rounded-2xl border border-slate-100 bg-white p-5 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-[var(--brand)]/30 hover:shadow-lg"
+        >
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-[var(--brand)]">
+            <Icon className="h-5 w-5" />
+          </span>
+          <p className="mt-4 font-black text-slate-800">{title}</p>
+          <p className="mt-1 text-sm leading-relaxed text-slate-500">{desc}</p>
+          <span className="mt-4 inline-flex text-xs font-black uppercase tracking-widest text-[var(--brand)]">Open template</span>
+        </button>
+      ))}
     </div>
   );
 }
@@ -150,6 +181,9 @@ export default function StudentDashboardPage() {
           <FeeLedger />
         </Card>
       );
+    }
+    if (pathname === '/portal/documents') {
+      return <DocumentsCenter />;
     }
     if (pathname === '/portal/profile') {
       return (

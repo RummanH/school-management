@@ -58,7 +58,7 @@ export class AuthService {
         token,
         expiresAt,
         user: { id: userRow.id, name: userRow.name, email: userRow.email, role: userRow.role, tenantId: userRow.tenant_id || null },
-        tenant: tenant ? { id: tenant.id, name: tenant.name, slug: tenant.slug } : null,
+        tenant: tenant ? { id: tenant.id, name: tenant.name, slug: tenant.slug, logoUrl: tenant.logo_url || '', address: tenant.address || '', phone: tenant.phone || '', email: tenant.email || '' } : null,
       };
     });
   }
@@ -73,7 +73,7 @@ export class AuthService {
     return {
       user: { id: row.id, name: row.name, email: row.email, role: row.role, tenantId: row.tenant_id || null },
       tenant: row.tenant_id
-        ? { id: row.tenant_id, name: row.tenant_name, slug: row.tenant_slug, status: row.tenant_status }
+        ? { id: row.tenant_id, name: row.tenant_name, slug: row.tenant_slug, status: row.tenant_status, logoUrl: row.tenant_logo_url || '', address: row.tenant_address || '', phone: row.tenant_phone || '', email: row.tenant_email || '' }
         : null,
     };
   }

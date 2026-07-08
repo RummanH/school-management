@@ -8,6 +8,7 @@ const NAV = [
   { label: 'Routine',    icon: Calendar,        path: '/portal/routine' },
   { label: 'Notices',    icon: Bell,            path: '/portal/notices' },
   { label: 'Fees',       icon: BadgeDollarSign,path: '/portal/fees' },
+  { label: 'Documents',  icon: FileText,       path: '/portal/documents' },
   { label: 'My Profile', icon: User,            path: '/portal/profile' },
 ];
 
@@ -54,13 +55,6 @@ export default function StudentSidebar({ activePath, onClose }) {
           );
         })}
 
-        <button
-          onClick={() => { navigate('/portal/report'); onClose?.(); }}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/60 transition hover:bg-white/10 hover:text-white"
-        >
-          <FileText className="h-4 w-4 shrink-0" />
-          Progress Report
-        </button>
       </nav>
 
       {/* Bottom */}

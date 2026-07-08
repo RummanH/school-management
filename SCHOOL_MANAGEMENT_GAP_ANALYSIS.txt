@@ -103,12 +103,8 @@ The current notice board is useful, but medium-size schools usually need direct
 communication workflows.
 
 Needed features:
-- SMS notices
-- Email notices
-- WhatsApp/SMS gateway support if required locally
 - Guardian-teacher messaging
 - Admin-to-guardian messaging
-- Emergency broadcasts
 - Notification delivery history
 - Read/unread tracking
 

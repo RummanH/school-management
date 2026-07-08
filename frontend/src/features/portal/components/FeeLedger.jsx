@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Loader2, ReceiptText, Printer } from 'lucide-react';
+import { Loader2, ReceiptText, FileText } from 'lucide-react';
+import { navigate } from '../../../app/App.jsx';
 import { getMyFees, getWardFees } from '../../../services/api/feeApi.js';
 
 const money = (n) => `৳${Number(n || 0).toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -37,8 +38,8 @@ export default function FeeLedger({ studentUserId = null }) {
     </div>
 
     <div>
-      <div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-black text-slate-800">Payment Receipts</h3>{ledger.payments?.length > 0 && <button onClick={() => window.print()} className="btn-secondary"><Printer className="h-4 w-4" /> Print</button>}</div>
-      {ledger.payments?.length ? <div className="space-y-3">{ledger.payments.map(p => <div key={p.id} className="rounded-2xl border border-slate-200 bg-white p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="font-black text-slate-800">{p.receiptNumber}</p><p className="text-xs text-slate-400">{p.paymentDate} · {p.method}</p></div><p className="text-lg font-black text-emerald-700">{money(p.amount)}</p></div>{p.referenceNo && <p className="mt-2 text-xs text-slate-500">Reference: {p.referenceNo}</p>}</div>)}</div> : <p className="rounded-2xl border border-dashed border-slate-200 py-8 text-center text-sm text-slate-400">No payments recorded yet.</p>}
+      <div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-black text-slate-800">Payment Receipts</h3></div>
+      {ledger.payments?.length ? <div className="space-y-3">{ledger.payments.map(p => <div key={p.id} className="rounded-2xl border border-slate-200 bg-white p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="font-black text-slate-800">{p.receiptNumber}</p><p className="text-xs text-slate-400">{p.paymentDate} · {p.method}</p></div><div className="flex items-center gap-3"><p className="text-lg font-black text-emerald-700">{money(p.amount)}</p><button onClick={() => navigate(`/portal/document?type=fee-receipt${studentUserId ? `&student=${studentUserId}` : ''}&payment=${p.id}`)} className="btn-secondary"><FileText className="h-4 w-4" />Receipt</button></div></div>{p.referenceNo && <p className="mt-2 text-xs text-slate-500">Reference: {p.referenceNo}</p>}</div>)}</div> : <p className="rounded-2xl border border-dashed border-slate-200 py-8 text-center text-sm text-slate-400">No payments recorded yet.</p>}
     </div>
   </div>;
 }
