@@ -10,11 +10,12 @@ import AcademicPage from '../../academic/pages/AcademicPage.jsx';
 import NoticesPage from '../../notices/pages/NoticesPage.jsx';
 import GalleryPage from '../../gallery/pages/GalleryPage.jsx';
 import AdmissionsPage from '../../admission/pages/AdmissionsPage.jsx';
+import FeesPage from '../../fees/pages/FeesPage.jsx';
 import { getStats, getContacts, markContactRead } from '../../../services/api/adminApi.js';
 import { createNotice } from '../../../services/api/noticeApi.js';
 import { useAuth, navigate } from '../../../app/App.jsx';
 
-/* ─── Shared sub-components ─── */
+/* Shared sub-components */
 
 function StatsCard({ icon: Icon, label, value, color }) {
   return (
@@ -23,7 +24,7 @@ function StatsCard({ icon: Icon, label, value, color }) {
         <Icon className="h-6 w-6" />
       </span>
       <div>
-        <p className="text-2xl font-black text-slate-800">{value ?? '—'}</p>
+        <p className="text-2xl font-black text-slate-800">{value ?? '-'}</p>
         <p className="text-xs text-slate-500">{label}</p>
       </div>
     </div>
@@ -89,9 +90,9 @@ function ContactsTable({ contacts, onMarkRead }) {
   );
 }
 
-/* ─── Publish notice (teacher quick action) ───
+/* Publish notice (teacher quick action)
    Teachers can publish notices/news (backend already authorizes `staffAndAdmin`
-   for POST /admin/notices), but — unlike admin — must not be able to post to
+      for POST /admin/notices), but unlike admin must not be able to post to
    the public website. The audience list here deliberately omits 'public'; the
    backend also enforces this (noticeService rejects a teacher posting with
    audience 'public'), so this is belt-and-suspenders, not the only guard. */
@@ -202,7 +203,7 @@ function PublishNoticeModal({ onClose }) {
               </button>
               <button type="submit" disabled={saving} className="btn-primary disabled:opacity-60">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                {saving ? 'Publishing…' : 'Publish'}
+                {saving ? 'Publishing...' : 'Publish'}
               </button>
             </div>
           </form>
@@ -212,7 +213,7 @@ function PublishNoticeModal({ onClose }) {
   );
 }
 
-/* ─── Home view ─── */
+/* Home view */
 
 function DashboardHome() {
   const { currentUser } = useAuth();
@@ -285,7 +286,7 @@ function DashboardHome() {
   );
 }
 
-/* ─── Page titles per route ─── */
+/* Page titles per route */
 const PAGE_TITLES = {
   '/dashboard':           'Dashboard',
   '/dashboard/contacts':  'Contact Messages',
@@ -297,15 +298,16 @@ const PAGE_TITLES = {
   '/dashboard/notices':   'Notices & News',
   '/dashboard/gallery':   'Gallery',
   '/dashboard/admissions':'Admissions',
+  '/dashboard/fees':      'Fees & Accounting',
 };
 
-// Teachers only get the shared dashboard home/contacts plus Academic — every
+// Teachers only get the shared dashboard home/contacts plus Academic - every
 // other sub-route (Students, Teachers, Users, Tenants, Notices, Gallery) is
 // admin/system_developer only on the backend, so the UI must not even try to
 // render them for a teacher (URL bar access, not just hidden nav links).
 const TEACHER_ALLOWED_PATHS = ['/dashboard', '/dashboard/contacts', '/dashboard/academic'];
 
-/* ─── Root layout ─── */
+/* Root layout */
 
 export default function DashboardPage() {
   const { currentUser } = useAuth();
@@ -336,6 +338,7 @@ export default function DashboardPage() {
     if (pathname === '/dashboard/notices')           return <NoticesPage />;
     if (pathname === '/dashboard/gallery')           return <GalleryPage />;
     if (pathname === '/dashboard/admissions')        return <AdmissionsPage />;
+    if (pathname === '/dashboard/fees')              return <FeesPage />;
     return <DashboardHome />;
   }
 
@@ -363,3 +366,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

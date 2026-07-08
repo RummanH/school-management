@@ -1,4 +1,4 @@
-import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, BookOpen, Globe, LogOut, X, BookMarked, Bell, Images, User, UserPlus } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, BookOpen, Globe, LogOut, X, BookMarked, Bell, Images, User, UserPlus, BadgeDollarSign } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 
 const SHARED_NAV = [
@@ -11,6 +11,7 @@ const TENANT_ADMIN_NAV = [
   { label: 'Teachers',   icon: BookOpen,     path: '/dashboard/teachers' },
   { label: 'Students',   icon: GraduationCap,path: '/dashboard/students' },
   { label: 'Admissions', icon: UserPlus,     path: '/dashboard/admissions' },
+  { label: 'Fees',       icon: BadgeDollarSign,path: '/dashboard/fees' },
   { label: 'Users',      icon: Users,        path: '/dashboard/users' },
   { label: 'Notices',    icon: Bell,         path: '/dashboard/notices' },
   { label: 'Gallery',    icon: Images,       path: '/dashboard/gallery' },
@@ -39,9 +40,9 @@ export default function DashboardSidebar({ activePath, onClose }) {
   const role = currentUser?.role;
   const isPlatform = role === 'system_developer';
 
-  // system_developer → full platform nav (orgs + all users)
-  // admin → tenant nav (academic, teachers, students, users, notices, gallery)
-  // teacher → academic management + link to their own portal profile
+  // system_developer -> full platform nav (orgs + all users)
+  // admin -> tenant nav (academic, teachers, students, users, notices, gallery)
+  // teacher -> academic management + link to their own portal profile
   // student / guardian never reach this sidebar (they live on /portal)
   let nav;
   if (isPlatform) {
@@ -119,3 +120,4 @@ export default function DashboardSidebar({ activePath, onClose }) {
     </aside>
   );
 }
+

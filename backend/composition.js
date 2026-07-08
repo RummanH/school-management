@@ -12,6 +12,7 @@ import { GuardianService } from "./services/guardianService.js";
 import { NoticeService } from "./services/noticeService.js";
 import { GalleryService } from "./services/galleryService.js";
 import { AdmissionService } from "./services/admissionService.js";
+import { FeeService } from "./services/feeService.js";
 import { createApp } from "./app.js";
 
 export async function createBackendApp() {
@@ -29,11 +30,14 @@ export async function createBackendApp() {
   const noticeService    = new NoticeService(databaseManager);
   const galleryService   = new GalleryService(databaseManager);
   const admissionService = new AdmissionService(databaseManager);
+  const feeService       = new FeeService(databaseManager);
 
   const app = createApp({
     env, contactService, authService, tenantService,
     userService, studentService, teacherService, academicService,
-    guardianService, noticeService, galleryService, admissionService, databaseManager,
+    guardianService, noticeService, galleryService, admissionService, feeService, databaseManager,
   });
   return { app, databaseManager, env };
 }
+
+

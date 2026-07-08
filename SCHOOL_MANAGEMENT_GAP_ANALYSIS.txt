@@ -1,0 +1,314 @@
+School Management System Gap Analysis
+Date: 2026-07-08
+
+Current State
+-------------
+The application already covers many core modules for a medium-size school:
+
+- Public school website
+- Online admission application and status tracking
+- Student management
+- Teacher management
+- Guardian accounts and ward linking
+- Class setup
+- Class routines
+- Syllabus
+- Exam schedules
+- Exam results
+- Attendance
+- Student portal
+- Guardian portal
+- Teacher academic dashboard
+- Notices and news
+- Gallery
+- Contact messages
+- Multi-tenant organization/user structure
+
+The system is a strong foundation, but it is not yet a complete school
+management system for a medium-size school. The main missing areas are finance,
+administration, operational workflows, reporting, communications, documents,
+and production hardening.
+
+
+Highest Priority Missing Modules
+--------------------------------
+
+1. Fees and Accounting
+
+This is the biggest missing business module for a real school.
+
+Needed features:
+- Fee category setup, such as tuition, admission fee, exam fee, transport fee
+- Monthly or term-based invoice generation
+- Student-wise fee assignment
+- Discounts, waivers, scholarships, and fine rules
+- Payment collection records
+- Due tracking
+- Receipt generation
+- Fee collection reports
+- Expense tracking
+
+
+2. Real Admin Reports
+
+The current admin stats are very limited and mainly count contact messages.
+A school administrator needs operational reports.
+
+Needed features:
+- Total active students
+- Total teachers
+- Class-wise student count
+- Gender-wise student count
+- Daily/monthly attendance percentage
+- Absent student list
+- Exam pass rate
+- Class-wise result summary
+- Admission application summary
+- Fee due and collection reports, once finance is added
+- Export to PDF/Excel/CSV
+
+
+3. About Us and Faculty Public Page
+
+The public website has vision, mission, chairman message, and principal message,
+but the About Us section is still partial.
+
+Needed features:
+- Faculty/staff grid
+- Teacher photo, name, designation, department, and qualification
+- Institution history
+- Founder profile
+- Simple organizational structure or leadership list
+
+
+4. Formal Documents and PDF Generation
+
+The current progress report is a print-to-PDF page, which is acceptable for a
+basic version but not enough for many schools.
+
+Needed features:
+- Designed report cards
+- Certificates
+- Transfer certificates
+- Admit cards
+- Student ID cards
+- Fee receipts
+- Downloadable PDF files
+- Print-friendly templates with school logo and signatures
+
+
+5. Communication Workflows
+
+The current notice board is useful, but medium-size schools usually need direct
+communication workflows.
+
+Needed features:
+- SMS notices
+- Email notices
+- WhatsApp/SMS gateway support if required locally
+- Guardian-teacher messaging
+- Admin-to-guardian messaging
+- Emergency broadcasts
+- Notification delivery history
+- Read/unread tracking
+
+
+Important Operational Modules
+-----------------------------
+
+6. HR and Staff Management
+
+Teacher profiles exist, but full staff/HR operations are missing.
+
+Needed features:
+- Non-teaching staff records
+- Staff attendance
+- Leave requests and approval
+- Payroll
+- Salary records
+- Contracts and joining documents
+- Staff performance notes
+
+
+7. Library Management
+
+Needed features:
+- Book catalog
+- Book copies and inventory
+- Issue and return tracking
+- Student/teacher borrower history
+- Late return fines
+- Lost/damaged book records
+
+
+8. Transport Management
+
+Needed features:
+- Routes
+- Vehicles
+- Drivers
+- Student route assignment
+- Transport fee assignment
+- Pickup/drop points
+
+
+9. Inventory and Assets
+
+Needed features:
+- Classroom assets
+- Lab equipment
+- Furniture records
+- Purchase records
+- Maintenance records
+- Stock tracking
+
+
+10. Discipline, Health, and Wellbeing
+
+Needed features:
+- Student behavior incidents
+- Disciplinary actions
+- Medical records
+- Allergies or emergency notes
+- Nurse/health visit logs
+- Counseling notes
+- Parent permissions
+
+
+Academic Improvements
+---------------------
+
+11. Better Academic Structure
+
+The app has classes, routines, syllabus, exams, results, and attendance, but
+some academic concepts should become first-class records.
+
+Needed features:
+- Subject master list
+- Teacher-subject-class assignment
+- Academic sessions or years
+- Terms
+- Grading policies
+- Promotion to next class/year
+- Section changes
+- Student transfer/withdrawal records
+
+
+12. More Complete Attendance
+
+Current attendance works, but could be expanded.
+
+Needed features:
+- Period-wise attendance
+- Bulk attendance import
+- Attendance correction approval
+- Absence reason tracking
+- Automatic guardian alert for absence
+- Monthly attendance report
+
+
+Admissions Improvements
+-----------------------
+
+13. Admission Document Handling
+
+The current admission flow supports applicant information and photo, but not
+full document management.
+
+Needed features:
+- Birth certificate upload
+- Previous school certificate upload
+- Transfer certificate upload
+- Guardian NID/passport upload if needed
+- Document verification status
+- Secure object storage for files
+
+
+14. Admission Workflow Expansion
+
+Needed features:
+- Admission test marks
+- Interview status
+- Merit list
+- Waiting list
+- Admission fee collection
+- Convert accepted applicant into student account
+
+
+Production and Engineering Gaps
+-------------------------------
+
+15. Automated Tests
+
+There are no clear frontend or backend test scripts. This makes future changes
+risky.
+
+Needed features:
+- Backend unit tests
+- Backend API tests
+- Frontend component tests
+- End-to-end tests for main role flows
+- Test data/seed scripts
+
+
+16. Security and Auditability
+
+Needed features:
+- Audit logs for sensitive changes
+- Rate limiting for public endpoints
+- Better permission checks per module
+- Password reset flow
+- Account lockout or login attempt throttling
+- Role/permission matrix
+- Data export controls
+
+
+17. Backup, Migration, and Operations
+
+Needed features:
+- Real database migration system
+- Backup and restore plan
+- Environment-specific configuration docs
+- Deployment checklist
+- Error monitoring
+- Admin activity monitoring
+
+
+18. Multi-Tenant Public Website Strategy
+
+The backend has tenant support, but some public modules are simplified as
+single-school public content.
+
+Needed features if this becomes SaaS for multiple schools:
+- Tenant-specific public website routing
+- Per-school public notices
+- Per-school galleries
+- Per-school admissions
+- Custom domain or subdomain support
+- Tenant branding settings
+
+
+Recommended Build Order
+-----------------------
+
+1. Finish basic admin reports and dashboard statistics.
+2. Finish the About Us/faculty public section.
+3. Add fees and accounting.
+4. Add formal PDF templates for report cards, certificates, and receipts.
+5. Add SMS/email notification support.
+6. Add automated tests for core flows.
+7. Add admission document uploads and secure file storage.
+8. Add audit logs, rate limits, and production hardening.
+9. Add library, transport, inventory, HR, and discipline modules based on real
+   customer demand.
+
+
+Conclusion
+----------
+
+The application is close to a strong academic portal and public school website,
+but it is not yet a complete school management system for a medium-size school.
+
+The most important missing product area is fees/accounting. The most important
+admin gap is real reporting. The most important engineering gap is automated
+testing and production hardening.

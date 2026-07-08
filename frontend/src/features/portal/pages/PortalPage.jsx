@@ -11,6 +11,7 @@ import { Card, InfoRow } from '../components/Card.jsx';
 import ResultsTable from '../components/ResultsTable.jsx';
 import AttendanceStats from '../components/AttendanceStats.jsx';
 import NoticesFeed from '../components/NoticesFeed.jsx';
+import FeeLedger from '../components/FeeLedger.jsx';
 import StudentDashboardPage from './StudentDashboardPage.jsx';
 
 const ROLE_CONFIG = {
@@ -151,6 +152,10 @@ function GuardianPortal() {
         </Card>
       )}
 
+      <Card title="Fees & Payments">
+        <FeeLedger studentUserId={selectedId} />
+      </Card>
+
       <Card title="Notices">
         <NoticesFeed />
       </Card>
@@ -175,7 +180,7 @@ export default function PortalPage() {
   }, []);
 
   // Students get a full dashboard shell (sidebar + sections), not the
-  // single-page layout below — see StudentDashboardPage.jsx.
+  // single-page layout below - see StudentDashboardPage.jsx.
   if (role === 'student') {
     return <StudentDashboardPage />;
   }
@@ -257,3 +262,4 @@ export default function PortalPage() {
     </div>
   );
 }
+

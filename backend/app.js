@@ -9,12 +9,12 @@ import { createApiRouter } from "./routes/api.js";
 export function createApp({
   env, contactService, authService, tenantService,
   userService, studentService, teacherService, academicService,
-  guardianService, noticeService, galleryService, admissionService, databaseManager,
+  guardianService, noticeService, galleryService, admissionService, feeService, databaseManager,
 }) {
   const app = express();
 
   app.set("trust proxy", 1);
-  // Default express.json() limit is 100kb — too small once admission
+  // Default express.json() limit is 100kb - too small once admission
   // applications carry a base64-encoded applicant photo (see admissionService.js).
   app.use(express.json({ limit: "2mb" }));
   app.use(cookieParser());
@@ -22,7 +22,7 @@ export function createApp({
   app.use("/api", createApiRouter({
     env, contactService, authService, tenantService,
     userService, studentService, teacherService, academicService,
-    guardianService, noticeService, galleryService, admissionService, databaseManager,
+    guardianService, noticeService, galleryService, admissionService, feeService, databaseManager,
   }));
 
   const staticRoot = fs.existsSync(backendDistPath) ? backendDistPath : frontendDistPath;
@@ -38,3 +38,4 @@ export function createApp({
 
   return app;
 }
+

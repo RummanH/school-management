@@ -8,6 +8,7 @@ import ResultsTable from '../components/ResultsTable.jsx';
 import AttendanceStats from '../components/AttendanceStats.jsx';
 import RoutineList from '../components/RoutineList.jsx';
 import NoticesFeed from '../components/NoticesFeed.jsx';
+import FeeLedger from '../components/FeeLedger.jsx';
 import { getMyProfile } from '../../../services/api/authApi.js';
 import { getMyResults, getMyAttendance, getRoutine } from '../../../services/api/academicApi.js';
 
@@ -17,6 +18,7 @@ const PAGE_TITLES = {
   '/portal/attendance': 'Attendance',
   '/portal/routine':    'Class Routine',
   '/portal/notices':    'Notices',
+  '/portal/fees':       'Fees',
   '/portal/profile':    'My Profile',
 };
 
@@ -77,7 +79,7 @@ export default function StudentDashboardPage() {
       .finally(() => setProfileLoading(false));
   }, []);
 
-  // Fetch once up front and hand down to whichever section is active —
+  // Fetch once up front and hand down to whichever section is active -
   // no re-fetching when the student clicks between nav items.
   useEffect(() => {
     if (!profile) return;
@@ -142,6 +144,13 @@ export default function StudentDashboardPage() {
         </Card>
       );
     }
+    if (pathname === '/portal/fees') {
+      return (
+        <Card title="Fees & Payments">
+          <FeeLedger />
+        </Card>
+      );
+    }
     if (pathname === '/portal/profile') {
       return (
         <div className="grid gap-4 sm:grid-cols-2">
@@ -176,3 +185,4 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+

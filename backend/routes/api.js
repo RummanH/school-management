@@ -11,6 +11,7 @@ import { GuardianController } from "../controllers/guardianController.js";
 import { NoticeController } from "../controllers/noticeController.js";
 import { GalleryController } from "../controllers/galleryController.js";
 import { AdmissionController } from "../controllers/admissionController.js";
+import { FeeController } from "../controllers/feeController.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { findStudentByUserId } from "../repositories/studentRepository.js";
@@ -19,7 +20,7 @@ import { findTeacherByUserId } from "../repositories/teacherRepository.js";
 export function createApiRouter({
   env, contactService, authService, tenantService,
   userService, studentService, teacherService, academicService,
-  guardianService, noticeService, galleryService, admissionService, databaseManager,
+  guardianService, noticeService, galleryService, admissionService, feeService, databaseManager,
 }) {
   const router = Router();
 
@@ -35,12 +36,14 @@ export function createApiRouter({
   const noticeController    = new NoticeController(noticeService);
   const galleryController   = new GalleryController(galleryService);
   const admissionController = new AdmissionController(admissionService);
+  const feeController       = new FeeController(feeService);
 
   const auth          = requireAuth(authService, env);
   const platformOnly  = [auth, requireRole("system_developer")];
   const adminOnly     = [auth, requireRole("system_developer", "admin")];
   const staffAndAdmin = [auth, requireRole("system_developer", "admin", "teacher")];
   const guardianOnly  = [auth, requireRole("guardian")];
+  const financeAdmin  = [auth, requireRole("system_developer", "admin")];
 
   router.get("/health", (_req, res) => res.json({ status: "ok" }));
 
@@ -57,27 +60,27 @@ export function createApiRouter({
   router.post("/auth/logout", authController.logout);
   router.get("/auth/me",      auth, authController.me);
 
-  // Platform — system_developer only
+  // Platform - system_developer only
   router.get("/platform/tenants",              ...platformOnly, tenantController.list);
   router.post("/platform/tenants",             ...platformOnly, tenantController.create);
   router.put("/platform/tenants/:id",          ...platformOnly, tenantController.update);
   router.patch("/platform/tenants/:id/status", ...platformOnly, tenantController.setStatus);
 
-  // Users (admin + guardian accounts only) — system_developer + admin
+  // Users (admin + guardian accounts only) - system_developer + admin
   router.get("/users",                     ...adminOnly, userController.list);
   router.post("/users",                    ...adminOnly, userController.create);
   router.put("/users/:id",                 ...adminOnly, userController.update);
   router.delete("/users/:id",              ...adminOnly, userController.remove);
   router.post("/users/:id/reset-password", ...adminOnly, userController.resetPassword);
 
-  // Students — admin only (tenant-scoped)
+  // Students - admin only (tenant-scoped)
   router.get("/students",         ...adminOnly, studentController.list);
   router.post("/students",        ...adminOnly, studentController.create);
   router.put("/students/:userId", ...adminOnly, studentController.update);
   router.delete("/students/:userId", ...adminOnly, studentController.remove);
   router.get("/students/:studentUserId/guardians", ...adminOnly, guardianController.listGuardiansForStudent);
 
-  // Teachers — admin only (tenant-scoped)
+  // Teachers - admin only (tenant-scoped)
   router.get("/teachers",         ...adminOnly, teacherController.list);
   router.post("/teachers",        ...adminOnly, teacherController.create);
   router.put("/teachers/:userId", ...adminOnly, teacherController.update);
@@ -96,7 +99,7 @@ export function createApiRouter({
     } catch (err) { next(err); }
   });
 
-  // ── Academic Portal ──────────────────────────────────────────────────────
+  // Academic Portal
 
   // Classes (admin manages, all authenticated can list)
   router.get("/academic/classes",      auth, academicController.listClasses);
@@ -104,7 +107,7 @@ export function createApiRouter({
   router.put("/academic/classes/:id",  ...adminOnly, academicController.updateClass);
   router.delete("/academic/classes/:id", ...adminOnly, academicController.deleteClass);
 
-  // Teachers list (for class teacher picker, routine assignment)
+  // Teachers - admin only (tenant-scoped)
   router.get("/academic/teachers", ...staffAndAdmin, academicController.listTeachers);
 
   // Class routine (admin + teacher can edit, all can view)
@@ -134,9 +137,9 @@ export function createApiRouter({
   router.post("/academic/classes/:classId/attendance", ...staffAndAdmin, academicController.saveAttendance);
   router.get("/academic/me/attendance",                auth, academicController.getMyAttendanceSummary);
 
-  // ── Guardian Portal ──────────────────────────────────────────────────────
+  // Guardian Portal
 
-  // Admin manages guardian ↔ student links (tenant-scoped)
+  // Admin manages guardian/student links (tenant-scoped)
   router.get("/guardians/:guardianId/wards",              ...adminOnly, guardianController.listWardLinks);
   router.post("/guardians/:guardianId/wards",              ...adminOnly, guardianController.linkWard);
   router.delete("/guardians/:guardianId/wards/:studentUserId", ...adminOnly, guardianController.unlinkWard);
@@ -146,9 +149,9 @@ export function createApiRouter({
   router.get("/guardian/wards/:studentUserId/results",     ...guardianOnly, guardianController.wardResults);
   router.get("/guardian/wards/:studentUserId/attendance",  ...guardianOnly, guardianController.wardAttendance);
 
-  // ── Notices & News ───────────────────────────────────────────────────────
+  // Notices & News
 
-  // Portal feed — any authenticated user sees notices for their role
+  // Portal feed - any authenticated user sees notices for their role
   router.get("/notices/feed", auth, noticeController.listFeed);
 
   // Admin/teacher management (admin + teacher can create/edit, only admin deletes)
@@ -157,18 +160,42 @@ export function createApiRouter({
   router.put("/admin/notices/:id",     ...staffAndAdmin, noticeController.update);
   router.delete("/admin/notices/:id",  ...adminOnly, noticeController.remove);
 
-  // ── Gallery (website content management) ────────────────────────────────
+  // Gallery (website content management)
 
   router.get("/admin/gallery",         ...adminOnly, galleryController.listAll);
   router.post("/admin/gallery",        ...adminOnly, galleryController.create);
   router.put("/admin/gallery/:id",     ...adminOnly, galleryController.update);
   router.delete("/admin/gallery/:id",  ...adminOnly, galleryController.remove);
 
-  // ── Online Admission ─────────────────────────────────────────────────────
+  // Online Admission
 
   router.get("/admin/admissions",     ...adminOnly, admissionController.listAll);
   router.get("/admin/admissions/:id", ...adminOnly, admissionController.getById);
   router.put("/admin/admissions/:id", ...adminOnly, admissionController.updateStatus);
+  // Fees & Accounting — admin managed, student/guardian read-only ledgers
+  router.get("/fees/categories",          ...financeAdmin, feeController.listCategories);
+  router.post("/fees/categories",         ...financeAdmin, feeController.createCategory);
+  router.put("/fees/categories/:id",      ...financeAdmin, feeController.updateCategory);
+  router.delete("/fees/categories/:id",   ...financeAdmin, feeController.deleteCategory);
+
+  router.get("/fees/assignments",         ...financeAdmin, feeController.listAssignments);
+  router.post("/fees/assignments",        ...financeAdmin, feeController.createAssignment);
+  router.put("/fees/assignments/:id",     ...financeAdmin, feeController.updateAssignment);
+  router.delete("/fees/assignments/:id",  ...financeAdmin, feeController.deleteAssignment);
+
+  router.get("/fees/invoices",            ...financeAdmin, feeController.listInvoices);
+  router.post("/fees/invoices/generate",  ...financeAdmin, feeController.generateInvoices);
+  router.get("/fees/invoices/:id",        ...financeAdmin, feeController.getInvoice);
+  router.post("/fees/invoices/:id/payments", ...financeAdmin, feeController.recordPayment);
+  router.get("/fees/payments",            ...financeAdmin, feeController.listPayments);
+
+  router.get("/fees/expenses",            ...financeAdmin, feeController.listExpenses);
+  router.post("/fees/expenses",           ...financeAdmin, feeController.createExpense);
+  router.delete("/fees/expenses/:id",     ...financeAdmin, feeController.deleteExpense);
+  router.get("/fees/report",              ...financeAdmin, feeController.getReport);
+
+  router.get("/fees/me",                  auth, feeController.getMyFees);
+  router.get("/guardian/wards/:studentUserId/fees", ...guardianOnly, feeController.getWardFees);
 
   // Admin dashboard
   router.get("/admin/stats",               auth, adminController.getStats);
@@ -177,3 +204,4 @@ export function createApiRouter({
 
   return router;
 }
+

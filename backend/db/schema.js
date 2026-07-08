@@ -1,5 +1,5 @@
 export async function createSchema(pool) {
-  // Stage 1 — create tables (idempotent; won't modify existing tables)
+  // Stage 1 â€” create tables (idempotent; won't modify existing tables)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS tenants (
       id               TEXT PRIMARY KEY,
@@ -210,17 +210,111 @@ export async function createSchema(pool) {
       address       TEXT,
       created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    CREATE TABLE IF NOT EXISTS fee_categories (
+      id             TEXT PRIMARY KEY,
+      tenant_id      TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      name           TEXT NOT NULL,
+      description    TEXT NOT NULL DEFAULT '',
+      default_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+      billing_cycle  TEXT NOT NULL DEFAULT 'monthly',
+      is_active      BOOLEAN NOT NULL DEFAULT true,
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS fee_assignments (
+      id                  TEXT PRIMARY KEY,
+      tenant_id           TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      student_user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      category_id         TEXT NOT NULL REFERENCES fee_categories(id) ON DELETE CASCADE,
+      amount              NUMERIC(10,2) NOT NULL DEFAULT 0,
+      discount_amount     NUMERIC(10,2) NOT NULL DEFAULT 0,
+      waiver_amount       NUMERIC(10,2) NOT NULL DEFAULT 0,
+      scholarship_amount  NUMERIC(10,2) NOT NULL DEFAULT 0,
+      fine_amount         NUMERIC(10,2) NOT NULL DEFAULT 0,
+      start_period        TEXT NOT NULL DEFAULT '',
+      end_period          TEXT NOT NULL DEFAULT '',
+      status              TEXT NOT NULL DEFAULT 'active',
+      notes               TEXT NOT NULL DEFAULT '',
+      created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS fee_invoices (
+      id                  TEXT PRIMARY KEY,
+      tenant_id           TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      student_user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      period              TEXT NOT NULL,
+      title               TEXT NOT NULL,
+      due_date            TEXT,
+      subtotal_amount     NUMERIC(10,2) NOT NULL DEFAULT 0,
+      discount_amount     NUMERIC(10,2) NOT NULL DEFAULT 0,
+      waiver_amount       NUMERIC(10,2) NOT NULL DEFAULT 0,
+      scholarship_amount  NUMERIC(10,2) NOT NULL DEFAULT 0,
+      fine_amount         NUMERIC(10,2) NOT NULL DEFAULT 0,
+      total_amount        NUMERIC(10,2) NOT NULL DEFAULT 0,
+      paid_amount         NUMERIC(10,2) NOT NULL DEFAULT 0,
+      status              TEXT NOT NULL DEFAULT 'unpaid',
+      notes               TEXT NOT NULL DEFAULT '',
+      created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(student_user_id, period)
+    );
+
+    CREATE TABLE IF NOT EXISTS fee_invoice_items (
+      id                  TEXT PRIMARY KEY,
+      invoice_id          TEXT NOT NULL REFERENCES fee_invoices(id) ON DELETE CASCADE,
+      category_id         TEXT REFERENCES fee_categories(id) ON DELETE SET NULL,
+      assignment_id       TEXT REFERENCES fee_assignments(id) ON DELETE SET NULL,
+      description         TEXT NOT NULL,
+      amount              NUMERIC(10,2) NOT NULL DEFAULT 0,
+      discount_amount     NUMERIC(10,2) NOT NULL DEFAULT 0,
+      waiver_amount       NUMERIC(10,2) NOT NULL DEFAULT 0,
+      scholarship_amount  NUMERIC(10,2) NOT NULL DEFAULT 0,
+      fine_amount         NUMERIC(10,2) NOT NULL DEFAULT 0,
+      total_amount        NUMERIC(10,2) NOT NULL DEFAULT 0,
+      created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS fee_payments (
+      id              TEXT PRIMARY KEY,
+      tenant_id       TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      invoice_id      TEXT NOT NULL REFERENCES fee_invoices(id) ON DELETE CASCADE,
+      student_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      receipt_number  TEXT NOT NULL UNIQUE,
+      amount          NUMERIC(10,2) NOT NULL,
+      method          TEXT NOT NULL DEFAULT 'cash',
+      payment_date    TEXT NOT NULL,
+      reference_no    TEXT NOT NULL DEFAULT '',
+      notes           TEXT NOT NULL DEFAULT '',
+      collected_by    TEXT REFERENCES users(id) ON DELETE SET NULL,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS expenses (
+      id            TEXT PRIMARY KEY,
+      tenant_id     TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      category      TEXT NOT NULL,
+      amount        NUMERIC(10,2) NOT NULL,
+      expense_date  TEXT NOT NULL,
+      payee         TEXT NOT NULL DEFAULT '',
+      method        TEXT NOT NULL DEFAULT 'cash',
+      reference_no  TEXT NOT NULL DEFAULT '',
+      notes         TEXT NOT NULL DEFAULT '',
+      created_by    TEXT REFERENCES users(id) ON DELETE SET NULL,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
 
-  // Stage 2 — add columns that may be missing on existing databases
+  // Stage 2 â€” add columns that may be missing on existing databases
   await pool.query(`
     ALTER TABLE tenants          ADD COLUMN IF NOT EXISTS institution_type TEXT NOT NULL DEFAULT 'SCHOOL';
     ALTER TABLE tenants          ADD COLUMN IF NOT EXISTS phone            TEXT;
     ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS class_id         TEXT REFERENCES classes(id) ON DELETE SET NULL;
   `);
 
-  // Stage 3 — create indexes (all referenced columns now guaranteed to exist)
+  // Stage 3 â€” create indexes (all referenced columns now guaranteed to exist)
   await pool.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_tenant
       ON users(email, COALESCE(tenant_id, ''));
@@ -256,5 +350,16 @@ export async function createSchema(pool) {
 
     CREATE INDEX IF NOT EXISTS idx_admission_applications_reference ON admission_applications(reference_code);
     CREATE INDEX IF NOT EXISTS idx_admission_applications_status    ON admission_applications(status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_fee_categories_tenant     ON fee_categories(tenant_id, is_active);
+    CREATE INDEX IF NOT EXISTS idx_fee_assignments_student   ON fee_assignments(student_user_id, status);
+    CREATE INDEX IF NOT EXISTS idx_fee_assignments_category  ON fee_assignments(category_id);
+    CREATE INDEX IF NOT EXISTS idx_fee_invoices_tenant       ON fee_invoices(tenant_id, status, period);
+    CREATE INDEX IF NOT EXISTS idx_fee_invoices_student      ON fee_invoices(student_user_id, period);
+    CREATE INDEX IF NOT EXISTS idx_fee_invoice_items_invoice ON fee_invoice_items(invoice_id);
+    CREATE INDEX IF NOT EXISTS idx_fee_payments_invoice      ON fee_payments(invoice_id);
+    CREATE INDEX IF NOT EXISTS idx_fee_payments_student      ON fee_payments(student_user_id, payment_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_expenses_tenant_date      ON expenses(tenant_id, expense_date DESC);
   `);
 }
+
+
