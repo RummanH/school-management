@@ -90,3 +90,72 @@ export async function updateApplicationStatus(client, { id, status, notes, admis
   );
   return mapApplication(result.rows[0]);
 }
+
+export function mapAdmissionDocument(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    applicationId: row.application_id,
+    documentType: row.document_type,
+    originalName: row.original_name,
+    mimeType: row.mime_type,
+    fileSize: Number(row.file_size || 0),
+    storageKey: row.storage_key,
+    verificationStatus: row.verification_status,
+    verificationNotes: row.verification_notes || '',
+    uploadedAt: row.uploaded_at,
+    verifiedBy: row.verified_by || null,
+    verifiedByName: row.verified_by_name || '',
+    verifiedAt: row.verified_at || null,
+  };
+}
+
+export async function listApplicationDocuments(client, applicationId) {
+  const result = await client.query(
+    `SELECT ad.*, u.name AS verified_by_name
+       FROM admission_documents ad
+       LEFT JOIN users u ON u.id = ad.verified_by
+      WHERE ad.application_id = $1
+      ORDER BY ad.uploaded_at ASC`,
+    [applicationId],
+  );
+  return result.rows.map(mapAdmissionDocument);
+}
+
+export async function findApplicationDocument(client, id) {
+  const result = await client.query(
+    `SELECT ad.*, u.name AS verified_by_name
+       FROM admission_documents ad
+       LEFT JOIN users u ON u.id = ad.verified_by
+      WHERE ad.id = $1
+      LIMIT 1`,
+    [id],
+  );
+  return mapAdmissionDocument(result.rows[0]);
+}
+
+export async function insertApplicationDocument(client, data) {
+  const result = await client.query(
+    `INSERT INTO admission_documents
+       (id, application_id, document_type, original_name, mime_type, file_size, storage_key)
+     VALUES ($1,$2,$3,$4,$5,$6,$7)
+     RETURNING *`,
+    [data.id, data.applicationId, data.documentType, data.originalName, data.mimeType, data.fileSize, data.storageKey],
+  );
+  return mapAdmissionDocument(result.rows[0]);
+}
+
+export async function updateApplicationDocumentVerification(client, { id, verificationStatus, verificationNotes, verifiedBy }) {
+  const result = await client.query(
+    `UPDATE admission_documents
+        SET verification_status = $2,
+            verification_notes = $3,
+            verified_by = $4,
+            verified_at = NOW(),
+            updated_at = NOW()
+      WHERE id = $1
+      RETURNING *`,
+    [id, verificationStatus, verificationNotes || '', verifiedBy],
+  );
+  return mapAdmissionDocument(result.rows[0]);
+}

@@ -152,7 +152,8 @@ export class AcademicController {
     try {
       const { classId } = req.params;
       const date = req.query.date || new Date().toISOString().slice(0, 10);
-      const records = await this.academicService.getAttendance(classId, date, req.currentUser);
+      const periodNumber = Number(req.query.periodNumber || 0);
+      const records = await this.academicService.getAttendance(classId, date, req.currentUser, periodNumber);
       res.json({ records });
     } catch (err) { next(err); }
   };
@@ -161,8 +162,46 @@ export class AcademicController {
     try {
       const date = (req.body.date || '').trim();
       assert(date, "Date is required.", 400);
-      await this.academicService.saveAttendance(req.params.classId, date, req.body.records || [], req.currentUser);
-      res.json({ success: true });
+      const result = await this.academicService.saveAttendance(req.params.classId, date, req.body.records || [], req.currentUser, Number(req.body.periodNumber || 0));
+      res.json({ success: true, ...result });
+    } catch (err) { next(err); }
+  };
+
+  importAttendance = async (req, res, next) => {
+    try {
+      const date = (req.body.date || '').trim();
+      assert(date, "Date is required.", 400);
+      const result = await this.academicService.importAttendance(req.params.classId, date, req.body, req.currentUser);
+      res.status(201).json(result);
+    } catch (err) { next(err); }
+  };
+
+  getAttendanceCorrections = async (req, res, next) => {
+    try {
+      const corrections = await this.academicService.getAttendanceCorrections(req.currentUser, req.query.status || 'pending');
+      res.json({ corrections });
+    } catch (err) { next(err); }
+  };
+
+  requestAttendanceCorrection = async (req, res, next) => {
+    try {
+      const corrections = await this.academicService.requestAttendanceCorrection(req.body, req.currentUser);
+      res.status(201).json({ corrections });
+    } catch (err) { next(err); }
+  };
+
+  reviewAttendanceCorrection = async (req, res, next) => {
+    try {
+      const corrections = await this.academicService.reviewAttendanceCorrection(req.params.id, req.body, req.currentUser);
+      res.json({ corrections });
+    } catch (err) { next(err); }
+  };
+
+  getMonthlyAttendanceReport = async (req, res, next) => {
+    try {
+      const month = req.query.month || new Date().toISOString().slice(0, 7);
+      const report = await this.academicService.getMonthlyAttendanceReport(req.params.classId, month, req.currentUser);
+      res.json({ report });
     } catch (err) { next(err); }
   };
 
@@ -175,6 +214,16 @@ export class AcademicController {
     } catch (err) { next(err); }
   };
 
+
+  getStructure = async (req, res, next) => {
+    try { res.json(await this.academicService.getStructure(req.currentUser)); }
+    catch (err) { next(err); }
+  };
+
+  createStructureRecord = async (req, res, next) => {
+    try { res.status(201).json(await this.academicService.createStructureRecord(req.params.type, req.body, req.currentUser)); }
+    catch (err) { next(err); }
+  };
   listTeachers = async (req, res, next) => {
     try {
       const teachers = await this.academicService.listTeachers(req.currentUser.tenantId);

@@ -35,6 +35,52 @@ export async function createSchema(pool) {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id              TEXT PRIMARY KEY,
+      tenant_id       TEXT REFERENCES tenants(id) ON DELETE SET NULL,
+      actor_user_id   TEXT REFERENCES users(id) ON DELETE SET NULL,
+      actor_role      TEXT NOT NULL DEFAULT '',
+      action          TEXT NOT NULL,
+      entity_type     TEXT NOT NULL DEFAULT '',
+      entity_id       TEXT NOT NULL DEFAULT '',
+      method          TEXT NOT NULL DEFAULT '',
+      path            TEXT NOT NULL DEFAULT '',
+      ip_address      TEXT NOT NULL DEFAULT '',
+      user_agent      TEXT NOT NULL DEFAULT '',
+      metadata        JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS login_attempts (
+      id              TEXT PRIMARY KEY,
+      email           TEXT NOT NULL,
+      tenant_id       TEXT REFERENCES tenants(id) ON DELETE SET NULL,
+      ip_address      TEXT NOT NULL DEFAULT '',
+      success         BOOLEAN NOT NULL DEFAULT false,
+      failure_reason  TEXT NOT NULL DEFAULT '',
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS account_lockouts (
+      id              TEXT PRIMARY KEY,
+      email           TEXT NOT NULL,
+      tenant_id       TEXT REFERENCES tenants(id) ON DELETE CASCADE,
+      locked_until    TIMESTAMPTZ NOT NULL,
+      failed_count    INTEGER NOT NULL DEFAULT 0,
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(email, tenant_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id              TEXT PRIMARY KEY,
+      user_id         TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash      TEXT NOT NULL UNIQUE,
+      expires_at      TIMESTAMPTZ NOT NULL,
+      used_at         TIMESTAMPTZ,
+      requested_ip    TEXT NOT NULL DEFAULT '',
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
     CREATE TABLE IF NOT EXISTS contact_messages (
       id         TEXT PRIMARY KEY,
       name       TEXT NOT NULL,
@@ -55,6 +101,78 @@ export async function createSchema(pool) {
       created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+
+    CREATE TABLE IF NOT EXISTS academic_sessions (
+      id         TEXT PRIMARY KEY,
+      tenant_id  TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      name       TEXT NOT NULL,
+      start_date TEXT,
+      end_date   TEXT,
+      is_active  BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS academic_terms (
+      id         TEXT PRIMARY KEY,
+      tenant_id  TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      session_id TEXT REFERENCES academic_sessions(id) ON DELETE CASCADE,
+      name       TEXT NOT NULL,
+      start_date TEXT,
+      end_date   TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS subjects (
+      id          TEXT PRIMARY KEY,
+      tenant_id   TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      code        TEXT NOT NULL DEFAULT '',
+      name        TEXT NOT NULL,
+      department  TEXT NOT NULL DEFAULT '',
+      description TEXT NOT NULL DEFAULT '',
+      is_active   BOOLEAN NOT NULL DEFAULT true,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS teacher_subject_assignments (
+      id         TEXT PRIMARY KEY,
+      tenant_id  TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      teacher_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      subject_id TEXT NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+      class_id   TEXT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+      session_id TEXT REFERENCES academic_sessions(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(teacher_id, subject_id, class_id, session_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS grading_policies (
+      id           TEXT PRIMARY KEY,
+      tenant_id    TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      name         TEXT NOT NULL,
+      min_percent  NUMERIC(5,2) NOT NULL DEFAULT 0,
+      max_percent  NUMERIC(5,2) NOT NULL DEFAULT 100,
+      grade        TEXT NOT NULL,
+      grade_point  NUMERIC(4,2) NOT NULL DEFAULT 0,
+      is_passing   BOOLEAN NOT NULL DEFAULT true,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS student_academic_movements (
+      id            TEXT PRIMARY KEY,
+      tenant_id     TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      student_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      movement_type TEXT NOT NULL,
+      from_class_id TEXT REFERENCES classes(id) ON DELETE SET NULL,
+      to_class_id   TEXT REFERENCES classes(id) ON DELETE SET NULL,
+      from_section  TEXT NOT NULL DEFAULT '',
+      to_section    TEXT NOT NULL DEFAULT '',
+      from_session_id TEXT REFERENCES academic_sessions(id) ON DELETE SET NULL,
+      to_session_id   TEXT REFERENCES academic_sessions(id) ON DELETE SET NULL,
+      effective_date TEXT NOT NULL,
+      reason        TEXT NOT NULL DEFAULT '',
+      created_by    TEXT REFERENCES users(id) ON DELETE SET NULL,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
     CREATE TABLE IF NOT EXISTS class_routines (
       id            TEXT PRIMARY KEY,
       tenant_id     TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -115,13 +233,38 @@ export async function createSchema(pool) {
       class_id         TEXT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
       student_user_id  TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       attendance_date  TEXT NOT NULL,
+      period_number    INTEGER NOT NULL DEFAULT 0,
       status           TEXT NOT NULL DEFAULT 'present',
       marked_by_id     TEXT REFERENCES users(id) ON DELETE SET NULL,
       note             TEXT NOT NULL DEFAULT '',
+      absence_reason   TEXT NOT NULL DEFAULT '',
+      guardian_alert_sent BOOLEAN NOT NULL DEFAULT false,
+      guardian_alert_sent_at TIMESTAMPTZ,
       created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       UNIQUE(class_id, student_user_id, attendance_date)
     );
 
+
+    CREATE TABLE IF NOT EXISTS attendance_correction_requests (
+      id               TEXT PRIMARY KEY,
+      tenant_id        TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      attendance_id    TEXT REFERENCES attendance_records(id) ON DELETE CASCADE,
+      class_id         TEXT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+      student_user_id  TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      attendance_date  TEXT NOT NULL,
+      period_number    INTEGER NOT NULL DEFAULT 0,
+      requested_status TEXT NOT NULL,
+      requested_reason TEXT NOT NULL DEFAULT '',
+      request_note     TEXT NOT NULL DEFAULT '',
+      status           TEXT NOT NULL DEFAULT 'pending',
+      requested_by     TEXT REFERENCES users(id) ON DELETE SET NULL,
+      reviewed_by      TEXT REFERENCES users(id) ON DELETE SET NULL,
+      reviewed_at      TIMESTAMPTZ,
+      review_note      TEXT NOT NULL DEFAULT '',
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
     CREATE TABLE IF NOT EXISTS student_profiles (
       id                TEXT PRIMARY KEY,
       tenant_id         TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -193,6 +336,22 @@ export async function createSchema(pool) {
       updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+
+    CREATE TABLE IF NOT EXISTS admission_documents (
+      id              TEXT PRIMARY KEY,
+      application_id  TEXT NOT NULL REFERENCES admission_applications(id) ON DELETE CASCADE,
+      document_type   TEXT NOT NULL,
+      original_name   TEXT NOT NULL,
+      mime_type       TEXT NOT NULL,
+      file_size       INTEGER NOT NULL DEFAULT 0,
+      storage_key     TEXT NOT NULL UNIQUE,
+      verification_status TEXT NOT NULL DEFAULT 'pending',
+      verification_notes  TEXT NOT NULL DEFAULT '',
+      uploaded_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      verified_by     TEXT REFERENCES users(id) ON DELETE SET NULL,
+      verified_at     TIMESTAMPTZ,
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
     CREATE TABLE IF NOT EXISTS teacher_profiles (
       id            TEXT PRIMARY KEY,
       tenant_id     TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -424,6 +583,12 @@ export async function createSchema(pool) {
     ALTER TABLE tenants          ADD COLUMN IF NOT EXISTS phone            TEXT;
     ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS class_id         TEXT REFERENCES classes(id) ON DELETE SET NULL;
     ALTER TABLE teacher_profiles ADD COLUMN IF NOT EXISTS photo_url        TEXT;
+    ALTER TABLE attendance_records ADD COLUMN IF NOT EXISTS period_number INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE attendance_records ADD COLUMN IF NOT EXISTS absence_reason TEXT NOT NULL DEFAULT '';
+    ALTER TABLE attendance_records ADD COLUMN IF NOT EXISTS guardian_alert_sent BOOLEAN NOT NULL DEFAULT false;
+    ALTER TABLE attendance_records ADD COLUMN IF NOT EXISTS guardian_alert_sent_at TIMESTAMPTZ;
+    ALTER TABLE attendance_records ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+    ALTER TABLE attendance_records DROP CONSTRAINT IF EXISTS attendance_records_class_id_student_user_id_attendance_date_key;
   `);
 
   // Stage 3 â€” create indexes (all referenced columns now guaranteed to exist)
@@ -435,16 +600,25 @@ export async function createSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_user_sessions_token_hash   ON user_sessions(token_hash);
     CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id      ON user_sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_contact_messages_created_at ON contact_messages(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_tenant_created ON audit_logs(tenant_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_actor_created ON audit_logs(actor_user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_login_attempts_email_created ON login_attempts(email, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user ON password_reset_tokens(user_id, created_at DESC);
 
     CREATE INDEX IF NOT EXISTS idx_classes_tenant_id          ON classes(tenant_id);
     CREATE INDEX IF NOT EXISTS idx_class_routines_class_id    ON class_routines(class_id);
+    CREATE INDEX IF NOT EXISTS idx_subjects_tenant            ON subjects(tenant_id, is_active);
+    CREATE INDEX IF NOT EXISTS idx_teacher_subject_class      ON teacher_subject_assignments(teacher_id, class_id);
+    CREATE INDEX IF NOT EXISTS idx_student_movements_student  ON student_academic_movements(student_user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_syllabus_entries_class_id  ON syllabus_entries(class_id);
     CREATE INDEX IF NOT EXISTS idx_exam_schedules_class_id    ON exam_schedules(class_id);
     CREATE INDEX IF NOT EXISTS idx_exam_schedules_exam_date   ON exam_schedules(exam_date);
     CREATE INDEX IF NOT EXISTS idx_exam_results_exam_schedule_id ON exam_results(exam_schedule_id);
     CREATE INDEX IF NOT EXISTS idx_exam_results_student_user_id  ON exam_results(student_user_id);
-    CREATE INDEX IF NOT EXISTS idx_attendance_class_date      ON attendance_records(class_id, attendance_date);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_attendance_unique_period ON attendance_records(class_id, student_user_id, attendance_date, period_number);
+    CREATE INDEX IF NOT EXISTS idx_attendance_class_date      ON attendance_records(class_id, attendance_date, period_number);
     CREATE INDEX IF NOT EXISTS idx_attendance_student         ON attendance_records(student_user_id);
+    CREATE INDEX IF NOT EXISTS idx_attendance_corrections_status ON attendance_correction_requests(tenant_id, status, created_at DESC);
 
     CREATE INDEX IF NOT EXISTS idx_student_profiles_tenant_id ON student_profiles(tenant_id);
     CREATE INDEX IF NOT EXISTS idx_student_profiles_user_id   ON student_profiles(user_id);
@@ -462,6 +636,8 @@ export async function createSchema(pool) {
 
     CREATE INDEX IF NOT EXISTS idx_admission_applications_reference ON admission_applications(reference_code);
     CREATE INDEX IF NOT EXISTS idx_admission_applications_status    ON admission_applications(status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_admission_documents_application ON admission_documents(application_id, document_type);
+    CREATE INDEX IF NOT EXISTS idx_admission_documents_status      ON admission_documents(verification_status, uploaded_at DESC);
     CREATE INDEX IF NOT EXISTS idx_fee_categories_tenant     ON fee_categories(tenant_id, is_active);
     CREATE INDEX IF NOT EXISTS idx_fee_assignments_student   ON fee_assignments(student_user_id, status);
     CREATE INDEX IF NOT EXISTS idx_fee_assignments_category  ON fee_assignments(category_id);

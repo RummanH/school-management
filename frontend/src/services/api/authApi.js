@@ -18,3 +18,11 @@ export async function getMe() {
 export async function getMyProfile() {
   return apiRequest('/me/profile');
 }
+
+export async function requestPasswordReset(data) {
+  return apiRequest('/auth/password-reset/request', { method: 'POST', body: data });
+}
+
+export async function confirmPasswordReset(data) {
+  return apiRequest('/auth/password-reset/confirm', { method: 'POST', body: data });
+}

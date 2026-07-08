@@ -1,12 +1,15 @@
 import { assert } from "../lib/errors.js";
+import { createId as cryptoId } from "../lib/ids.js";
 import {
   listClasses, listClassesPublic, findClassById, insertClass, updateClass, deleteClass,
   listRoutineByClass, upsertRoutineEntry, deleteRoutineEntry,
   listSyllabusByClass, insertSyllabusEntry, updateSyllabusEntry, deleteSyllabusEntry,
   listExamsByClass, findExamById, insertExam, updateExam, deleteExam,
   listStudentsByClass, listResultsByExam, listResultsByStudent, upsertResult,
-  listAttendanceByClassDate, upsertAttendance, getAttendanceSummary,
+  listAttendanceByClassDate, upsertAttendance, sendAbsenceGuardianAlerts, getAttendanceSummary,
+  listAttendanceCorrections, createAttendanceCorrection, reviewAttendanceCorrection, getMonthlyAttendanceReport,
   listTeachersByTenant,
+  listAcademicStructure, createAcademicSession, createAcademicTerm, createSubject, createTeacherSubjectAssignment, createGradingPolicy, createStudentMovement,
 } from "../repositories/academicRepository.js";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -276,29 +279,105 @@ export class AcademicService {
 
   // ── Attendance ─────────────────────────────────────────────────────────────
 
-  async getAttendance(classId, date, actor) {
+  async getAttendance(classId, date, actor, periodNumber = 0) {
     return this.databaseManager.withClient(async (c) => {
       const cls = await findClassById(c, classId);
       assert(cls && cls.tenant_id === actor.tenantId, "Class not found.", 404);
-      return listAttendanceByClassDate(c, classId, date);
+      return listAttendanceByClassDate(c, classId, date, Number(periodNumber || 0));
     });
   }
 
-  async saveAttendance(classId, date, records, actor) {
+  async saveAttendance(classId, date, records, actor, periodNumber = 0) {
     const VALID = ['present', 'absent', 'late', 'excused'];
-    return this.databaseManager.withTransaction(async (c) => {
+    let alertedCount = 0;
+    await this.databaseManager.withTransaction(async (c) => {
       const cls = await findClassById(c, classId);
       assert(cls && cls.tenant_id === actor.tenantId, "Class not found.", 404);
       for (const rec of records) {
         assert(VALID.includes(rec.status), "Invalid attendance status.", 400);
         await upsertAttendance(c, {
-          tenantId: actor.tenantId, classId,
+          tenantId: actor.tenantId,
+          classId,
           studentUserId: rec.studentUserId,
-          date, status: rec.status,
+          date,
+          periodNumber: Number(rec.periodNumber ?? periodNumber ?? 0),
+          status: rec.status,
           markedById: actor.id,
           note: rec.note || '',
+          absenceReason: rec.absenceReason || '',
         });
       }
+      alertedCount = await sendAbsenceGuardianAlerts(c, {
+        tenantId: actor.tenantId,
+        classId,
+        date,
+        periodNumber: Number(periodNumber || 0),
+        senderUserId: actor.id,
+      });
+    });
+    return { alertedCount };
+  }
+
+  async importAttendance(classId, date, input, actor) {
+    const periodNumber = Number(input.periodNumber || 0);
+    const lines = String(input.csv || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    const currentRows = await this.getAttendance(classId, date, actor, periodNumber);
+    const byRoll = new Map(currentRows.map(row => [String(row.rollNumber || '').trim(), row]));
+    const byName = new Map(currentRows.map(row => [String(row.studentName || '').trim().toLowerCase(), row]));
+    const records = [];
+    for (const line of lines) {
+      const [key, status = 'present', absenceReason = '', note = ''] = line.split(',').map(part => part.trim());
+      const student = byRoll.get(key) || byName.get(key.toLowerCase());
+      if (!student) continue;
+      records.push({ studentUserId: student.studentUserId, status, absenceReason, note, periodNumber });
+    }
+    const result = await this.saveAttendance(classId, date, records, actor, periodNumber);
+    return { importedCount: records.length, ...result };
+  }
+
+  async getAttendanceCorrections(actor, status = 'pending') {
+    return this.databaseManager.withClient(c => listAttendanceCorrections(c, actor.tenantId, status));
+  }
+
+  async requestAttendanceCorrection(input, actor) {
+    const status = (input.requestedStatus || '').trim();
+    assert(['present', 'absent', 'late', 'excused'].includes(status), "Invalid attendance status.", 400);
+    assert(input.classId && input.studentUserId && input.attendanceDate, "Class, student, and date are required.", 400);
+    return this.databaseManager.withTransaction(async (c) => {
+      const cls = await findClassById(c, input.classId);
+      assert(cls && cls.tenant_id === actor.tenantId, "Class not found.", 404);
+      await createAttendanceCorrection(c, {
+        id: cryptoId('attcorr'),
+        tenantId: actor.tenantId,
+        attendanceId: input.attendanceId || null,
+        classId: input.classId,
+        studentUserId: input.studentUserId,
+        attendanceDate: input.attendanceDate,
+        periodNumber: Number(input.periodNumber || 0),
+        requestedStatus: status,
+        requestedReason: input.requestedReason || '',
+        requestNote: input.requestNote || '',
+        requestedBy: actor.id,
+      });
+      return listAttendanceCorrections(c, actor.tenantId, 'pending');
+    });
+  }
+
+  async reviewAttendanceCorrection(id, input, actor) {
+    const decision = input.decision === 'rejected' ? 'rejected' : 'approved';
+    return this.databaseManager.withTransaction(async (c) => {
+      const reviewed = await reviewAttendanceCorrection(c, actor.tenantId, id, decision, input.reviewNote || '', actor.id);
+      assert(reviewed, "Correction request not found.", 404);
+      return listAttendanceCorrections(c, actor.tenantId, 'pending');
+    });
+  }
+
+  async getMonthlyAttendanceReport(classId, month, actor) {
+    assert(/^\d{4}-\d{2}$/.test(month || ''), "Month must be YYYY-MM.", 400);
+    return this.databaseManager.withClient(async (c) => {
+      const cls = await findClassById(c, classId);
+      assert(cls && cls.tenant_id === actor.tenantId, "Class not found.", 404);
+      return getMonthlyAttendanceReport(c, actor.tenantId, classId, month);
     });
   }
 
@@ -308,6 +387,38 @@ export class AcademicService {
 
   // ── Helpers for UI ─────────────────────────────────────────────────────────
 
+
+  async getStructure(actor) {
+    return this.databaseManager.withClient(c => listAcademicStructure(c, actor.tenantId));
+  }
+
+  async createStructureRecord(type, input, actor) {
+    const requiredName = (input.name || '').trim();
+    return this.databaseManager.withTransaction(async (c) => {
+      if (type === 'sessions') {
+        assert(requiredName, "Session name is required.", 400);
+        await createAcademicSession(c, { ...input, id: cryptoId('session'), tenantId: actor.tenantId, name: requiredName });
+      } else if (type === 'terms') {
+        assert(requiredName, "Term name is required.", 400);
+        await createAcademicTerm(c, { ...input, id: cryptoId('term'), tenantId: actor.tenantId, name: requiredName });
+      } else if (type === 'subjects') {
+        assert(requiredName, "Subject name is required.", 400);
+        await createSubject(c, { ...input, id: cryptoId('subj'), tenantId: actor.tenantId, name: requiredName });
+      } else if (type === 'assignments') {
+        assert(input.teacherId && input.subjectId && input.classId, "Teacher, subject, and class are required.", 400);
+        await createTeacherSubjectAssignment(c, { ...input, id: cryptoId('tsa'), tenantId: actor.tenantId });
+      } else if (type === 'grading-policies') {
+        assert(requiredName && input.grade, "Policy name and grade are required.", 400);
+        await createGradingPolicy(c, { ...input, id: cryptoId('grade'), tenantId: actor.tenantId, name: requiredName });
+      } else if (type === 'movements') {
+        assert(input.studentUserId && input.movementType && input.effectiveDate, "Student, movement type, and date are required.", 400);
+        await createStudentMovement(c, { ...input, id: cryptoId('move'), tenantId: actor.tenantId, createdBy: actor.id });
+      } else {
+        assert(false, "Unknown academic structure type.", 404);
+      }
+      return listAcademicStructure(c, actor.tenantId);
+    });
+  }
   async listTeachers(tenantId) {
     return this.databaseManager.withClient(c => listTeachersByTenant(c, tenantId));
   }

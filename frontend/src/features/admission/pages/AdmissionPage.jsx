@@ -6,10 +6,25 @@ import { listClassesPublic } from '../../../services/api/academicApi.js';
 import { STATUS_LABELS, STATUS_COLORS } from '../constants.js';
 
 const GENDERS = ['Male', 'Female', 'Other'];
+const DOCUMENT_TYPES = [
+  { key: 'birth_certificate', label: 'Birth Certificate' },
+  { key: 'previous_school_certificate', label: 'Previous School Certificate' },
+  { key: 'transfer_certificate', label: 'Transfer Certificate' },
+  { key: 'guardian_identity', label: 'Guardian NID/Passport' },
+];
 
 // Client-side resize/compress before base64 encoding — keeps the payload well
 // under the backend's ~1.5MB decoded cap (and the 2mb request body limit)
 // without the applicant needing to know or care about file size.
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = () => reject(new Error('Could not read document file.'));
+    reader.readAsDataURL(file);
+  });
+}
+
 function resizeImageToDataUrl(file, maxSize = 480, quality = 0.75) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -47,6 +62,7 @@ function ApplyForm({ onSubmitted }) {
   const [form, setForm] = useState(EMPTY);
   const [photoData, setPhotoData] = useState('');
   const [photoPreview, setPhotoPreview] = useState('');
+  const [documents, setDocuments] = useState({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [classes, setClasses] = useState([]);
@@ -60,6 +76,15 @@ function ApplyForm({ onSubmitted }) {
   }, []);
 
   function set(field, value) { setForm((f) => ({ ...f, [field]: value })); setError(''); }
+
+  async function handleDocument(type, file) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { setError('Each document must be 5MB or smaller.'); return; }
+    try {
+      const data = await fileToDataUrl(file);
+      setDocuments((current) => ({ ...current, [type]: { documentType: type, name: file.name, data } }));
+    } catch (err) { setError(err.message || 'Could not process document.'); }
+  }
 
   async function handlePhoto(e) {
     const file = e.target.files?.[0];
@@ -80,6 +105,7 @@ function ApplyForm({ onSubmitted }) {
     try {
       const payload = { ...form };
       if (photoData) payload.photoData = photoData;
+      payload.documents = Object.values(documents);
       const result = await applyForAdmission(payload);
       onSubmitted(result.referenceCode);
     } catch (err) {
@@ -133,6 +159,19 @@ function ApplyForm({ onSubmitted }) {
           <label className="label-sm">Previous School</label>
           <input className="input" value={form.previousSchool} onChange={(e) => set('previousSchool', e.target.value)}
             placeholder="Optional" />
+        </div>
+        <div className="sm:col-span-2">
+          <p className="mb-2 text-xs font-black uppercase tracking-widest text-slate-400">Supporting Documents</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {DOCUMENT_TYPES.map((doc) => (
+              <label key={doc.key} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm">
+                <span className="block font-bold text-slate-700">{doc.label}</span>
+                <input type="file" accept="application/pdf,image/*" onChange={(e) => handleDocument(doc.key, e.target.files?.[0])}
+                  className="mt-2 block w-full text-xs text-slate-500 file:mr-2 file:rounded-lg file:border-0 file:bg-white file:px-2 file:py-1.5 file:text-xs file:font-bold file:text-slate-600" />
+                {documents[doc.key] && <span className="mt-1 block truncate text-xs text-emerald-600">{documents[doc.key].name}</span>}
+              </label>
+            ))}
+          </div>
         </div>
         <div className="sm:col-span-2">
           <label className="label-sm">Applicant Photo</label>

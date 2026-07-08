@@ -14,6 +14,7 @@ import FeesPage from '../../fees/pages/FeesPage.jsx';
 import MessagesPage from '../../communication/pages/MessagesPage.jsx';
 import HrPage from '../../hr/pages/HrPage.jsx';
 import ReportsPage from '../../reports/pages/ReportsPage.jsx';
+import SecurityPage from '../../security/pages/SecurityPage.jsx';
 import { getStats, getContacts, markContactRead } from '../../../services/api/adminApi.js';
 import { createNotice } from '../../../services/api/noticeApi.js';
 import { useAuth, navigate } from '../../../app/App.jsx';
@@ -305,6 +306,7 @@ const PAGE_TITLES = {
   '/dashboard/admissions':'Admissions',
   '/dashboard/fees':      'Fees & Accounting',
   '/dashboard/reports':   'Reports',
+  '/dashboard/security':  'Security & Audit',
 };
 
 // Teachers only get the shared dashboard home/contacts plus Academic - every
@@ -348,6 +350,7 @@ export default function DashboardPage() {
     if (pathname === '/dashboard/admissions')        return <AdmissionsPage />;
     if (pathname === '/dashboard/fees')              return <FeesPage />;
     if (pathname === '/dashboard/reports')           return <ReportsPage />;
+    if (pathname === '/dashboard/security')          return <SecurityPage />;
     return <DashboardHome />;
   }
 

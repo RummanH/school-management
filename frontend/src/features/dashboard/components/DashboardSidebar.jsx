@@ -1,4 +1,4 @@
-import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, BookOpen, BriefcaseBusiness, Globe, LogOut, X, BookMarked, Bell, Images, User, UserPlus, BadgeDollarSign, BarChart3 } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, BookOpen, BriefcaseBusiness, Globe, LogOut, X, BookMarked, Bell, Images, User, UserPlus, BadgeDollarSign, BarChart3, ShieldCheck } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 
 const SHARED_NAV = [
@@ -15,6 +15,7 @@ const TENANT_ADMIN_NAV = [
   { label: 'Admissions', icon: UserPlus,     path: '/dashboard/admissions' },
   { label: 'Fees',       icon: BadgeDollarSign,path: '/dashboard/fees' },
   { label: 'Reports',    icon: BarChart3,    path: '/dashboard/reports' },
+  { label: 'Security',   icon: ShieldCheck,  path: '/dashboard/security' },
   { label: 'Users',      icon: Users,        path: '/dashboard/users' },
   { label: 'Notices',    icon: Bell,         path: '/dashboard/notices' },
   { label: 'Gallery',    icon: Images,       path: '/dashboard/gallery' },
@@ -23,6 +24,7 @@ const TENANT_ADMIN_NAV = [
 const PLATFORM_NAV = [
   { label: 'Organizations', icon: Building2, path: '/dashboard/tenants' },
   { label: 'All Users',     icon: Users,     path: '/dashboard/users' },
+  { label: 'Security',      icon: ShieldCheck, path: '/dashboard/security' },
 ];
 
 // Teachers get academic management here, plus a link back to their portal

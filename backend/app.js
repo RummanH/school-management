@@ -16,7 +16,7 @@ export function createApp({
   app.set("trust proxy", 1);
   // Default express.json() limit is 100kb - too small once admission
   // applications carry a base64-encoded applicant photo (see admissionService.js).
-  app.use(express.json({ limit: "2mb" }));
+  app.use(express.json({ limit: "20mb" }));
   app.use(cookieParser());
 
   app.use("/api", createApiRouter({

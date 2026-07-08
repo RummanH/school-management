@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GraduationCap, Calendar, BookOpen, FileText, Award, Users } from 'lucide-react';
+import { GraduationCap, Calendar, BookOpen, FileText, Award, Users, Layers } from 'lucide-react';
 import { useAuth } from '../../../app/App.jsx';
 import ClassesTab    from '../components/ClassesTab.jsx';
 import RoutineTab    from '../components/RoutineTab.jsx';
@@ -7,8 +7,10 @@ import SyllabusTab   from '../components/SyllabusTab.jsx';
 import ExamsTab      from '../components/ExamsTab.jsx';
 import ResultsTab    from '../components/ResultsTab.jsx';
 import AttendanceTab from '../components/AttendanceTab.jsx';
+import StructureTab from '../components/StructureTab.jsx';
 
 const ALL_TABS = [
+  { id: 'structure',  label: 'Structure',  Icon: Layers,        Component: StructureTab },
   { id: 'classes',    label: 'Classes',    Icon: GraduationCap, Component: ClassesTab },
   { id: 'routine',    label: 'Routine',    Icon: Calendar,      Component: RoutineTab },
   { id: 'syllabus',   label: 'Syllabus',   Icon: BookOpen,      Component: SyllabusTab },

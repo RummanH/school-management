@@ -33,6 +33,16 @@ export const saveResults      = (examId, entries) => apiRequest(`/academic/exams
 export const getMyResults     = ()              => apiRequest('/academic/me/results');
 
 // Attendance
-export const getAttendance    = (classId, date) => apiRequest(`/academic/classes/${classId}/attendance?date=${date}`);
-export const saveAttendance   = (classId, date, records) => apiRequest(`/academic/classes/${classId}/attendance`, { method: 'POST', body: { date, records } });
-export const getMyAttendance  = (classId)       => apiRequest(`/academic/me/attendance?classId=${classId}`);
+export const getAttendance = (classId, date, periodNumber = 0) => apiRequest(`/academic/classes/${classId}/attendance?date=${date}&periodNumber=${periodNumber}`);
+export const saveAttendance = (classId, date, periodNumber, records) => apiRequest(`/academic/classes/${classId}/attendance`, { method: 'POST', body: { date, periodNumber, records } });
+export const importAttendance = (classId, data) => apiRequest(`/academic/classes/${classId}/attendance/import`, { method: 'POST', body: data });
+export const getMonthlyAttendanceReport = (classId, month) => apiRequest(`/academic/classes/${classId}/attendance/monthly?month=${month}`);
+export const getAttendanceCorrections = (status = 'pending') => apiRequest(`/academic/attendance/corrections?status=${status}`);
+export const requestAttendanceCorrection = (data) => apiRequest('/academic/attendance/corrections', { method: 'POST', body: data });
+export const reviewAttendanceCorrection = (id, data) => apiRequest(`/academic/attendance/corrections/${id}/review`, { method: 'POST', body: data });
+export const getMyAttendance = (classId) => apiRequest(`/academic/me/attendance?classId=${classId}`);
+
+
+// Academic structure
+export const getAcademicStructure = () => apiRequest('/academic/structure');
+export const createAcademicStructureRecord = (type, data) => apiRequest(`/academic/structure/${type}`, { method: 'POST', body: data });

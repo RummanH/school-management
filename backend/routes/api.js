@@ -14,8 +14,11 @@ import { AdmissionController } from "../controllers/admissionController.js";
 import { FeeController } from "../controllers/feeController.js";
 import { CommunicationController } from "../controllers/communicationController.js";
 import { HrController } from "../controllers/hrController.js";
+import { SecurityController } from "../controllers/securityController.js";
 import { requireAuth } from "../middleware/requireAuth.js";
-import { requireRole } from "../middleware/requireRole.js";
+import { requirePermission } from "../middleware/permissions.js";
+import { rateLimit } from "../middleware/rateLimit.js";
+import { auditAction, auditMutations } from "../middleware/audit.js";
 import { findStudentByUserId } from "../repositories/studentRepository.js";
 import { findTeacherByUserId } from "../repositories/teacherRepository.js";
 
@@ -41,30 +44,40 @@ export function createApiRouter({
   const feeController       = new FeeController(feeService);
   const communicationController = new CommunicationController(communicationService);
   const hrController = new HrController(hrService);
+  const securityController = new SecurityController(databaseManager);
 
   const auth          = requireAuth(authService, env);
-  const platformOnly  = [auth, requireRole("system_developer")];
-  const adminOnly     = [auth, requireRole("system_developer", "admin")];
-  const staffAndAdmin = [auth, requireRole("system_developer", "admin", "teacher")];
-  const guardianOnly  = [auth, requireRole("guardian")];
-  const financeAdmin  = [auth, requireRole("system_developer", "admin")];
-  const communicationUsers = [auth, requireRole("system_developer", "admin", "teacher", "guardian")];
+  const platformOnly  = [auth, requirePermission("platformManage")];
+  const adminOnly     = [auth, requirePermission("adminManage")];
+  const staffAndAdmin = [auth, requirePermission("academicWrite")];
+  const guardianOnly  = [auth, requirePermission("guardianUse")];
+  const financeAdmin  = [auth, requirePermission("financeManage")];
+  const communicationUsers = [auth, requirePermission("communicationUse")];
+  const securityAudit = [auth, requirePermission("securityAudit")];
+  const dataExport = [auth, requirePermission("dataExport")];
 
   router.get("/health", (_req, res) => res.json({ status: "ok" }));
+  router.use(auditMutations(databaseManager));
 
   // Public
-  router.post("/contact", contactController.submit);
+  router.post("/contact", rateLimit({ windowMs: 60_000, max: 5, keyPrefix: "contact" }), contactController.submit);
   router.get("/notices/public", noticeController.listPublic);
   router.get("/gallery/public", galleryController.listPublic);
-  router.post("/admission/apply",  admissionController.apply);
-  router.get("/admission/status",  admissionController.checkStatus);
+  router.post("/admission/apply", rateLimit({ windowMs: 60_000, max: 3, keyPrefix: "admission" }), admissionController.apply);
+  router.get("/admission/status", rateLimit({ windowMs: 60_000, max: 20, keyPrefix: "admission-status" }), admissionController.checkStatus);
   router.get("/academic/classes/public", academicController.listClassesPublic);
   router.get("/teachers/public", teacherController.listPublic);
 
   // Auth
-  router.post("/auth/login",  authController.login);
+  router.post("/auth/login", rateLimit({ windowMs: 60_000, max: 10, keyPrefix: "login" }), authController.login);
+  router.post("/auth/password-reset/request", rateLimit({ windowMs: 60_000, max: 3, keyPrefix: "password-reset" }), authController.requestPasswordReset);
+  router.post("/auth/password-reset/confirm", rateLimit({ windowMs: 60_000, max: 5, keyPrefix: "password-reset-confirm" }), authController.confirmPasswordReset);
   router.post("/auth/logout", authController.logout);
   router.get("/auth/me",      auth, authController.me);
+
+  // Security & audit
+  router.get("/security/audit-logs", ...securityAudit, securityController.auditLogs);
+  router.get("/security/permissions", ...securityAudit, securityController.permissionMatrix);
 
   // Platform - system_developer only
   router.get("/platform/tenants",              ...platformOnly, tenantController.list);
@@ -107,6 +120,9 @@ export function createApiRouter({
 
   // Academic Portal
 
+  router.get("/academic/structure",      ...adminOnly, academicController.getStructure);
+  router.post("/academic/structure/:type", ...adminOnly, academicController.createStructureRecord);
+
   // Classes (admin manages, all authenticated can list)
   router.get("/academic/classes",      auth, academicController.listClasses);
   router.post("/academic/classes",     ...adminOnly, academicController.createClass);
@@ -141,6 +157,11 @@ export function createApiRouter({
   // Attendance (admin + teacher mark, students view summary)
   router.get("/academic/classes/:classId/attendance",  ...staffAndAdmin, academicController.getAttendance);
   router.post("/academic/classes/:classId/attendance", ...staffAndAdmin, academicController.saveAttendance);
+  router.post("/academic/classes/:classId/attendance/import", ...staffAndAdmin, academicController.importAttendance);
+  router.get("/academic/classes/:classId/attendance/monthly", ...staffAndAdmin, academicController.getMonthlyAttendanceReport);
+  router.get("/academic/attendance/corrections", ...staffAndAdmin, academicController.getAttendanceCorrections);
+  router.post("/academic/attendance/corrections", ...staffAndAdmin, academicController.requestAttendanceCorrection);
+  router.post("/academic/attendance/corrections/:id/review", ...adminOnly, academicController.reviewAttendanceCorrection);
   router.get("/academic/me/attendance",                auth, academicController.getMyAttendanceSummary);
 
   // Guardian Portal
@@ -196,6 +217,8 @@ export function createApiRouter({
   router.get("/admin/admissions",     ...adminOnly, admissionController.listAll);
   router.get("/admin/admissions/:id", ...adminOnly, admissionController.getById);
   router.put("/admin/admissions/:id", ...adminOnly, admissionController.updateStatus);
+  router.put("/admin/admissions/documents/:documentId", ...adminOnly, admissionController.updateDocumentVerification);
+  router.get("/admin/admissions/documents/:documentId/download", ...dataExport, auditAction(databaseManager, "export.admission_document", "admission_document"), admissionController.downloadDocument);
   // Fees & Accounting — admin managed, student/guardian read-only ledgers
   router.get("/fees/categories",          ...financeAdmin, feeController.listCategories);
   router.post("/fees/categories",         ...financeAdmin, feeController.createCategory);
@@ -223,7 +246,7 @@ export function createApiRouter({
 
   // Admin dashboard
   router.get("/admin/stats",               auth, adminController.getStats);
-  router.get("/admin/reports",             ...adminOnly, adminController.getReports);
+  router.get("/admin/reports", ...dataExport, auditAction(databaseManager, "export.admin_reports", "report"), adminController.getReports);
   router.get("/admin/contacts",            auth, adminController.getContacts);
   router.patch("/admin/contacts/:id/read", auth, adminController.markRead);
 

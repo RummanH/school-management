@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GraduationCap, Eye, EyeOff, LogIn } from 'lucide-react';
-import { login as apiLogin } from '../../../services/api/authApi.js';
+import { login as apiLogin, requestPasswordReset, confirmPasswordReset } from '../../../services/api/authApi.js';
 import { useAuth, navigate } from '../../../app/App.jsx';
 
 export default function LoginPage() {
@@ -9,12 +9,36 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
 
   function handleChange(e) {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
     setError('');
   }
 
+
+  async function handleResetRequest() {
+    setError('');
+    setResetMessage('');
+    try {
+      const result = await requestPasswordReset({ email: form.email });
+      setResetToken(result.resetToken || '');
+      setResetMessage(result.resetToken ? 'Reset token generated. Use it below to set a new password.' : 'If the account exists, a reset token has been generated.');
+    } catch (err) { setError(err.message || 'Could not request password reset.'); }
+  }
+
+  async function handleResetConfirm() {
+    setError('');
+    setResetMessage('');
+    try {
+      await confirmPasswordReset({ token: resetToken, password: newPassword });
+      setResetMessage('Password reset complete. You can sign in now.');
+      setNewPassword('');
+    } catch (err) { setError(err.message || 'Could not reset password.'); }
+  }
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
@@ -109,6 +133,25 @@ export default function LoginPage() {
               )}
               {loading ? 'Signing in…' : 'Sign In'}
             </button>
+
+            <div className="border-t border-white/10 pt-4">
+              <button type="button" onClick={() => setResetOpen((v) => !v)} className="text-xs font-semibold text-white/70 transition hover:text-white">
+                Forgot password?
+              </button>
+              {resetOpen && (
+                <div className="mt-3 space-y-3 rounded-xl border border-white/10 bg-white/5 p-3">
+                  {resetMessage && <p className="text-xs text-emerald-100">{resetMessage}</p>}
+                  <button type="button" onClick={handleResetRequest} className="w-full rounded-lg bg-white/15 px-3 py-2 text-xs font-bold text-white transition hover:bg-white/20">
+                    Generate Reset Token
+                  </button>
+                  <input className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs text-white placeholder-white/30 outline-none" value={resetToken} onChange={(e) => setResetToken(e.target.value)} placeholder="Reset token" />
+                  <input type="password" className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs text-white placeholder-white/30 outline-none" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" />
+                  <button type="button" onClick={handleResetConfirm} className="w-full rounded-lg bg-white px-3 py-2 text-xs font-bold text-[var(--brand-strong)]">
+                    Set New Password
+                  </button>
+                </div>
+              )}
+            </div>
           </form>
         </div>
 

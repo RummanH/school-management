@@ -36,6 +36,22 @@ export class AuthController {
     }
   };
 
+  requestPasswordReset = async (req, res, next) => {
+    try {
+      const requestMeta = { ip: req.ip, userAgent: req.headers["user-agent"] || "" };
+      const result = await this.authService.requestPasswordReset(req.body, requestMeta);
+      res.json(result);
+    } catch (error) { next(error); }
+  };
+
+  confirmPasswordReset = async (req, res, next) => {
+    try {
+      const requestMeta = { ip: req.ip, userAgent: req.headers["user-agent"] || "" };
+      const result = await this.authService.confirmPasswordReset(req.body, requestMeta);
+      res.json(result);
+    } catch (error) { next(error); }
+  };
+
   me = async (req, res, next) => {
     try {
       res.json({ user: req.currentUser, tenant: req.currentTenant });

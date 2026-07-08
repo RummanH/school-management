@@ -37,4 +37,17 @@ export class AdmissionController {
       res.json({ application });
     } catch (err) { next(err); }
   };
+  updateDocumentVerification = async (req, res, next) => {
+    try {
+      const document = await this.admissionService.updateDocumentVerification(req.params.documentId, req.body, req.currentUser);
+      res.json({ document });
+    } catch (err) { next(err); }
+  };
+
+  downloadDocument = async (req, res, next) => {
+    try {
+      const document = await this.admissionService.getDocumentForDownload(req.params.documentId);
+      res.download(document.filePath, document.originalName);
+    } catch (err) { next(err); }
+  };
 }

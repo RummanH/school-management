@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Loader2, ClipboardList, X, Save, Eye } from 'lucide-react';
-import { listAdmissions, getAdmission, updateAdmissionStatus } from '../../../services/api/admissionApi.js';
+import { Loader2, ClipboardList, X, Save, Eye, Download, FileCheck2 } from 'lucide-react';
+import { listAdmissions, getAdmission, updateAdmissionStatus, updateAdmissionDocumentVerification, admissionDocumentDownloadUrl } from '../../../services/api/admissionApi.js';
 import { STATUS_LABELS, STATUS_COLORS, STATUS_VALUES } from '../constants.js';
+
+const DOCUMENT_LABELS = {
+  birth_certificate: 'Birth Certificate',
+  previous_school_certificate: 'Previous School Certificate',
+  transfer_certificate: 'Transfer Certificate',
+  guardian_identity: 'Guardian NID/Passport',
+};
+const DOCUMENT_STATUS_VALUES = ['pending', 'verified', 'rejected', 'needs_resubmission'];
 
 function StatusBadge({ status }) {
   return (
@@ -35,6 +43,21 @@ function DetailModal({ id, onClose, onUpdated }) {
 
   function set(field, value) { setForm((f) => ({ ...f, [field]: value })); }
 
+  async function handleDocumentStatus(documentId, verificationStatus) {
+    setSaving(true);
+    setError('');
+    try {
+      const result = await updateAdmissionDocumentVerification(documentId, { verificationStatus });
+      setApplication((current) => ({
+        ...current,
+        documents: (current.documents || []).map((doc) => doc.id === documentId ? { ...doc, ...result.document } : doc),
+      }));
+    } catch (err) {
+      setError(err.message || 'Could not update document status.');
+    } finally {
+      setSaving(false);
+    }
+  }
   async function handleSave() {
     setSaving(true);
     setError('');
@@ -91,6 +114,32 @@ function DetailModal({ id, onClose, onUpdated }) {
                 <p className="mb-2 text-xs font-black uppercase tracking-widest text-slate-400">Guardian</p>
                 <p className="font-semibold text-slate-700">{application.guardianName} · {application.guardianPhone}</p>
                 {application.guardianEmail && <p className="text-slate-500">{application.guardianEmail}</p>}
+              </div>
+
+              <div className="rounded-xl border border-slate-100 bg-white p-4 text-sm">
+                <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400">
+                  <FileCheck2 className="h-4 w-4" /> Documents
+                </div>
+                {(application.documents || []).length === 0 ? (
+                  <p className="text-slate-400">No documents uploaded.</p>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {application.documents.map((doc) => (
+                      <div key={doc.id} className="grid gap-3 py-3 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-slate-700">{DOCUMENT_LABELS[doc.documentType] || doc.documentType}</p>
+                          <p className="truncate text-xs text-slate-400">{doc.originalName} - {Math.ceil((doc.fileSize || 0) / 1024)} KB</p>
+                        </div>
+                        <select className="input" value={doc.verificationStatus || 'pending'} onChange={(e) => handleDocumentStatus(doc.id, e.target.value)}>
+                          {DOCUMENT_STATUS_VALUES.map((status) => <option key={status} value={status}>{status.replaceAll('_', ' ')}</option>)}
+                        </select>
+                        <a href={admissionDocumentDownloadUrl(doc.id)} className="btn-secondary inline-flex items-center justify-center gap-2" target="_blank" rel="noreferrer">
+                          <Download className="h-4 w-4" /> Download
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="grid gap-4 border-t border-slate-100 pt-5 sm:grid-cols-2">
