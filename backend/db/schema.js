@@ -199,6 +199,7 @@ export async function createSchema(pool) {
       user_id       TEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
       employee_id   TEXT,
       designation   TEXT NOT NULL DEFAULT '',
+      photo_url     TEXT,
       department    TEXT NOT NULL DEFAULT '',
       subjects      TEXT NOT NULL DEFAULT '',
       qualification TEXT NOT NULL DEFAULT '',
@@ -314,6 +315,7 @@ export async function createSchema(pool) {
     ALTER TABLE tenants          ADD COLUMN IF NOT EXISTS institution_type TEXT NOT NULL DEFAULT 'SCHOOL';
     ALTER TABLE tenants          ADD COLUMN IF NOT EXISTS phone            TEXT;
     ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS class_id         TEXT REFERENCES classes(id) ON DELETE SET NULL;
+    ALTER TABLE teacher_profiles ADD COLUMN IF NOT EXISTS photo_url        TEXT;
   `);
 
   // Stage 3 â€” create indexes (all referenced columns now guaranteed to exist)

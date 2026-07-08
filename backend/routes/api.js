@@ -54,6 +54,7 @@ export function createApiRouter({
   router.post("/admission/apply",  admissionController.apply);
   router.get("/admission/status",  admissionController.checkStatus);
   router.get("/academic/classes/public", academicController.listClassesPublic);
+  router.get("/teachers/public", teacherController.listPublic);
 
   // Auth
   router.post("/auth/login",  authController.login);

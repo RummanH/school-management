@@ -3,6 +3,7 @@ import { createId } from "../lib/ids.js";
 import { hashPassword, validatePasswordStrength } from "../lib/passwords.js";
 import {
   listTeachers,
+  listPublicTeachers,
   insertTeacherProfile,
   updateTeacherProfile,
 } from "../repositories/teacherRepository.js";
@@ -22,6 +23,10 @@ export class TeacherService {
   list(actor) {
     assert(actor.tenantId, "No active organization.", 403);
     return this.databaseManager.withClient((client) => listTeachers(client, actor.tenantId));
+  }
+
+  listPublic(limit = 12) {
+    return this.databaseManager.withClient((client) => listPublicTeachers(client, limit));
   }
 
   async create(input, actor) {
@@ -59,6 +64,7 @@ export class TeacherService {
         userId,
         employeeId: input.employeeId,
         designation: input.designation,
+        photoUrl: input.photoUrl,
         department: input.department,
         subjects: input.subjects,
         qualification: input.qualification,
@@ -104,6 +110,7 @@ export class TeacherService {
         userId,
         employeeId: input.employeeId,
         designation: input.designation,
+        photoUrl: input.photoUrl,
         department: input.department,
         subjects: input.subjects,
         qualification: input.qualification,

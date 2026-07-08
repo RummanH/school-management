@@ -10,7 +10,7 @@ const QUALIFICATIONS = ['B.Ed', 'M.Ed', 'B.Sc', 'M.Sc', 'B.A', 'M.A', 'B.B.A', '
 
 const EMPTY = {
   name: '', email: '', password: '', status: 'active',
-  employeeId: '', designation: '', department: '', subjects: '',
+  employeeId: '', designation: '', photoUrl: '', department: '', subjects: '',
   qualification: '', joiningDate: '', dateOfBirth: '',
   gender: '', bloodGroup: '', phone: '', address: '',
 };
@@ -76,7 +76,7 @@ function TeacherModal({ initial, onClose, onSaved }) {
   const [form, setForm] = useState(isEdit ? {
     name: initial.name, email: initial.email, password: '', status: initial.status,
     employeeId: initial.employeeId || '', designation: initial.designation || '',
-    department: initial.department || '', subjects: initial.subjects || '',
+    photoUrl: initial.photoUrl || '', department: initial.department || '', subjects: initial.subjects || '',
     qualification: initial.qualification || '', joiningDate: initial.joiningDate || '',
     dateOfBirth: initial.dateOfBirth || '', gender: initial.gender || '',
     bloodGroup: initial.bloodGroup || '', phone: initial.phone || '', address: initial.address || '',
@@ -163,6 +163,10 @@ function TeacherModal({ initial, onClose, onSaved }) {
                   <option value="">Select…</option>
                   {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                 </Select>
+              </div>
+              <div className="sm:col-span-3">
+                <FieldLabel>Photo URL</FieldLabel>
+                <Input value={form.photoUrl} onChange={e => set('photoUrl', e.target.value)} placeholder="https://example.com/teacher-photo.jpg" />
               </div>
               <div className="sm:col-span-2">
                 <FieldLabel>Subjects</FieldLabel>
@@ -297,9 +301,13 @@ export default function TeachersPage() {
                 <tr key={t.userId} className="transition hover:bg-slate-50/60">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-700">
-                        {t.name.charAt(0).toUpperCase()}
-                      </span>
+                      {t.photoUrl ? (
+                        <img src={t.photoUrl} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                      ) : (
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-700">
+                          {t.name.charAt(0).toUpperCase()}
+                        </span>
+                      )}
                       <div>
                         <p className="font-bold text-slate-800">{t.name}</p>
                         <p className="text-xs text-slate-400">{t.email}</p>
