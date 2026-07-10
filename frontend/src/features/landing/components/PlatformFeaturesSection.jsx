@@ -29,7 +29,7 @@ const GRID_FEATURES = [
 
 function PlaceholderVisual({ icon: Icon, label }) {
   return (
-    <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/10 bg-[var(--brand-strong)]">
+    <div className="relative aspect-[7/4] w-full overflow-hidden rounded-2xl border border-white/10 bg-[var(--brand-strong)]">
       <div className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-indigo-500/25 blur-3xl" />
       <div className="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-violet-500/20 blur-3xl" />
       <div
@@ -55,7 +55,7 @@ function Spotlight({ tkey, icon, image, reverse, t }) {
     <div className={`grid items-center gap-10 lg:grid-cols-2 ${reverse ? '' : ''}`}>
       <div className={reverse ? 'lg:order-2' : ''}>
         {image ? (
-          <img src={image} alt={t(`features.${tkey}Title`)} className="aspect-[16/10] w-full rounded-2xl object-cover shadow-2xl" loading="lazy" />
+          <img src={image} alt={t(`features.${tkey}Title`)} className="aspect-[7/4] w-full rounded-2xl object-cover shadow-2xl" loading="lazy" />
         ) : (
           <PlaceholderVisual icon={icon} label={`Screenshot placeholder — ${t(`features.${tkey}Title`)}`} />
         )}

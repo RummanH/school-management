@@ -65,7 +65,7 @@ function FacultyCard({ teacher, index }) {
   const photo = teacher.photoUrl || PHOTO_FALLBACKS[index % PHOTO_FALLBACKS.length];
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-soft">
-      <div className="aspect-[4/3] bg-slate-100">
+      <div className="aspect-square bg-slate-100">
         <img src={photo} alt={teacher.name} className="h-full w-full object-cover" loading="lazy" />
       </div>
       <div className="p-5">

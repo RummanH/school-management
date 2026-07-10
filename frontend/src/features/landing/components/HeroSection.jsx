@@ -52,7 +52,7 @@ export default function HeroSection() {
               <img
                 src={HERO_IMAGE}
                 alt={t('school.name')}
-                className="h-80 w-full object-cover sm:h-[26rem]"
+                className="aspect-[7/4] w-full object-cover"
                 loading="lazy"
               />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent p-5">
