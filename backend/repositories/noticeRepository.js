@@ -2,6 +2,7 @@ export function mapNotice(row) {
   if (!row) return null;
   return {
     id:          row.id,
+    tenantId:    row.tenant_id,
     type:        row.type,
     title:       row.title,
     body:        row.body,
@@ -25,18 +26,21 @@ export async function listPublicNotices(client, type, limit) {
   return result.rows.map(mapNotice);
 }
 
-export async function listForAudience(client, role) {
+export async function listForAudience(client, role, tenantId) {
   const result = await client.query(
     `SELECT * FROM notices
-      WHERE is_published = true AND audience IN ('all_portal', 'public', $1)
+      WHERE tenant_id = $1 AND is_published = true AND audience IN ('all_portal', 'public', $2)
       ORDER BY published_at DESC`,
-    [role],
+    [tenantId, role],
   );
   return result.rows.map(mapNotice);
 }
 
-export async function listAllNotices(client) {
-  const result = await client.query(`SELECT * FROM notices ORDER BY created_at DESC`);
+export async function listAllNotices(client, tenantId) {
+  const result = await client.query(
+    `SELECT * FROM notices WHERE tenant_id = $1 ORDER BY created_at DESC`,
+    [tenantId],
+  );
   return result.rows.map(mapNotice);
 }
 
@@ -45,11 +49,11 @@ export async function findNoticeById(client, id) {
   return mapNotice(result.rows[0]);
 }
 
-export async function insertNotice(client, { id, type, title, body, audience, isPublished, createdBy }) {
+export async function insertNotice(client, { id, tenantId, type, title, body, audience, isPublished, createdBy }) {
   await client.query(
-    `INSERT INTO notices (id, type, title, body, audience, is_published, created_by)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [id, type, title, body, audience, isPublished, createdBy || null],
+    `INSERT INTO notices (id, tenant_id, type, title, body, audience, is_published, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [id, tenantId, type, title, body, audience, isPublished, createdBy || null],
   );
 }
 

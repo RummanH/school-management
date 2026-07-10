@@ -19,21 +19,21 @@ export class AdmissionController {
 
   listAll = async (req, res, next) => {
     try {
-      const applications = await this.admissionService.listAll(req.query.status);
+      const applications = await this.admissionService.listAll(req.query.status, req.currentUser);
       res.json({ applications });
     } catch (err) { next(err); }
   };
 
   getById = async (req, res, next) => {
     try {
-      const application = await this.admissionService.getById(req.params.id);
+      const application = await this.admissionService.getById(req.params.id, req.currentUser);
       res.json({ application });
     } catch (err) { next(err); }
   };
 
   updateStatus = async (req, res, next) => {
     try {
-      const application = await this.admissionService.updateStatus(req.params.id, req.body);
+      const application = await this.admissionService.updateStatus(req.params.id, req.body, req.currentUser);
       res.json({ application });
     } catch (err) { next(err); }
   };
@@ -46,7 +46,7 @@ export class AdmissionController {
 
   downloadDocument = async (req, res, next) => {
     try {
-      const document = await this.admissionService.getDocumentForDownload(req.params.documentId);
+      const document = await this.admissionService.getDocumentForDownload(req.params.documentId, req.currentUser);
       res.download(document.filePath, document.originalName);
     } catch (err) { next(err); }
   };

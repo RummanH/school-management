@@ -24,14 +24,18 @@ export class NoticeService {
   }
 
   async listFeedForUser(actor) {
-    return this.databaseManager.withClient((client) => listForAudience(client, actor.role));
+    assert(actor.tenantId, "No active organization.", 403);
+    return this.databaseManager.withClient((client) => listForAudience(client, actor.role, actor.tenantId));
   }
 
-  async listAll() {
-    return this.databaseManager.withClient((client) => listAllNotices(client));
+  async listAll(actor) {
+    assert(actor.tenantId, "No active organization.", 403);
+    return this.databaseManager.withClient((client) => listAllNotices(client, actor.tenantId));
   }
 
   async create(input, actor) {
+    assert(actor.tenantId, "No active organization.", 403);
+
     const title = (input.title || "").trim();
     const body = (input.body || "").trim();
     const type = NOTICE_TYPES.includes(input.type) ? input.type : "notice";
@@ -44,6 +48,7 @@ export class NoticeService {
     return this.databaseManager.withTransaction(async (client) => {
       await insertNotice(client, {
         id: createId("notice"),
+        tenantId: actor.tenantId,
         type,
         title,
         body,
@@ -51,14 +56,16 @@ export class NoticeService {
         isPublished,
         createdBy: actor.id,
       });
-      return listAllNotices(client);
+      return listAllNotices(client, actor.tenantId);
     });
   }
 
   async update(id, input, actor) {
+    assert(actor.tenantId, "No active organization.", 403);
+
     return this.databaseManager.withTransaction(async (client) => {
       const existing = await findNoticeById(client, id);
-      assert(existing, "Notice not found.", 404);
+      assert(existing && existing.tenantId === actor.tenantId, "Notice not found.", 404);
 
       const title = (input.title ?? existing.title).trim();
       const body = input.body ?? existing.body;
@@ -70,16 +77,18 @@ export class NoticeService {
       assert(audience !== "public" || actor.role !== "teacher", "Teachers cannot publish public notices.", 403);
 
       await updateNotice(client, { id, type, title, body, audience, isPublished });
-      return listAllNotices(client);
+      return listAllNotices(client, actor.tenantId);
     });
   }
 
-  async remove(id) {
+  async remove(id, actor) {
+    assert(actor.tenantId, "No active organization.", 403);
+
     return this.databaseManager.withTransaction(async (client) => {
       const existing = await findNoticeById(client, id);
-      assert(existing, "Notice not found.", 404);
+      assert(existing && existing.tenantId === actor.tenantId, "Notice not found.", 404);
       await deleteNotice(client, id);
-      return listAllNotices(client);
+      return listAllNotices(client, actor.tenantId);
     });
   }
 }

@@ -145,25 +145,28 @@ export class AdmissionService {
     });
   }
 
-  async listAll(status) {
-    return this.databaseManager.withClient((client) => listApplications(client, status));
+  async listAll(status, actor) {
+    assert(actor.tenantId, "No active organization.", 403);
+    return this.databaseManager.withClient((client) => listApplications(client, status, actor.tenantId));
   }
 
-  async getById(id) {
+  async getById(id, actor) {
+    assert(actor.tenantId, "No active organization.", 403);
     return this.databaseManager.withClient(async (client) => {
       const application = await findApplicationById(client, id);
-      assert(application, "Application not found.", 404);
+      assert(application && application.tenantId === actor.tenantId, "Application not found.", 404);
       const documents = await listApplicationDocuments(client, id);
       return { ...application, documents: this.sanitizeDocuments(documents) };
     });
   }
 
-  async updateStatus(id, input) {
+  async updateStatus(id, input, actor) {
+    assert(actor.tenantId, "No active organization.", 403);
     const status = APPLICATION_STATUSES.includes(input.status) ? input.status : null;
 
     return this.databaseManager.withTransaction(async (client) => {
       const existing = await findApplicationById(client, id);
-      assert(existing, "Application not found.", 404);
+      assert(existing && existing.tenantId === actor.tenantId, "Application not found.", 404);
 
       const application = await updateApplicationStatus(client, {
         id,
@@ -176,12 +179,21 @@ export class AdmissionService {
     });
   }
 
+  // Documents don't carry their own tenant_id — ownership is verified through
+  // the parent application, which is the tenant-scoped record.
+  async assertDocumentInTenant(client, document, actor) {
+    assert(document, "Admission document not found.", 404);
+    assert(actor.tenantId, "No active organization.", 403);
+    const application = await findApplicationById(client, document.applicationId);
+    assert(application && application.tenantId === actor.tenantId, "Admission document not found.", 404);
+  }
+
   async updateDocumentVerification(documentId, input, actor) {
     const verificationStatus = DOCUMENT_STATUSES.has(input.verificationStatus) ? input.verificationStatus : null;
     assert(verificationStatus, "Invalid document verification status.", 400);
     return this.databaseManager.withTransaction(async (client) => {
       const document = await findApplicationDocument(client, documentId);
-      assert(document, "Admission document not found.", 404);
+      await this.assertDocumentInTenant(client, document, actor);
       return updateApplicationDocumentVerification(client, {
         id: documentId,
         verificationStatus,
@@ -191,10 +203,10 @@ export class AdmissionService {
     });
   }
 
-  async getDocumentForDownload(documentId) {
+  async getDocumentForDownload(documentId, actor) {
     return this.databaseManager.withClient(async (client) => {
       const document = await findApplicationDocument(client, documentId);
-      assert(document, "Admission document not found.", 404);
+      await this.assertDocumentInTenant(client, document, actor);
       const filePath = path.join(DOCUMENT_STORAGE_DIR, document.storageKey);
       const resolved = path.resolve(filePath);
       assert(resolved.startsWith(path.resolve(DOCUMENT_STORAGE_DIR)), "Invalid document path.", 400);

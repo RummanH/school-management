@@ -589,6 +589,27 @@ export async function createSchema(pool) {
     ALTER TABLE attendance_records ADD COLUMN IF NOT EXISTS guardian_alert_sent_at TIMESTAMPTZ;
     ALTER TABLE attendance_records ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
     ALTER TABLE attendance_records DROP CONSTRAINT IF EXISTS attendance_records_class_id_student_user_id_attendance_date_key;
+
+    -- Tenant isolation: notices, gallery_items, and admission_applications were
+    -- created without a tenant_id, so every tenant's admin could read/edit every
+    -- other tenant's rows. Backfill existing rows before enforcing NOT NULL.
+    ALTER TABLE notices ADD COLUMN IF NOT EXISTS tenant_id TEXT REFERENCES tenants(id) ON DELETE CASCADE;
+    UPDATE notices n SET tenant_id = u.tenant_id
+      FROM users u WHERE u.id = n.created_by AND n.tenant_id IS NULL AND u.tenant_id IS NOT NULL;
+    UPDATE notices SET tenant_id = (SELECT id FROM tenants ORDER BY created_at ASC LIMIT 1)
+      WHERE tenant_id IS NULL;
+    ALTER TABLE notices ALTER COLUMN tenant_id SET NOT NULL;
+
+    ALTER TABLE gallery_items ADD COLUMN IF NOT EXISTS tenant_id TEXT REFERENCES tenants(id) ON DELETE CASCADE;
+    UPDATE gallery_items SET tenant_id = (SELECT id FROM tenants ORDER BY created_at ASC LIMIT 1)
+      WHERE tenant_id IS NULL;
+    ALTER TABLE gallery_items ALTER COLUMN tenant_id SET NOT NULL;
+
+    -- admission_applications stays nullable: the public apply form has no
+    -- tenant-selection mechanism yet (single shared public site), so it cannot
+    -- attribute new applications to a tenant. See conversation notes / gap
+    -- analysis item 18 (multi-tenant public website strategy) for the follow-up.
+    ALTER TABLE admission_applications ADD COLUMN IF NOT EXISTS tenant_id TEXT REFERENCES tenants(id) ON DELETE CASCADE;
   `);
 
   // Stage 3 â€” create indexes (all referenced columns now guaranteed to exist)
@@ -631,10 +652,13 @@ export async function createSchema(pool) {
 
     CREATE INDEX IF NOT EXISTS idx_notices_published ON notices(is_published, published_at DESC);
     CREATE INDEX IF NOT EXISTS idx_notices_type      ON notices(type);
+    CREATE INDEX IF NOT EXISTS idx_notices_tenant     ON notices(tenant_id, created_at DESC);
 
-    CREATE INDEX IF NOT EXISTS idx_gallery_items_sort ON gallery_items(sort_order, created_at ASC);
+    CREATE INDEX IF NOT EXISTS idx_gallery_items_sort   ON gallery_items(sort_order, created_at ASC);
+    CREATE INDEX IF NOT EXISTS idx_gallery_items_tenant ON gallery_items(tenant_id);
 
     CREATE INDEX IF NOT EXISTS idx_admission_applications_reference ON admission_applications(reference_code);
+    CREATE INDEX IF NOT EXISTS idx_admission_applications_tenant    ON admission_applications(tenant_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_admission_applications_status    ON admission_applications(status, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_admission_documents_application ON admission_documents(application_id, document_type);
     CREATE INDEX IF NOT EXISTS idx_admission_documents_status      ON admission_documents(verification_status, uploaded_at DESC);

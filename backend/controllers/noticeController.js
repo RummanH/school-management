@@ -17,7 +17,7 @@ export class NoticeController {
 
   listAll = async (req, res, next) => {
     try {
-      res.json({ notices: await this.noticeService.listAll() });
+      res.json({ notices: await this.noticeService.listAll(req.currentUser) });
     } catch (err) { next(err); }
   };
 
@@ -37,7 +37,7 @@ export class NoticeController {
 
   remove = async (req, res, next) => {
     try {
-      res.json({ notices: await this.noticeService.remove(req.params.id) });
+      res.json({ notices: await this.noticeService.remove(req.params.id, req.currentUser) });
     } catch (err) { next(err); }
   };
 }

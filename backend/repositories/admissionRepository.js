@@ -2,6 +2,7 @@ export function mapApplication(row) {
   if (!row) return null;
   return {
     id:                row.id,
+    tenantId:          row.tenant_id || null,
     referenceCode:     row.reference_code,
     applicantName:     row.applicant_name,
     dateOfBirth:       row.date_of_birth,
@@ -21,15 +22,15 @@ export function mapApplication(row) {
 }
 
 // List view deliberately excludes photo_data — keeps the admin list payload small.
-export async function listApplications(client, status) {
+export async function listApplications(client, status, tenantId) {
   const result = await client.query(
-    `SELECT id, reference_code, applicant_name, date_of_birth, gender, applying_for_class,
+    `SELECT id, tenant_id, reference_code, applicant_name, date_of_birth, gender, applying_for_class,
             guardian_name, guardian_phone, guardian_email, previous_school,
             status, admission_test_date, notes, created_at, updated_at
        FROM admission_applications
-      WHERE ($1::text IS NULL OR status = $1)
+      WHERE tenant_id = $1 AND ($2::text IS NULL OR status = $2)
       ORDER BY created_at DESC`,
-    [status || null],
+    [tenantId, status || null],
   );
   return result.rows.map(mapApplication);
 }
