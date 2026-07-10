@@ -17,7 +17,7 @@ export default function StudentSidebar({ activePath, onClose }) {
   const { logout, currentUser } = useAuth();
 
   return (
-    <aside className="flex h-full w-64 flex-col bg-[var(--brand-strong)] text-white">
+    <aside className="flex h-full min-h-0 w-64 flex-col overflow-hidden bg-[var(--brand-strong)] text-white">
       {/* Logo */}
       <div className="flex items-center justify-between gap-3 px-5 py-5">
         <div className="flex items-center gap-3">
@@ -39,7 +39,7 @@ export default function StudentSidebar({ activePath, onClose }) {
       <div className="mx-4 h-px bg-white/10" />
 
       {/* Nav */}
-      <nav className="mt-2 flex-1 space-y-0.5 px-3">
+      <nav className="premium-scrollbar mt-2 min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-3 pb-3">
         {NAV.map(({ label, icon: Icon, path }) => {
           const active = activePath === path;
           return (
@@ -78,4 +78,5 @@ export default function StudentSidebar({ activePath, onClose }) {
     </aside>
   );
 }
+
 

@@ -369,7 +369,7 @@ export default function MessagesPage() {
       <div className="flex h-[calc(100dvh-7rem)] min-h-[32rem] min-w-0 flex-col overflow-hidden sm:h-[calc(100dvh-8rem)]">
 
         <div className="grid min-h-0 flex-1 overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(244,247,255,0.96))] lg:grid-cols-[360px_minmax(0,1fr)]">
-          <aside className={`${activeId ? 'hidden lg:flex' : 'flex'} flex-col border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(241,245,249,0.96),rgba(255,255,255,0.98))] lg:border-b-0 lg:border-r`}>
+          <aside className={`${activeId ? 'hidden lg:flex' : 'flex'} min-h-0 flex-col overflow-hidden border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(241,245,249,0.96),rgba(255,255,255,0.98))] lg:border-b-0 lg:border-r`}>
             <div className="border-b border-slate-200/80 px-4 py-4 sm:px-5">
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -386,7 +386,7 @@ export default function MessagesPage() {
               </div>
             </div>
 
-            <div className="premium-scrollbar flex-1 overflow-y-auto p-3 sm:p-4">
+            <div className="premium-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4">
               {filteredThreads.length ? (
                 <div className="space-y-3">
                   {filteredThreads.map((thread) => (
@@ -521,6 +521,7 @@ export default function MessagesPage() {
     </>
   );
 }
+
 
 
 
