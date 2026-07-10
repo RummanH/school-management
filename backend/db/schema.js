@@ -383,15 +383,28 @@ export async function createSchema(pool) {
     );
 
     CREATE TABLE IF NOT EXISTS fee_categories (
-      id             TEXT PRIMARY KEY,
-      tenant_id      TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-      name           TEXT NOT NULL,
-      description    TEXT NOT NULL DEFAULT '',
-      default_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
-      billing_cycle  TEXT NOT NULL DEFAULT 'monthly',
-      is_active      BOOLEAN NOT NULL DEFAULT true,
-      created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      id              TEXT PRIMARY KEY,
+      tenant_id       TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      name            TEXT NOT NULL,
+      description     TEXT NOT NULL DEFAULT '',
+      default_amount  NUMERIC(10,2) NOT NULL DEFAULT 0,
+      billing_cycle   TEXT NOT NULL DEFAULT 'monthly',
+      late_fee_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+      is_active       BOOLEAN NOT NULL DEFAULT true,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS fee_structures (
+      id           TEXT PRIMARY KEY,
+      tenant_id    TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      class_id     TEXT REFERENCES classes(id) ON DELETE CASCADE,
+      category_id  TEXT NOT NULL REFERENCES fee_categories(id) ON DELETE CASCADE,
+      amount       NUMERIC(10,2) NOT NULL DEFAULT 0,
+      is_active    BOOLEAN NOT NULL DEFAULT true,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(tenant_id, class_id, category_id)
     );
 
     CREATE TABLE IF NOT EXISTS fee_assignments (
@@ -427,6 +440,7 @@ export async function createSchema(pool) {
       total_amount        NUMERIC(10,2) NOT NULL DEFAULT 0,
       paid_amount         NUMERIC(10,2) NOT NULL DEFAULT 0,
       status              TEXT NOT NULL DEFAULT 'unpaid',
+      fine_applied        BOOLEAN NOT NULL DEFAULT false,
       notes               TEXT NOT NULL DEFAULT '',
       created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -585,6 +599,22 @@ export async function createSchema(pool) {
       created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS finance_transactions (
+      id               TEXT PRIMARY KEY,
+      tenant_id        TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      direction        TEXT NOT NULL,
+      source_type      TEXT NOT NULL,
+      source_id        TEXT NOT NULL,
+      amount           NUMERIC(10,2) NOT NULL,
+      method           TEXT NOT NULL DEFAULT 'cash',
+      category         TEXT NOT NULL DEFAULT '',
+      transaction_date TEXT NOT NULL,
+      recorded_by      TEXT REFERENCES users(id) ON DELETE SET NULL,
+      notes            TEXT NOT NULL DEFAULT '',
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(source_type, source_id)
+    );
   `);
 
   // Stage 2 â€” add columns that may be missing on existing databases
@@ -640,6 +670,28 @@ export async function createSchema(pool) {
     UPDATE classes c SET session_id = s.id
       FROM academic_sessions s
      WHERE c.session_id IS NULL AND s.tenant_id = c.tenant_id AND s.name = c.academic_year;
+
+    -- Class-wise fee rules + accounting ledger additions.
+    ALTER TABLE fee_categories ADD COLUMN IF NOT EXISTS late_fee_amount NUMERIC(10,2) NOT NULL DEFAULT 0;
+    ALTER TABLE fee_invoices   ADD COLUMN IF NOT EXISTS fine_applied BOOLEAN NOT NULL DEFAULT false;
+
+    -- Backfill the new cash-book ledger from existing fee payments, expenses,
+    -- and paid payroll records so it isn't empty on rollout.
+    INSERT INTO finance_transactions (id, tenant_id, direction, source_type, source_id, amount, method, category, transaction_date, recorded_by, notes, created_at)
+      SELECT 'fintx-' || fp.id, fp.tenant_id, 'in', 'fee_payment', fp.id, fp.amount, fp.method, 'Fee Payment', fp.payment_date, fp.collected_by, fp.notes, fp.created_at
+        FROM fee_payments fp
+      ON CONFLICT (source_type, source_id) DO NOTHING;
+
+    INSERT INTO finance_transactions (id, tenant_id, direction, source_type, source_id, amount, method, category, transaction_date, recorded_by, notes, created_at)
+      SELECT 'fintx-' || e.id, e.tenant_id, 'out', 'expense', e.id, e.amount, e.method, e.category, e.expense_date, e.created_by, e.notes, e.created_at
+        FROM expenses e
+      ON CONFLICT (source_type, source_id) DO NOTHING;
+
+    INSERT INTO finance_transactions (id, tenant_id, direction, source_type, source_id, amount, method, category, transaction_date, recorded_by, notes, created_at)
+      SELECT 'fintx-' || pr.id, pr.tenant_id, 'out', 'payroll', pr.id, pr.net_salary, 'bank', 'Staff Payroll', COALESCE(pr.paid_at, pr.period || '-01'), NULL, pr.notes, pr.created_at
+        FROM staff_payroll_records pr
+       WHERE pr.status = 'paid'
+      ON CONFLICT (source_type, source_id) DO NOTHING;
   `);
 
   // Stage 3 â€” create indexes (all referenced columns now guaranteed to exist)
@@ -696,6 +748,10 @@ export async function createSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_admission_documents_application ON admission_documents(application_id, document_type);
     CREATE INDEX IF NOT EXISTS idx_admission_documents_status      ON admission_documents(verification_status, uploaded_at DESC);
     CREATE INDEX IF NOT EXISTS idx_fee_categories_tenant     ON fee_categories(tenant_id, is_active);
+    CREATE INDEX IF NOT EXISTS idx_fee_structures_tenant     ON fee_structures(tenant_id, is_active);
+    CREATE INDEX IF NOT EXISTS idx_fee_structures_class      ON fee_structures(class_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_fee_structures_tenant_category_allclasses
+      ON fee_structures(tenant_id, category_id) WHERE class_id IS NULL;
     CREATE INDEX IF NOT EXISTS idx_fee_assignments_student   ON fee_assignments(student_user_id, status);
     CREATE INDEX IF NOT EXISTS idx_fee_assignments_category  ON fee_assignments(category_id);
     CREATE INDEX IF NOT EXISTS idx_fee_invoices_tenant       ON fee_invoices(tenant_id, status, period);
@@ -704,6 +760,8 @@ export async function createSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_fee_payments_invoice      ON fee_payments(invoice_id);
     CREATE INDEX IF NOT EXISTS idx_fee_payments_student      ON fee_payments(student_user_id, payment_date DESC);
     CREATE INDEX IF NOT EXISTS idx_expenses_tenant_date      ON expenses(tenant_id, expense_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_finance_tx_tenant_date    ON finance_transactions(tenant_id, transaction_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_finance_tx_source         ON finance_transactions(source_type, source_id);
     CREATE INDEX IF NOT EXISTS idx_staff_profiles_tenant    ON staff_profiles(tenant_id, status);
     CREATE INDEX IF NOT EXISTS idx_staff_attendance_date    ON staff_attendance(tenant_id, attendance_date DESC);
     CREATE INDEX IF NOT EXISTS idx_staff_leave_status      ON staff_leave_requests(tenant_id, status);

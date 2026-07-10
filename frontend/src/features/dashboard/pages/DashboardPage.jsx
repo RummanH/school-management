@@ -315,6 +315,10 @@ const PAGE_TITLES = {
 // render them for a teacher (URL bar access, not just hidden nav links).
 const TEACHER_ALLOWED_PATHS = ['/dashboard', '/dashboard/contacts', '/dashboard/messages', '/dashboard/academic'];
 
+// Accountants only get the finance side of the dashboard (fees/accounting +
+// payroll marking, the latter server-gated to payroll-only within HR & Staff).
+const ACCOUNTANT_ALLOWED_PATHS = ['/dashboard', '/dashboard/fees', '/dashboard/hr'];
+
 /* Root layout */
 
 export default function DashboardPage() {
@@ -334,6 +338,13 @@ export default function DashboardPage() {
   const teacherAllowed = TEACHER_ALLOWED_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
   if (isTeacher && !teacherAllowed) {
     navigate('/dashboard/academic');
+    return null;
+  }
+
+  const isAccountant = currentUser?.role === 'accountant';
+  const accountantAllowed = ACCOUNTANT_ALLOWED_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
+  if (isAccountant && !accountantAllowed) {
+    navigate('/dashboard/fees');
     return null;
   }
 

@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { BriefcaseBusiness, CalendarCheck, FileText, Loader2, Plus, Save, Star, Trash2, WalletCards } from 'lucide-react';
 import { addPerformanceNote, addStaffDocument, deleteStaff, getHrOverview, markStaffAttendance, requestStaffLeave, reviewStaffLeave, savePayroll, saveStaff } from '../../../services/api/hrApi.js';
+import { useAuth } from '../../../app/App.jsx';
 
-const TABS = ['Staff', 'Attendance', 'Leave', 'Payroll', 'Documents', 'Performance'];
+const ALL_TABS = ['Staff', 'Attendance', 'Leave', 'Payroll', 'Documents', 'Performance'];
+// Accountants only get payroll (server-side, staff/attendance/leave/document
+// writes stay admin-only) — don't show them forms that would just 403.
+const ACCOUNTANT_TABS = ['Payroll'];
 const today = () => new Date().toISOString().slice(0,10);
 const month = () => new Date().toISOString().slice(0,7);
 const money = (n) => `BDT ${Number(n||0).toLocaleString('en-BD',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
@@ -13,7 +17,10 @@ function Empty({children}){return <div className="rounded-2xl border-2 border-da
 function Stat({icon:Icon,label,value,color}){return <div className="card flex items-center gap-4"><span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${color}`}><Icon className="h-5 w-5" /></span><div><p className="text-xl font-black text-slate-800">{value}</p><p className="text-xs text-slate-400">{label}</p></div></div>}
 
 export default function HrPage(){
-  const [active,setActive]=useState('Staff'); const [data,setData]=useState(null); const [loading,setLoading]=useState(true);
+  const { currentUser } = useAuth();
+  const isAccountant = currentUser?.role === 'accountant';
+  const TABS = isAccountant ? ACCOUNTANT_TABS : ALL_TABS;
+  const [active,setActive]=useState(TABS[0]); const [data,setData]=useState(null); const [loading,setLoading]=useState(true);
   const [staffForm,setStaffForm]=useState({name:'',staffType:'non_teaching',employeeId:'',designation:'',department:'',qualification:'',phone:'',email:'',joiningDate:today(),contractType:'permanent',baseSalary:0,status:'active'});
   const [attendance,setAttendance]=useState({staffId:'',attendanceDate:today(),status:'present',note:''});
   const [leave,setLeave]=useState({staffId:'',leaveType:'casual',startDate:today(),endDate:today(),reason:''});

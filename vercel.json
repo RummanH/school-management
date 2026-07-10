@@ -10,5 +10,15 @@
       "source": "/api/:path*",
       "destination": "/api/index.js?path=:path*"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/fees/generate-monthly",
+      "schedule": "5 0 1 * *"
+    },
+    {
+      "path": "/api/cron/fees/apply-overdue-fines",
+      "schedule": "15 0 * * *"
+    }
   ]
 }

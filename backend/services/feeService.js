@@ -1,15 +1,20 @@
 import { assert } from "../lib/errors.js";
 import { createId } from "../lib/ids.js";
-import { findStudentByUserId } from "../repositories/studentRepository.js";
+import { findStudentByUserId, listStudents } from "../repositories/studentRepository.js";
 import { isWardOfGuardian } from "../repositories/guardianRepository.js";
+import { findClassById } from "../repositories/academicRepository.js";
+import { listTenants } from "../repositories/tenantRepository.js";
 import {
   toMoney,
   listCategories, findCategoryById, insertCategory, updateCategory, deleteCategory,
+  listFeeStructures, findFeeStructureById, insertFeeStructure, updateFeeStructure, deleteFeeStructure, listActiveFeeStructures,
   listAssignments, findAssignmentById, listBillableAssignments, insertAssignment, updateAssignment, deleteAssignment,
   listInvoices, findInvoiceById, findInvoiceForStudentPeriod, insertInvoice, insertInvoiceItem, listInvoiceItems,
   listPayments, receiptNumberExists, insertPayment, updateInvoicePaymentStatus,
   listExpenses, insertExpense, deleteExpense, getFeeReport,
+  getDefaulters, getStudentMonthlyLedger, listOverdueInvoicesForFines, applyInvoiceFine,
 } from "../repositories/feeRepository.js";
+import { insertTransaction } from "../repositories/financeRepository.js";
 
 const BILLING_CYCLES = ["monthly", "term", "annual", "one_time"];
 const ASSIGNMENT_STATUSES = ["active", "inactive"];
@@ -51,7 +56,7 @@ export class FeeService {
     return this.databaseManager.withTransaction((client) => insertCategory(client, {
       id: createId("fee_cat"), tenantId: actor.tenantId, name,
       description: cleanText(input.description), defaultAmount: money(input.defaultAmount, "Default amount"),
-      billingCycle, isActive: input.isActive !== false,
+      billingCycle, lateFeeAmount: money(input.lateFeeAmount || 0, "Late fee amount"), isActive: input.isActive !== false,
     }));
   }
 
@@ -65,6 +70,7 @@ export class FeeService {
         id, name, description: cleanText(input.description),
         defaultAmount: money(input.defaultAmount, "Default amount"),
         billingCycle: BILLING_CYCLES.includes(input.billingCycle) ? input.billingCycle : existing.billingCycle,
+        lateFeeAmount: money(input.lateFeeAmount ?? existing.lateFeeAmount, "Late fee amount"),
         isActive: input.isActive !== false,
       });
     });
@@ -75,6 +81,44 @@ export class FeeService {
       const existing = await findCategoryById(client, id);
       assert(existing && existing.tenantId === actor.tenantId, "Fee category not found.", 404);
       await deleteCategory(client, id);
+    });
+  }
+
+  async listFeeStructures(actor) {
+    return this.databaseManager.withClient((client) => listFeeStructures(client, actor.tenantId));
+  }
+
+  async saveFeeStructure(id, input, actor) {
+    const categoryId = cleanText(input.categoryId);
+    const classId = cleanText(input.classId) || null;
+    assert(categoryId, "Fee category is required.", 400);
+
+    return this.databaseManager.withTransaction(async (client) => {
+      if (id) {
+        const existing = await findFeeStructureById(client, id);
+        assert(existing && existing.tenantId === actor.tenantId, "Fee rule not found.", 404);
+      }
+      const category = await findCategoryById(client, categoryId);
+      assert(category && category.tenantId === actor.tenantId, "Fee category not found.", 404);
+      if (classId) {
+        const cls = await findClassById(client, classId);
+        assert(cls && cls.tenant_id === actor.tenantId, "Class not found.", 404);
+      }
+
+      const data = {
+        id: id || createId("fee_str"), tenantId: actor.tenantId, classId, categoryId,
+        amount: money(input.amount ?? category.defaultAmount, "Amount"),
+        isActive: input.isActive !== false,
+      };
+      return id ? updateFeeStructure(client, data) : insertFeeStructure(client, data);
+    });
+  }
+
+  async deleteFeeStructure(id, actor) {
+    return this.databaseManager.withTransaction(async (client) => {
+      const existing = await findFeeStructureById(client, id);
+      assert(existing && existing.tenantId === actor.tenantId, "Fee rule not found.", 404);
+      await deleteFeeStructure(client, id);
     });
   }
 
@@ -145,20 +189,71 @@ export class FeeService {
     });
   }
 
+  // Resolves, per active student, the list of billable line items for a period:
+  // every active class-wide fee_structure that matches the student's class
+  // (or applies to all classes), with any per-student fee_assignment for that
+  // same category taking precedence, plus any assignment-only categories that
+  // have no class rule at all (ad-hoc charges/scholarships).
+  async resolveBillableItems(client, tenantId, { studentUserIds, period }) {
+    const [allStudents, structures, assignments] = await Promise.all([
+      listStudents(client, tenantId),
+      listActiveFeeStructures(client, tenantId),
+      listBillableAssignments(client, tenantId, { studentUserIds, period }),
+    ]);
+
+    const students = allStudents.filter((s) =>
+      s.status === "active" && (!studentUserIds || studentUserIds.includes(s.userId)));
+
+    const structuresByClass = new Map();
+    for (const structure of structures) {
+      const key = structure.classId || "";
+      if (!structuresByClass.has(key)) structuresByClass.set(key, []);
+      structuresByClass.get(key).push(structure);
+    }
+
+    const assignmentsByStudent = new Map();
+    for (const assignment of assignments) {
+      if (!assignmentsByStudent.has(assignment.studentUserId)) assignmentsByStudent.set(assignment.studentUserId, new Map());
+      assignmentsByStudent.get(assignment.studentUserId).set(assignment.categoryId, assignment);
+    }
+
+    const byStudent = new Map();
+    for (const student of students) {
+      const overrides = assignmentsByStudent.get(student.userId) || new Map();
+      const applicable = [
+        ...(structuresByClass.get(student.classId || "") || []),
+        ...(structuresByClass.get("") || []),
+      ];
+      const seenCategories = new Set();
+      const items = [];
+      for (const structure of applicable) {
+        if (seenCategories.has(structure.categoryId)) continue;
+        seenCategories.add(structure.categoryId);
+        const override = overrides.get(structure.categoryId);
+        items.push(override || {
+          id: null, studentUserId: student.userId, categoryId: structure.categoryId, categoryName: structure.categoryName,
+          amount: structure.amount, discountAmount: 0, waiverAmount: 0, scholarshipAmount: 0, fineAmount: 0,
+          netAmount: structure.amount,
+        });
+      }
+      for (const [categoryId, assignment] of overrides.entries()) {
+        if (!seenCategories.has(categoryId)) { items.push(assignment); seenCategories.add(categoryId); }
+      }
+      if (items.length) byStudent.set(student.userId, items);
+    }
+    return byStudent;
+  }
+
   async generateInvoices(input, actor) {
     const period = cleanText(input.period);
     assert(period, "Billing period is required, e.g. 2026-07 or Term 1.", 400);
     const title = cleanText(input.title) || `Fees - ${period}`;
     const dueDate = cleanText(input.dueDate);
-    const studentUserIds = Array.isArray(input.studentUserIds) ? input.studentUserIds.filter(Boolean) : null;
+    const studentUserIds = Array.isArray(input.studentUserIds) && input.studentUserIds.length
+      ? input.studentUserIds.filter(Boolean) : null;
 
     return this.databaseManager.withTransaction(async (client) => {
-      const assignments = await listBillableAssignments(client, actor.tenantId, { studentUserIds, period });
-      const byStudent = new Map();
-      for (const assignment of assignments) {
-        if (!byStudent.has(assignment.studentUserId)) byStudent.set(assignment.studentUserId, []);
-        byStudent.get(assignment.studentUserId).push(assignment);
-      }
+      const byStudent = await this.resolveBillableItems(client, actor.tenantId, { studentUserIds, period });
 
       const created = [];
       const skipped = [];
@@ -191,8 +286,48 @@ export class FeeService {
         }
         created.push(invoice);
       }
-      return { created, skipped, assignmentCount: assignments.length };
+      return { created, skipped, studentCount: byStudent.size };
     });
+  }
+
+  // Called by the monthly cron/scheduler (see backend/services/feeCronService.js)
+  // to auto-bill every active student in a tenant for the given period.
+  async generateMonthlyInvoicesForTenant(tenantId, period) {
+    return this.generateInvoices({ period, studentUserIds: null }, { tenantId });
+  }
+
+  async generateMonthlyInvoicesForAllTenants(period) {
+    const tenants = await this.databaseManager.withClient((client) => listTenants(client));
+    const results = [];
+    for (const tenant of tenants) {
+      const result = await this.generateMonthlyInvoicesForTenant(tenant.id, period);
+      results.push({ tenantId: tenant.id, tenantName: tenant.name, ...result });
+    }
+    return results;
+  }
+
+  // Adds each overdue category's configured late fee to its invoice once, so
+  // repeated runs never double-charge (fee_invoices.fine_applied guards it).
+  async applyOverdueFines(tenantId, today = new Date().toISOString().slice(0, 10)) {
+    return this.databaseManager.withTransaction(async (client) => {
+      const overdue = await listOverdueInvoicesForFines(client, tenantId, today);
+      let applied = 0;
+      for (const invoice of overdue) {
+        if (invoice.lateFeeAmount <= 0) continue;
+        await applyInvoiceFine(client, invoice.id, invoice.lateFeeAmount);
+        applied += 1;
+      }
+      return { checked: overdue.length, applied };
+    });
+  }
+
+  async applyOverdueFinesForAllTenants(today) {
+    const tenants = await this.databaseManager.withClient((client) => listTenants(client));
+    const results = [];
+    for (const tenant of tenants) {
+      results.push({ tenantId: tenant.id, ...(await this.applyOverdueFines(tenant.id, today)) });
+    }
+    return results;
   }
 
   async recordPayment(invoiceId, input, actor) {
@@ -203,13 +338,18 @@ export class FeeService {
       assert(amount > 0, "Payment amount must be greater than zero.", 400);
       assert(amount <= invoice.dueAmount, "Payment cannot exceed invoice due amount.", 400);
       const method = PAYMENT_METHODS.includes(input.method) ? input.method : "cash";
+      const paymentDate = cleanText(input.paymentDate) || new Date().toISOString().slice(0, 10);
       const payment = await insertPayment(client, {
         id: createId("fee_pay"), tenantId: actor.tenantId, invoiceId,
         studentUserId: invoice.studentUserId, receiptNumber: await generateReceiptNumber(client),
-        amount, method, paymentDate: cleanText(input.paymentDate) || new Date().toISOString().slice(0, 10),
+        amount, method, paymentDate,
         referenceNo: cleanText(input.referenceNo), notes: cleanText(input.notes), collectedBy: actor.id,
       });
       await updateInvoicePaymentStatus(client, invoiceId);
+      await insertTransaction(client, {
+        id: createId("fintx"), tenantId: actor.tenantId, direction: "in", sourceType: "fee_payment", sourceId: payment.id,
+        amount, method, category: "Fee Payment", transactionDate: paymentDate, recordedBy: actor.id, notes: payment.notes,
+      });
       return payment;
     });
   }
@@ -225,13 +365,20 @@ export class FeeService {
   async createExpense(input, actor) {
     const category = cleanText(input.category);
     assert(category, "Expense category is required.", 400);
-    return this.databaseManager.withTransaction((client) => insertExpense(client, {
-      id: createId("exp"), tenantId: actor.tenantId, category,
-      amount: money(input.amount, "Expense amount"),
-      expenseDate: cleanText(input.expenseDate) || new Date().toISOString().slice(0, 10),
-      payee: cleanText(input.payee), method: PAYMENT_METHODS.includes(input.method) ? input.method : "cash",
-      referenceNo: cleanText(input.referenceNo), notes: cleanText(input.notes), createdBy: actor.id,
-    }));
+    const amount = money(input.amount, "Expense amount");
+    const expenseDate = cleanText(input.expenseDate) || new Date().toISOString().slice(0, 10);
+    const method = PAYMENT_METHODS.includes(input.method) ? input.method : "cash";
+    return this.databaseManager.withTransaction(async (client) => {
+      const expense = await insertExpense(client, {
+        id: createId("exp"), tenantId: actor.tenantId, category, amount, expenseDate, payee: cleanText(input.payee),
+        method, referenceNo: cleanText(input.referenceNo), notes: cleanText(input.notes), createdBy: actor.id,
+      });
+      await insertTransaction(client, {
+        id: createId("fintx"), tenantId: actor.tenantId, direction: "out", sourceType: "expense", sourceId: expense.id,
+        amount, method, category, transactionDate: expenseDate, recordedBy: actor.id, notes: expense.notes,
+      });
+      return expense;
+    });
   }
 
   async deleteExpense(id, actor) {
@@ -244,6 +391,19 @@ export class FeeService {
 
   async getReport(actor, period = null) {
     return this.databaseManager.withClient((client) => getFeeReport(client, actor.tenantId, period));
+  }
+
+  async getDefaulters(actor, filters = {}) {
+    return this.databaseManager.withClient((client) => getDefaulters(client, actor.tenantId, filters));
+  }
+
+  async getStudentMonthlyLedger(studentUserId, year, actor) {
+    return this.databaseManager.withClient(async (client) => {
+      const student = await findStudentByUserId(client, studentUserId);
+      assert(student && student.tenantId === actor.tenantId, "Student not found.", 404);
+      const months = await getStudentMonthlyLedger(client, actor.tenantId, studentUserId, year);
+      return { student, year: Number(year), months };
+    });
   }
 
   async getStudentLedger(studentUserId, actor) {

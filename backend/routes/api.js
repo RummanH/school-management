@@ -12,6 +12,8 @@ import { NoticeController } from "../controllers/noticeController.js";
 import { GalleryController } from "../controllers/galleryController.js";
 import { AdmissionController } from "../controllers/admissionController.js";
 import { FeeController } from "../controllers/feeController.js";
+import { FinanceController } from "../controllers/financeController.js";
+import { CronController } from "../controllers/cronController.js";
 import { CommunicationController } from "../controllers/communicationController.js";
 import { HrController } from "../controllers/hrController.js";
 import { SecurityController } from "../controllers/securityController.js";
@@ -25,7 +27,7 @@ import { findTeacherByUserId } from "../repositories/teacherRepository.js";
 export function createApiRouter({
   env, contactService, authService, tenantService,
   userService, studentService, teacherService, academicService,
-  guardianService, noticeService, galleryService, admissionService, feeService, communicationService, hrService, databaseManager,
+  guardianService, noticeService, galleryService, admissionService, feeService, financeService, communicationService, hrService, databaseManager,
 }) {
   const router = Router();
 
@@ -42,6 +44,8 @@ export function createApiRouter({
   const galleryController   = new GalleryController(galleryService);
   const admissionController = new AdmissionController(admissionService);
   const feeController       = new FeeController(feeService);
+  const financeController   = new FinanceController(financeService);
+  const cronController      = new CronController(feeService, env);
   const communicationController = new CommunicationController(communicationService);
   const hrController = new HrController(hrService);
   const securityController = new SecurityController(databaseManager);
@@ -52,6 +56,8 @@ export function createApiRouter({
   const staffAndAdmin = [auth, requirePermission("academicWrite")];
   const guardianOnly  = [auth, requirePermission("guardianUse")];
   const financeAdmin  = [auth, requirePermission("financeManage")];
+  const payrollAdmin  = [auth, requirePermission("payrollManage")];
+  const hrView        = [auth, requirePermission("hrView")];
   const communicationUsers = [auth, requirePermission("communicationUse")];
   const securityAudit = [auth, requirePermission("securityAudit")];
   const dataExport = [auth, requirePermission("dataExport")];
@@ -191,13 +197,13 @@ export function createApiRouter({
   router.get("/guardian/wards/:studentUserId/attendance",  ...guardianOnly, guardianController.wardAttendance);
 
   // HR & Staff Management
-  router.get("/hr", ...adminOnly, hrController.overview);
+  router.get("/hr", ...hrView, hrController.overview);
   router.post("/hr/staff", ...adminOnly, hrController.saveStaff);
   router.delete("/hr/staff/:id", ...adminOnly, hrController.removeStaff);
   router.post("/hr/attendance", ...adminOnly, hrController.markAttendance);
   router.post("/hr/leaves", ...adminOnly, hrController.requestLeave);
   router.patch("/hr/leaves/:id", ...adminOnly, hrController.reviewLeave);
-  router.post("/hr/payroll", ...adminOnly, hrController.savePayroll);
+  router.post("/hr/payroll", ...payrollAdmin, hrController.savePayroll);
   router.post("/hr/documents", ...adminOnly, hrController.addDocument);
   router.post("/hr/notes", ...adminOnly, hrController.addNote);
 
@@ -239,6 +245,11 @@ export function createApiRouter({
   router.put("/fees/categories/:id",      ...financeAdmin, feeController.updateCategory);
   router.delete("/fees/categories/:id",   ...financeAdmin, feeController.deleteCategory);
 
+  router.get("/fees/structures",          ...financeAdmin, feeController.listFeeStructures);
+  router.post("/fees/structures",         ...financeAdmin, feeController.createFeeStructure);
+  router.put("/fees/structures/:id",      ...financeAdmin, feeController.updateFeeStructure);
+  router.delete("/fees/structures/:id",   ...financeAdmin, feeController.deleteFeeStructure);
+
   router.get("/fees/assignments",         ...financeAdmin, feeController.listAssignments);
   router.post("/fees/assignments",        ...financeAdmin, feeController.createAssignment);
   router.put("/fees/assignments/:id",     ...financeAdmin, feeController.updateAssignment);
@@ -254,6 +265,15 @@ export function createApiRouter({
   router.post("/fees/expenses",           ...financeAdmin, feeController.createExpense);
   router.delete("/fees/expenses/:id",     ...financeAdmin, feeController.deleteExpense);
   router.get("/fees/report",              ...financeAdmin, feeController.getReport);
+  router.get("/fees/defaulters",          ...financeAdmin, feeController.getDefaulters);
+  router.get("/fees/students/:studentUserId/monthly", ...financeAdmin, feeController.getStudentMonthlyLedger);
+
+  router.get("/finance/cashbook",         ...financeAdmin, financeController.getCashBook);
+  router.get("/finance/balance",          ...financeAdmin, financeController.getBalance);
+
+  // GET (not POST): Vercel Cron Jobs only ever issue GET requests.
+  router.get("/cron/fees/generate-monthly",    cronController.requireCronSecret, cronController.generateMonthlyInvoices);
+  router.get("/cron/fees/apply-overdue-fines", cronController.requireCronSecret, cronController.applyOverdueFines);
 
   router.get("/fees/me",                  auth, feeController.getMyFees);
   router.get("/guardian/wards/:studentUserId/fees", ...guardianOnly, feeController.getWardFees);

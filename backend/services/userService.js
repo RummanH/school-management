@@ -13,9 +13,9 @@ import {
 } from "../repositories/userRepository.js";
 import { findTenantById } from "../repositories/tenantRepository.js";
 
-// Users page only manages admin + guardian.
+// Users page manages admin + accountant + guardian.
 // Teachers and students must be created through their dedicated pages (which also create the profile).
-const USER_PAGE_ROLES = [USER_ROLES.ADMIN, USER_ROLES.GUARDIAN];
+const USER_PAGE_ROLES = [USER_ROLES.ADMIN, USER_ROLES.ACCOUNTANT, USER_ROLES.GUARDIAN];
 
 function allowedRolesFor(actorRole) {
   if (actorRole === USER_ROLES.SYSTEM_DEVELOPER) return USER_PAGE_ROLES;

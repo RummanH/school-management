@@ -9,7 +9,7 @@ import { createApiRouter } from "./routes/api.js";
 export function createApp({
   env, contactService, authService, tenantService,
   userService, studentService, teacherService, academicService,
-  guardianService, noticeService, galleryService, admissionService, feeService,
+  guardianService, noticeService, galleryService, admissionService, feeService, financeService,
   communicationService, hrService, databaseManager,
 }) {
   const app = express();
@@ -23,7 +23,7 @@ export function createApp({
   app.use("/api", createApiRouter({
     env, contactService, authService, tenantService,
     userService, studentService, teacherService, academicService,
-    guardianService, noticeService, galleryService, admissionService, feeService,
+    guardianService, noticeService, galleryService, admissionService, feeService, financeService,
     communicationService, hrService, databaseManager,
   }));
 

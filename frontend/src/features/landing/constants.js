@@ -31,10 +31,7 @@ export const ACCENT_COLORS = [
   { bg: 'bg-purple-50',  text: 'text-purple-600' },
 ];
 
-// Placeholder campus photo for the hero — swap for real photography when
-// available (same "placeholder now, replace later" convention this file
-// previously used for the photo gallery before it became DB-driven).
-export const HERO_IMAGE = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80';
+export const HERO_IMAGE = '/images/hero.jpg';
 
 export const WHY_CHOOSE_US = [
   { key: 'facultyTitle', descKey: 'facultyDesc', icon: '👩‍🏫' },

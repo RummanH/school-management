@@ -24,6 +24,9 @@ this file — the prompts below are copy-paste only, no clutter.
 -----------------------------------------------------------------------------
 1. HERO PHOTO
 Dimensions: 1792 x 1024 px (Landscape)
+  Brand indigo   #4F46E5
+  Deep indigo    #312E81
+  Accent violet  #6366F1
 -----------------------------------------------------------------------------
 Professional editorial photography style, a modern school building exterior with large windows and a green courtyard, students walking between classes in the background, natural warm afternoon light, diverse South Asian students, clean and welcoming architecture, a subtle indigo or violet accent visible somewhere in the scene (e.g. a school sign, banner, or door trim), high resolution, no text or logos in the image.
 

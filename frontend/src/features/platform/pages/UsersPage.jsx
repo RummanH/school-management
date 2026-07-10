@@ -10,23 +10,25 @@ import { listStudents } from '../../../services/api/studentApi.js';
 import { listWardLinks, linkWard, unlinkWard } from '../../../services/api/guardianApi.js';
 
 const ROLE_LABELS = {
-  admin:    'Admin',
-  teacher:  'Teacher',
-  student:  'Student',
-  guardian: 'Guardian',
+  admin:      'Admin',
+  accountant: 'Accountant',
+  teacher:    'Teacher',
+  student:    'Student',
+  guardian:   'Guardian',
 };
 
 const ROLE_COLORS = {
-  admin:    'bg-blue-100 text-blue-700',
-  teacher:  'bg-emerald-100 text-emerald-700',
-  student:  'bg-purple-100 text-purple-700',
-  guardian: 'bg-amber-100 text-amber-700',
+  admin:      'bg-blue-100 text-blue-700',
+  accountant: 'bg-teal-100 text-teal-700',
+  teacher:    'bg-emerald-100 text-emerald-700',
+  student:    'bg-purple-100 text-purple-700',
+  guardian:   'bg-amber-100 text-amber-700',
 };
 
 // Teachers and students are created from their dedicated pages (with full profiles).
-// This Users page only manages admin and guardian accounts.
+// This Users page manages admin, accountant, and guardian accounts.
 function rolesFor(actorRole) {
-  return ['admin', 'guardian'];
+  return ['admin', 'accountant', 'guardian'];
 }
 
 /* ─── Confirmation dialog ─── */
@@ -383,7 +385,7 @@ export default function UsersPage() {
   return (
     <div>
       <div className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-        This page manages <strong>Admin</strong> and <strong>Guardian</strong> accounts only.
+        This page manages <strong>Admin</strong>, <strong>Accountant</strong>, and <strong>Guardian</strong> accounts.
         To create teachers or students, use the <strong>Teachers</strong> and <strong>Students</strong> pages — they create the login account and full profile together.
       </div>
 

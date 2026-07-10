@@ -11,7 +11,7 @@ const FALLBACK_FACULTY = [
     designation: 'Head Teacher',
     department: 'Science',
     qualification: 'M.Sc, B.Ed',
-    photoUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&q=80',
+    photoUrl: '/images/faculty/1-head-teacher.jpg',
   },
   {
     userId: 'public-teacher-2',
@@ -19,7 +19,7 @@ const FALLBACK_FACULTY = [
     designation: 'Senior Teacher',
     department: 'Mathematics',
     qualification: 'M.Sc, M.Ed',
-    photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80',
+    photoUrl: '/images/faculty/2-senior-teacher.jpg',
   },
   {
     userId: 'public-teacher-3',
@@ -27,7 +27,7 @@ const FALLBACK_FACULTY = [
     designation: 'Assistant Teacher',
     department: 'Languages',
     qualification: 'M.A, B.Ed',
-    photoUrl: 'https://images.unsplash.com/photo-1556157382-97eda2d62296?w=400&q=80',
+    photoUrl: '/images/faculty/3-assistant-teacher.jpg',
   },
   {
     userId: 'public-teacher-4',
@@ -35,7 +35,7 @@ const FALLBACK_FACULTY = [
     designation: 'ICT Teacher',
     department: 'ICT',
     qualification: 'B.Sc in CSE',
-    photoUrl: 'https://images.unsplash.com/photo-1580894732444-8ecded7900cd?w=400&q=80',
+    photoUrl: '/images/faculty/4-ict-teacher.jpg',
   },
 ];
 
@@ -55,10 +55,10 @@ const LEADERSHIP = [
 ];
 
 const PHOTO_FALLBACKS = [
-  'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&q=80',
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80',
-  'https://images.unsplash.com/photo-1556157382-97eda2d62296?w=400&q=80',
-  'https://images.unsplash.com/photo-1580894732444-8ecded7900cd?w=400&q=80',
+  '/images/faculty/1-head-teacher.jpg',
+  '/images/faculty/2-senior-teacher.jpg',
+  '/images/faculty/3-assistant-teacher.jpg',
+  '/images/faculty/4-ict-teacher.jpg',
 ];
 
 function FacultyCard({ teacher, index }) {

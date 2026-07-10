@@ -1,17 +1,14 @@
 import { useLanguage } from '../../../app/App.jsx';
 
-// Verified, appropriately-licensed Unsplash photography — every URL below was
-// downloaded and visually checked before use (not guessed from memory) to
-// make sure captions match what the photo actually shows.
 const CAMPUS_PHOTOS = [
-  { key: 'teacherClass', url: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=900&q=80', big: true },
-  { key: 'activeLearning', url: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?w=600&q=80' },
-  { key: 'studyTime', url: 'https://images.unsplash.com/photo-1588072432836-e10032774350?w=600&q=80' },
-  { key: 'modernClassroom', url: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=600&q=80' },
-  { key: 'scienceLab', url: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=600&q=80' },
-  { key: 'experiments', url: 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=600&q=80' },
-  { key: 'library', url: 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=600&q=80' },
-  { key: 'digitalLearning', url: 'https://images.unsplash.com/photo-1610484826967-09c5720778c7?w=600&q=80' },
+  { key: 'teacherClass', url: '/images/campus/teacher-class.jpg', big: true },
+  { key: 'activeLearning', url: '/images/campus/active-learning.jpg' },
+  { key: 'studyTime', url: '/images/campus/study-time.jpg' },
+  { key: 'modernClassroom', url: '/images/campus/modern-classroom.jpg' },
+  { key: 'scienceLab', url: '/images/campus/science-lab.jpg' },
+  { key: 'experiments', url: '/images/campus/experiments.jpg' },
+  { key: 'library', url: '/images/campus/library.jpg' },
+  { key: 'digitalLearning', url: '/images/campus/digital-learning.jpg' },
 ];
 
 export default function CampusGallerySection() {

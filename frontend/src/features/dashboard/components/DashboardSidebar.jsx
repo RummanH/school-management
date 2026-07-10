@@ -44,6 +44,18 @@ const PLATFORM_NAV_GROUPS = [
   ]},
 ];
 
+// Accountants only get the finance side of the admin nav — fees/accounting
+// plus payroll (via HR & Staff, gated server-side to payroll-only for them).
+const ACCOUNTANT_NAV_GROUPS = [
+  { label: null, items: [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  ]},
+  { label: 'Finance & HR', items: [
+    { label: 'Fees',      icon: BadgeDollarSign,   path: '/dashboard/fees' },
+    { label: 'HR & Staff', icon: BriefcaseBusiness, path: '/dashboard/hr' },
+  ]},
+];
+
 // Teachers get academic management here, plus a link back to their portal
 // profile (they're the only dashboard role that also has a /portal profile).
 const TEACHER_NAV_GROUPS = [
@@ -63,6 +75,7 @@ const TEACHER_NAV_GROUPS = [
 function panelLabelFor(role) {
   if (role === 'system_developer') return 'Platform Panel';
   if (role === 'teacher') return 'Teacher Panel';
+  if (role === 'accountant') return 'Accountant Panel';
   return 'Admin Panel';
 }
 
@@ -77,6 +90,7 @@ export default function DashboardSidebar({ activePath, onClose }) {
   let groups;
   if (role === 'system_developer') groups = PLATFORM_NAV_GROUPS;
   else if (role === 'admin') groups = ADMIN_NAV_GROUPS;
+  else if (role === 'accountant') groups = ACCOUNTANT_NAV_GROUPS;
   else if (role === 'teacher') groups = TEACHER_NAV_GROUPS;
   else groups = [{ label: null, items: [{ label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' }] }];
 

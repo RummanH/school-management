@@ -5,6 +5,11 @@ export const createFeeCategory = (data) => apiRequest('/fees/categories', { meth
 export const updateFeeCategory = (id, data) => apiRequest(`/fees/categories/${id}`, { method: 'PUT', body: data });
 export const deleteFeeCategory = (id) => apiRequest(`/fees/categories/${id}`, { method: 'DELETE' });
 
+export const listFeeStructures = () => apiRequest('/fees/structures');
+export const createFeeStructure = (data) => apiRequest('/fees/structures', { method: 'POST', body: data });
+export const updateFeeStructure = (id, data) => apiRequest(`/fees/structures/${id}`, { method: 'PUT', body: data });
+export const deleteFeeStructure = (id) => apiRequest(`/fees/structures/${id}`, { method: 'DELETE' });
+
 export const listFeeAssignments = (studentUserId) => apiRequest(`/fees/assignments${buildQueryString({ studentUserId })}`);
 export const createFeeAssignment = (data) => apiRequest('/fees/assignments', { method: 'POST', body: data });
 export const updateFeeAssignment = (id, data) => apiRequest(`/fees/assignments/${id}`, { method: 'PUT', body: data });
@@ -20,6 +25,11 @@ export const listExpenses = () => apiRequest('/fees/expenses');
 export const createExpense = (data) => apiRequest('/fees/expenses', { method: 'POST', body: data });
 export const deleteExpense = (id) => apiRequest(`/fees/expenses/${id}`, { method: 'DELETE' });
 export const getFeeReport = (period) => apiRequest(`/fees/report${buildQueryString({ period })}`);
+export const getFeeDefaulters = (filters = {}) => apiRequest(`/fees/defaulters${buildQueryString(filters)}`);
+export const getStudentMonthlyLedger = (studentUserId, year) => apiRequest(`/fees/students/${studentUserId}/monthly${buildQueryString({ year })}`);
+
+export const getCashBook = (filters = {}) => apiRequest(`/finance/cashbook${buildQueryString(filters)}`);
+export const getFinanceBalance = () => apiRequest('/finance/balance');
 
 export const getMyFees = () => apiRequest('/fees/me');
 export const getWardFees = (studentUserId) => apiRequest(`/guardian/wards/${studentUserId}/fees`);

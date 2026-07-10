@@ -20,6 +20,23 @@ export class FeeController {
     catch (err) { next(err); }
   };
 
+  listFeeStructures = async (req, res, next) => {
+    try { res.json({ structures: await this.feeService.listFeeStructures(req.currentUser) }); }
+    catch (err) { next(err); }
+  };
+  createFeeStructure = async (req, res, next) => {
+    try { res.status(201).json({ structure: await this.feeService.saveFeeStructure(null, req.body, req.currentUser) }); }
+    catch (err) { next(err); }
+  };
+  updateFeeStructure = async (req, res, next) => {
+    try { res.json({ structure: await this.feeService.saveFeeStructure(req.params.id, req.body, req.currentUser) }); }
+    catch (err) { next(err); }
+  };
+  deleteFeeStructure = async (req, res, next) => {
+    try { await this.feeService.deleteFeeStructure(req.params.id, req.currentUser); res.json({ success: true }); }
+    catch (err) { next(err); }
+  };
+
   listAssignments = async (req, res, next) => {
     try { res.json({ assignments: await this.feeService.listAssignments(req.currentUser, req.query.studentUserId || null) }); }
     catch (err) { next(err); }
@@ -74,6 +91,16 @@ export class FeeController {
   getReport = async (req, res, next) => {
     try { res.json({ report: await this.feeService.getReport(req.currentUser, req.query.period || null) }); }
     catch (err) { next(err); }
+  };
+  getDefaulters = async (req, res, next) => {
+    try { res.json({ defaulters: await this.feeService.getDefaulters(req.currentUser, req.query) }); }
+    catch (err) { next(err); }
+  };
+  getStudentMonthlyLedger = async (req, res, next) => {
+    try {
+      const year = req.query.year || String(new Date().getFullYear());
+      res.json(await this.feeService.getStudentMonthlyLedger(req.params.studentUserId, year, req.currentUser));
+    } catch (err) { next(err); }
   };
   getMyFees = async (req, res, next) => {
     try { res.json(await this.feeService.getMyFees(req.currentUser)); }

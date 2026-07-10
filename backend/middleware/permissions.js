@@ -3,7 +3,9 @@ export const PERMISSIONS = {
   adminManage: ['system_developer', 'admin'],
   staffManage: ['system_developer', 'admin'],
   academicWrite: ['system_developer', 'admin', 'teacher'],
-  financeManage: ['system_developer', 'admin'],
+  financeManage: ['system_developer', 'admin', 'accountant'],
+  payrollManage: ['system_developer', 'admin', 'accountant'],
+  hrView: ['system_developer', 'admin', 'accountant'],
   communicationUse: ['system_developer', 'admin', 'teacher', 'guardian'],
   guardianUse: ['guardian'],
   dataExport: ['system_developer', 'admin'],
@@ -25,7 +27,7 @@ export function requirePermission(permission) {
 }
 
 export function rolePermissionMatrix() {
-  const roles = ['system_developer', 'admin', 'teacher', 'student', 'guardian'];
+  const roles = ['system_developer', 'admin', 'accountant', 'teacher', 'student', 'guardian'];
   return roles.map((role) => ({
     role,
     permissions: Object.fromEntries(Object.keys(PERMISSIONS).map((permission) => [permission, can(role, permission)])),

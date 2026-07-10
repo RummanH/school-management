@@ -25,8 +25,8 @@ export function navigate(path) {
 // attendance/results) but also keep access to /portal for their own profile —
 // see the cross-role guards below, where only system_developer/admin are fully
 // barred from /portal.
-const DASHBOARD_ROLES = ['system_developer', 'admin', 'teacher'];
-const DASHBOARD_ONLY_ROLES = ['system_developer', 'admin'];
+const DASHBOARD_ROLES = ['system_developer', 'admin', 'accountant', 'teacher'];
+const DASHBOARD_ONLY_ROLES = ['system_developer', 'admin', 'accountant'];
 
 function homePathForRole(role) {
   return DASHBOARD_ROLES.includes(role) ? '/dashboard' : '/portal';

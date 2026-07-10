@@ -4,15 +4,11 @@ import {
 } from 'lucide-react';
 import { useLanguage, navigate } from '../../../app/App.jsx';
 
-// Drop a generated image path/URL here to replace a spotlight's placeholder —
-// e.g. FEATURE_IMAGES.fees = '/images/features/fees.png'. Leave empty to keep
-// showing the styled placeholder. See the image-generation prompts given
-// alongside this section for what each one should depict.
 const FEATURE_IMAGES = {
-  attendance: '',
-  fees: '',
-  communication: '',
-  reports: '',
+  attendance: '/images/features/attendance.jpg',
+  fees: '/images/features/fees.jpg',
+  communication: '/images/features/communication.jpg',
+  reports: '/images/features/reports.jpg',
 };
 
 const SPOTLIGHTS = [
