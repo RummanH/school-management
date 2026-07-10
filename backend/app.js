@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import express from "express";
 import cookieParser from "cookie-parser";
-import { backendDistPath, frontendDistPath } from "./config/paths.js";
+import { backendDistPath, frontendDistPath, publicUploadsPath } from "./config/paths.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { createApiRouter } from "./routes/api.js";
 
@@ -19,6 +19,11 @@ export function createApp({
   // applications carry a base64-encoded applicant photo (see admissionService.js).
   app.use(express.json({ limit: "20mb" }));
   app.use(cookieParser());
+
+  if (!fs.existsSync(publicUploadsPath)) {
+    fs.mkdirSync(publicUploadsPath, { recursive: true });
+  }
+  app.use("/uploads", express.static(publicUploadsPath));
 
   app.use("/api", createApiRouter({
     env, contactService, authService, tenantService,
@@ -40,4 +45,3 @@ export function createApp({
 
   return app;
 }
-
