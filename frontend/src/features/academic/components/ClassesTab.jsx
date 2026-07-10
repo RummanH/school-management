@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Loader2, Users, X, Save, GraduationCap } from 'lucide-react';
 import { useAuth } from '../../../app/App.jsx';
-import { listClasses, createClass, updateClass, deleteClass } from '../../../services/api/academicApi.js';
+import { listClasses, createClass, updateClass, deleteClass, getAcademicStructure } from '../../../services/api/academicApi.js';
 import { listTeachersForAcademic } from '../../../services/api/academicApi.js';
 
 // Class create/edit/delete are adminOnly on the backend — teachers get a
@@ -30,7 +30,7 @@ function Modal({ title, onClose, onSave, saving, children }) {
   );
 }
 
-const EMPTY = { name: '', section: '', academicYear: '', classTeacherId: '', description: '' };
+const EMPTY = { name: '', section: '', sessionId: '', classTeacherId: '', description: '' };
 
 export default function ClassesTab() {
   const { currentUser } = useAuth();
@@ -38,6 +38,7 @@ export default function ClassesTab() {
 
   const [classes, setClasses]   = useState([]);
   const [teachers, setTeachers] = useState([]);
+  const [sessions, setSessions] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [modal, setModal]       = useState(null);
   const [form, setForm]         = useState(EMPTY);
@@ -45,13 +46,22 @@ export default function ClassesTab() {
   const [deleting, setDeleting] = useState(null);
 
   useEffect(() => {
-    Promise.all([listClasses(), listTeachersForAcademic()])
-      .then(([c, t]) => { setClasses(c.classes || []); setTeachers(t.teachers || []); })
+    Promise.all([listClasses(), listTeachersForAcademic(), getAcademicStructure().catch(() => null)])
+      .then(([c, t, structure]) => {
+        setClasses(c.classes || []);
+        setTeachers(t.teachers || []);
+        setSessions(structure?.sessions || []);
+      })
       .finally(() => setLoading(false));
   }, []);
 
-  function openCreate() { setForm(EMPTY); setModal('create'); }
-  function openEdit(cls) { setForm({ ...cls, classTeacherId: cls.classTeacherId || '' }); setModal(cls); }
+  function openCreate() {
+    // Default new classes into the active session
+    const activeSession = sessions.find(s => s.is_active);
+    setForm({ ...EMPTY, sessionId: activeSession?.id || '' });
+    setModal('create');
+  }
+  function openEdit(cls) { setForm({ ...cls, sessionId: cls.sessionId || '', classTeacherId: cls.classTeacherId || '' }); setModal(cls); }
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   async function handleSave() {
@@ -131,8 +141,17 @@ export default function ClassesTab() {
               <input className="input" value={form.section} onChange={e => set('section', e.target.value)} placeholder="e.g. A, B, Science" />
             </div>
             <div>
-              <label className="label-sm">Academic Year</label>
-              <input className="input" value={form.academicYear} onChange={e => set('academicYear', e.target.value)} placeholder="e.g. 2024-25" />
+              <label className="label-sm">Academic Session</label>
+              {sessions.length ? (
+                <select className="input" value={form.sessionId} onChange={e => set('sessionId', e.target.value)}>
+                  <option value="">— None —</option>
+                  {sessions.map(s => <option key={s.id} value={s.id}>{s.name}{s.is_active ? ' (active)' : ''}</option>)}
+                </select>
+              ) : (
+                <p className="rounded-xl border border-dashed border-slate-200 px-3 py-2.5 text-xs text-slate-400">
+                  No sessions yet — create one in Academic → Structure → Sessions.
+                </p>
+              )}
             </div>
           </div>
           <div>

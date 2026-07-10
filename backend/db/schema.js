@@ -200,6 +200,16 @@ export async function createSchema(pool) {
       updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS exams (
+      id         TEXT PRIMARY KEY,
+      tenant_id  TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      session_id TEXT REFERENCES academic_sessions(id) ON DELETE SET NULL,
+      term_id    TEXT REFERENCES academic_terms(id) ON DELETE SET NULL,
+      name       TEXT NOT NULL,
+      status     TEXT NOT NULL DEFAULT 'scheduled',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS exam_schedules (
       id          TEXT PRIMARY KEY,
       tenant_id   TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -610,6 +620,26 @@ export async function createSchema(pool) {
     -- attribute new applications to a tenant. See conversation notes / gap
     -- analysis item 18 (multi-tenant public website strategy) for the follow-up.
     ALTER TABLE admission_applications ADD COLUMN IF NOT EXISTS tenant_id TEXT REFERENCES tenants(id) ON DELETE CASCADE;
+
+    -- Academic restructure: exams become first-class records (name/term/session
+    -- live on "exams"; per-class-per-subject rows on exam_schedules link to
+    -- them). exam_name stays on exam_schedules, synced from the parent exam, so
+    -- portal/report readers keep working. Backfill groups legacy rows by name.
+    ALTER TABLE exam_schedules ADD COLUMN IF NOT EXISTS exam_id TEXT REFERENCES exams(id) ON DELETE CASCADE;
+    INSERT INTO exams (id, tenant_id, name)
+      SELECT 'exam-' || md5(tenant_id || '|' || exam_name), tenant_id, exam_name
+        FROM (SELECT DISTINCT tenant_id, exam_name FROM exam_schedules WHERE exam_id IS NULL) legacy
+      ON CONFLICT (id) DO NOTHING;
+    UPDATE exam_schedules
+       SET exam_id = 'exam-' || md5(tenant_id || '|' || exam_name)
+     WHERE exam_id IS NULL;
+
+    -- Classes link to an academic session; academic_year stays as a display
+    -- string synced from the session name for existing consumers.
+    ALTER TABLE classes ADD COLUMN IF NOT EXISTS session_id TEXT REFERENCES academic_sessions(id) ON DELETE SET NULL;
+    UPDATE classes c SET session_id = s.id
+      FROM academic_sessions s
+     WHERE c.session_id IS NULL AND s.tenant_id = c.tenant_id AND s.name = c.academic_year;
   `);
 
   // Stage 3 â€” create indexes (all referenced columns now guaranteed to exist)
@@ -634,6 +664,9 @@ export async function createSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_syllabus_entries_class_id  ON syllabus_entries(class_id);
     CREATE INDEX IF NOT EXISTS idx_exam_schedules_class_id    ON exam_schedules(class_id);
     CREATE INDEX IF NOT EXISTS idx_exam_schedules_exam_date   ON exam_schedules(exam_date);
+    CREATE INDEX IF NOT EXISTS idx_exam_schedules_exam_id     ON exam_schedules(exam_id);
+    CREATE INDEX IF NOT EXISTS idx_exams_tenant_session       ON exams(tenant_id, session_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_classes_session            ON classes(session_id);
     CREATE INDEX IF NOT EXISTS idx_exam_results_exam_schedule_id ON exam_results(exam_schedule_id);
     CREATE INDEX IF NOT EXISTS idx_exam_results_student_user_id  ON exam_results(student_user_id);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_attendance_unique_period ON attendance_records(class_id, student_user_id, attendance_date, period_number);

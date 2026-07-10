@@ -9,6 +9,7 @@ export function mapClass(row) {
     name:            row.name,
     section:         row.section,
     academicYear:    row.academic_year,
+    sessionId:       row.session_id || null,
     classTeacherId:  row.class_teacher_id,
     classTeacherName:row.class_teacher_name || null,
     description:     row.description || '',
@@ -47,6 +48,7 @@ export function mapSyllabus(row) {
 export function mapExam(row) {
   return {
     id:          row.id,
+    examId:      row.exam_id || null,
     classId:     row.class_id,
     examName:    row.exam_name,
     subject:     row.subject,
@@ -55,6 +57,22 @@ export function mapExam(row) {
     endTime:     row.end_time,
     totalMarks:  row.total_marks,
     room:        row.room,
+    createdAt:   row.created_at,
+  };
+}
+
+export function mapExamGroup(row) {
+  return {
+    id:          row.id,
+    tenantId:    row.tenant_id,
+    sessionId:   row.session_id || null,
+    sessionName: row.session_name || '',
+    termId:      row.term_id || null,
+    termName:    row.term_name || '',
+    name:        row.name,
+    status:      row.status,
+    subjectCount: Number(row.subject_count || 0),
+    classCount:   Number(row.class_count || 0),
     createdAt:   row.created_at,
   };
 }
@@ -128,22 +146,22 @@ export async function findClassById(client, id) {
   return result.rows[0] || null;
 }
 
-export async function insertClass(client, { tenantId, name, section, academicYear, classTeacherId, description }) {
+export async function insertClass(client, { tenantId, name, section, academicYear, sessionId, classTeacherId, description }) {
   const id = createId('cls');
   await client.query(
-    `INSERT INTO classes (id, tenant_id, name, section, academic_year, class_teacher_id, description)
-     VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-    [id, tenantId, name, section || '', academicYear || '', classTeacherId || null, description || ''],
+    `INSERT INTO classes (id, tenant_id, name, section, academic_year, session_id, class_teacher_id, description)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+    [id, tenantId, name, section || '', academicYear || '', sessionId || null, classTeacherId || null, description || ''],
   );
   return id;
 }
 
-export async function updateClass(client, { id, name, section, academicYear, classTeacherId, description }) {
+export async function updateClass(client, { id, name, section, academicYear, sessionId, classTeacherId, description }) {
   await client.query(
-    `UPDATE classes SET name=$1, section=$2, academic_year=$3,
-            class_teacher_id=$4, description=$5
-      WHERE id = $6`,
-    [name, section || '', academicYear || '', classTeacherId || null, description || '', id],
+    `UPDATE classes SET name=$1, section=$2, academic_year=$3, session_id=$4,
+            class_teacher_id=$5, description=$6
+      WHERE id = $7`,
+    [name, section || '', academicYear || '', sessionId || null, classTeacherId || null, description || '', id],
   );
 }
 
@@ -234,12 +252,12 @@ export async function findExamById(client, id) {
   return result.rows[0] || null;
 }
 
-export async function insertExam(client, { tenantId, classId, examName, subject, examDate, startTime, endTime, totalMarks, room }) {
+export async function insertExam(client, { tenantId, classId, examId, examName, subject, examDate, startTime, endTime, totalMarks, room }) {
   const id = createId('exm');
   await client.query(
-    `INSERT INTO exam_schedules (id, tenant_id, class_id, exam_name, subject, exam_date, start_time, end_time, total_marks, room)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-    [id, tenantId, classId, examName, subject, examDate, startTime || '', endTime || '', totalMarks || 100, room || ''],
+    `INSERT INTO exam_schedules (id, tenant_id, class_id, exam_id, exam_name, subject, exam_date, start_time, end_time, total_marks, room)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+    [id, tenantId, classId, examId || null, examName, subject, examDate, startTime || '', endTime || '', totalMarks || 100, room || ''],
   );
   return id;
 }
@@ -253,6 +271,51 @@ export async function updateExam(client, { id, examName, subject, examDate, star
 
 export async function deleteExam(client, id) {
   await client.query('DELETE FROM exam_schedules WHERE id = $1', [id]);
+}
+
+// ─── Exam groups (first-class exams: name/term/session live here) ─────────────
+
+export async function listExamGroups(client, tenantId, sessionId = null) {
+  const result = await client.query(
+    `SELECT e.*, s.name AS session_name, t.name AS term_name,
+            COUNT(es.id)::int AS subject_count,
+            COUNT(DISTINCT es.class_id)::int AS class_count
+       FROM exams e
+       LEFT JOIN academic_sessions s ON s.id = e.session_id
+       LEFT JOIN academic_terms t ON t.id = e.term_id
+       LEFT JOIN exam_schedules es ON es.exam_id = e.id
+      WHERE e.tenant_id = $1 AND ($2::text IS NULL OR e.session_id = $2)
+      GROUP BY e.id, s.name, t.name
+      ORDER BY e.created_at DESC`,
+    [tenantId, sessionId],
+  );
+  return result.rows.map(mapExamGroup);
+}
+
+export async function findExamGroupById(client, id) {
+  const result = await client.query('SELECT * FROM exams WHERE id = $1', [id]);
+  return result.rows[0] || null;
+}
+
+export async function insertExamGroup(client, { id, tenantId, name, sessionId, termId, status }) {
+  await client.query(
+    `INSERT INTO exams (id, tenant_id, name, session_id, term_id, status)
+     VALUES ($1,$2,$3,$4,$5,$6)`,
+    [id, tenantId, name, sessionId || null, termId || null, status || 'scheduled'],
+  );
+}
+
+export async function updateExamGroup(client, { id, name, sessionId, termId, status }) {
+  // exam_name on schedule rows mirrors the group name for portal/report readers
+  await client.query(
+    `UPDATE exams SET name=$2, session_id=$3, term_id=$4, status=$5 WHERE id=$1`,
+    [id, name, sessionId || null, termId || null, status || 'scheduled'],
+  );
+  await client.query(`UPDATE exam_schedules SET exam_name=$2 WHERE exam_id=$1`, [id, name]);
+}
+
+export async function deleteExamGroup(client, id) {
+  await client.query('DELETE FROM exams WHERE id = $1', [id]);
 }
 
 // ─── Exam Results ─────────────────────────────────────────────────────────────
@@ -575,4 +638,68 @@ export async function createStudentMovement(client, data) {
   if (['withdrawal','transfer'].includes(data.movementType)) {
     await client.query(`UPDATE users SET status='inactive', updated_at=NOW() WHERE id=$1`, [data.studentUserId]);
   }
+}
+
+// Structure record maintenance (movements excluded on purpose — they're an
+// audit log with side effects already applied; editing one wouldn't undo them)
+
+export async function updateAcademicSession(client, tenantId, id, data) {
+  await client.query(
+    `UPDATE academic_sessions SET name=$3, start_date=$4, end_date=$5, is_active=$6 WHERE tenant_id=$1 AND id=$2`,
+    [tenantId, id, data.name, data.startDate || null, data.endDate || null, Boolean(data.isActive)],
+  );
+}
+
+// A tenant has at most one active session — activating one deactivates the rest.
+export async function deactivateOtherSessions(client, tenantId, exceptId) {
+  await client.query(`UPDATE academic_sessions SET is_active=false WHERE tenant_id=$1 AND id <> $2`, [tenantId, exceptId]);
+}
+
+export async function findSessionById(client, id) {
+  const result = await client.query(`SELECT * FROM academic_sessions WHERE id=$1`, [id]);
+  return result.rows[0] || null;
+}
+
+export async function updateAcademicTerm(client, tenantId, id, data) {
+  await client.query(
+    `UPDATE academic_terms SET session_id=$3, name=$4, start_date=$5, end_date=$6, sort_order=$7 WHERE tenant_id=$1 AND id=$2`,
+    [tenantId, id, data.sessionId || null, data.name, data.startDate || null, data.endDate || null, Number(data.sortOrder || 0)],
+  );
+}
+
+export async function updateSubject(client, tenantId, id, data) {
+  await client.query(
+    `UPDATE subjects SET code=$3, name=$4, department=$5, description=$6, is_active=$7 WHERE tenant_id=$1 AND id=$2`,
+    [tenantId, id, data.code || '', data.name, data.department || '', data.description || '', data.isActive !== false],
+  );
+}
+
+export async function updateGradingPolicy(client, tenantId, id, data) {
+  await client.query(
+    `UPDATE grading_policies SET name=$3, min_percent=$4, max_percent=$5, grade=$6, grade_point=$7, is_passing=$8 WHERE tenant_id=$1 AND id=$2`,
+    [tenantId, id, data.name, Number(data.minPercent || 0), Number(data.maxPercent || 100), data.grade, Number(data.gradePoint || 0), data.isPassing !== false],
+  );
+}
+
+const STRUCTURE_TABLES = {
+  'sessions': 'academic_sessions',
+  'terms': 'academic_terms',
+  'subjects': 'subjects',
+  'assignments': 'teacher_subject_assignments',
+  'grading-policies': 'grading_policies',
+};
+
+export async function deleteStructureRecord(client, tenantId, type, id) {
+  const table = STRUCTURE_TABLES[type];
+  if (!table) return false;
+  const result = await client.query(`DELETE FROM ${table} WHERE tenant_id=$1 AND id=$2`, [tenantId, id]);
+  return result.rowCount > 0;
+}
+
+export async function getGradingPolicies(client, tenantId) {
+  const result = await client.query(
+    `SELECT * FROM grading_policies WHERE tenant_id=$1 ORDER BY min_percent DESC`,
+    [tenantId],
+  );
+  return result.rows;
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Loader2, X, Save, BookOpen } from 'lucide-react';
 import { useAuth } from '../../../app/App.jsx';
-import { listClasses, getSyllabus, createSyllabusEntry, updateSyllabusEntry, deleteSyllabusEntry } from '../../../services/api/academicApi.js';
+import { listClasses, getSyllabus, createSyllabusEntry, updateSyllabusEntry, deleteSyllabusEntry, getAcademicStructure } from '../../../services/api/academicApi.js';
 
 // Deleting a syllabus entry is adminOnly on the backend — admin/teacher can
 // both add/edit entries (POST/PUT are staffAndAdmin), only admin can delete.
@@ -16,6 +16,7 @@ export default function SyllabusTab() {
   const [classes, setClasses]   = useState([]);
   const [classId, setClassId]   = useState('');
   const [syllabus, setSyllabus] = useState([]);
+  const [subjectMaster, setSubjectMaster] = useState([]);
   const [loading, setLoading]   = useState(false);
   const [modal, setModal]       = useState(null);
   const [form, setForm]         = useState(EMPTY);
@@ -23,9 +24,10 @@ export default function SyllabusTab() {
   const [deleting, setDeleting] = useState(null);
 
   useEffect(() => {
-    listClasses().then(c => {
+    Promise.all([listClasses(), getAcademicStructure().catch(() => null)]).then(([c, structure]) => {
       const cls = c.classes || [];
       setClasses(cls);
+      setSubjectMaster((structure?.subjects || []).filter(s => s.is_active !== false));
       if (cls.length) setClassId(cls[0].id);
     });
   }, []);
@@ -132,7 +134,14 @@ export default function SyllabusTab() {
             <div className="p-5 space-y-4">
               <div>
                 <label className="label-sm">Subject <span className="text-red-500">*</span></label>
-                <input className="input" value={form.subject} onChange={e => set('subject', e.target.value)} placeholder="e.g. Mathematics" />
+                {subjectMaster.length ? (
+                  <select className="input" value={form.subject} onChange={e => set('subject', e.target.value)}>
+                    <option value="">— Select subject —</option>
+                    {subjectMaster.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                  </select>
+                ) : (
+                  <input className="input" value={form.subject} onChange={e => set('subject', e.target.value)} placeholder="e.g. Mathematics" />
+                )}
               </div>
               <div>
                 <label className="label-sm">Title <span className="text-red-500">*</span></label>

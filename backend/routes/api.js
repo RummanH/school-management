@@ -120,8 +120,22 @@ export function createApiRouter({
 
   // Academic Portal
 
-  router.get("/academic/structure",      ...adminOnly, academicController.getStructure);
+  // Structure read is staffAndAdmin: teachers need the subject master and
+  // teacher-subject assignments to drive routine/syllabus pickers. Writes stay admin.
+  router.get("/academic/structure",      ...staffAndAdmin, academicController.getStructure);
   router.post("/academic/structure/:type", ...adminOnly, academicController.createStructureRecord);
+  router.put("/academic/structure/:type/:id", ...adminOnly, academicController.updateStructureRecord);
+  router.delete("/academic/structure/:type/:id", ...adminOnly, academicController.deleteStructureRecord);
+
+  // Exams as first-class records (name/term/session); schedule rows live under
+  // /academic/classes/:classId/exams and link back via examId.
+  router.get("/academic/exam-groups",        ...staffAndAdmin, academicController.listExamGroups);
+  router.post("/academic/exam-groups",       ...adminOnly, academicController.createExamGroup);
+  router.put("/academic/exam-groups/:id",    ...adminOnly, academicController.updateExamGroup);
+  router.delete("/academic/exam-groups/:id", ...adminOnly, academicController.deleteExamGroup);
+
+  // Year-end bulk promotion (per-student movements created under the hood)
+  router.post("/academic/promote", ...adminOnly, academicController.bulkPromote);
 
   // Classes (admin manages, all authenticated can list)
   router.get("/academic/classes",      auth, academicController.listClasses);

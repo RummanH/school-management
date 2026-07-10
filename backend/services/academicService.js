@@ -5,18 +5,26 @@ import {
   listRoutineByClass, upsertRoutineEntry, deleteRoutineEntry,
   listSyllabusByClass, insertSyllabusEntry, updateSyllabusEntry, deleteSyllabusEntry,
   listExamsByClass, findExamById, insertExam, updateExam, deleteExam,
+  listExamGroups, findExamGroupById, insertExamGroup, updateExamGroup, deleteExamGroup,
   listStudentsByClass, listResultsByExam, listResultsByStudent, upsertResult,
   listAttendanceByClassDate, upsertAttendance, sendAbsenceGuardianAlerts, getAttendanceSummary,
   listAttendanceCorrections, createAttendanceCorrection, reviewAttendanceCorrection, getMonthlyAttendanceReport,
   listTeachersByTenant,
   listAcademicStructure, createAcademicSession, createAcademicTerm, createSubject, createTeacherSubjectAssignment, createGradingPolicy, createStudentMovement,
+  updateAcademicSession, deactivateOtherSessions, findSessionById, updateAcademicTerm, updateSubject, updateGradingPolicy, deleteStructureRecord,
+  getGradingPolicies,
 } from "../repositories/academicRepository.js";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-function gradeFor(obtained, total) {
+// Grade from the tenant's own grading policies; the built-in ladder is only a
+// fallback for tenants that haven't defined any bands yet.
+function gradeFor(obtained, total, policies = []) {
   if (obtained === null || obtained === undefined || !total) return '';
   const pct = (Number(obtained) / Number(total)) * 100;
+  const band = policies.find(p => pct >= Number(p.min_percent) && pct <= Number(p.max_percent));
+  if (band) return band.grade;
+  if (policies.length) return policies[policies.length - 1].grade; // below every band → lowest defined grade
   if (pct >= 80) return 'A+';
   if (pct >= 70) return 'A';
   if (pct >= 60) return 'A-';
@@ -42,16 +50,28 @@ export class AcademicService {
     return this.databaseManager.withClient(c => listClassesPublic(c));
   }
 
+  // The class's academic_year display string mirrors the linked session's name
+  // (kept in sync here so reports/cards/admission labels keep working); a
+  // free-text academicYear is only honored when no session is linked.
+  async resolveSessionYear(c, sessionId, actor, fallbackYear = '') {
+    if (!sessionId) return { sessionId: null, academicYear: (fallbackYear || '').trim() };
+    const session = await findSessionById(c, sessionId);
+    assert(session && session.tenant_id === actor.tenantId, "Session not found.", 404);
+    return { sessionId: session.id, academicYear: session.name };
+  }
+
   async createClass(input, actor) {
     const name = (input.name || '').trim();
     assert(name, "Class name is required.", 400);
-    const section     = (input.section || '').trim();
-    const academicYear = (input.academicYear || '').trim();
-    const classTeacherId = input.classTeacherId || null;
-    const description = (input.description || '').trim();
-
     return this.databaseManager.withTransaction(async (c) => {
-      await insertClass(c, { tenantId: actor.tenantId, name, section, academicYear, classTeacherId, description });
+      const { sessionId, academicYear } = await this.resolveSessionYear(c, input.sessionId, actor, input.academicYear);
+      await insertClass(c, {
+        tenantId: actor.tenantId, name,
+        section: (input.section || '').trim(),
+        academicYear, sessionId,
+        classTeacherId: input.classTeacherId || null,
+        description: (input.description || '').trim(),
+      });
       return listClasses(c, actor.tenantId);
     });
   }
@@ -62,11 +82,12 @@ export class AcademicService {
     return this.databaseManager.withTransaction(async (c) => {
       const existing = await findClassById(c, classId);
       assert(existing && existing.tenant_id === actor.tenantId, "Class not found.", 404);
+      const { sessionId, academicYear } = await this.resolveSessionYear(c, input.sessionId, actor, input.academicYear);
       await updateClass(c, {
         id: classId,
         name,
         section:         (input.section || '').trim(),
-        academicYear:    (input.academicYear || '').trim(),
+        academicYear, sessionId,
         classTeacherId:  input.classTeacherId || null,
         description:     (input.description || '').trim(),
       });
@@ -168,6 +189,53 @@ export class AcademicService {
     await this.databaseManager.withTransaction(c => deleteSyllabusEntry(c, entryId));
   }
 
+  // ── Exams (first-class records: name/term/session) ────────────────────────
+
+  async listExamGroups(actor, sessionId = null) {
+    return this.databaseManager.withClient(c => listExamGroups(c, actor.tenantId, sessionId || null));
+  }
+
+  async createExamGroup(input, actor) {
+    const name = (input.name || '').trim();
+    assert(name, "Exam name is required.", 400);
+    return this.databaseManager.withTransaction(async (c) => {
+      await insertExamGroup(c, {
+        id: cryptoId('exam'),
+        tenantId: actor.tenantId,
+        name,
+        sessionId: input.sessionId || null,
+        termId: input.termId || null,
+        status: input.status || 'scheduled',
+      });
+      return listExamGroups(c, actor.tenantId, null);
+    });
+  }
+
+  async updateExamGroup(id, input, actor) {
+    const name = (input.name || '').trim();
+    assert(name, "Exam name is required.", 400);
+    return this.databaseManager.withTransaction(async (c) => {
+      const existing = await findExamGroupById(c, id);
+      assert(existing && existing.tenant_id === actor.tenantId, "Exam not found.", 404);
+      await updateExamGroup(c, {
+        id, name,
+        sessionId: input.sessionId ?? existing.session_id,
+        termId: input.termId ?? existing.term_id,
+        status: input.status || existing.status,
+      });
+      return listExamGroups(c, actor.tenantId, null);
+    });
+  }
+
+  async deleteExamGroup(id, actor) {
+    return this.databaseManager.withTransaction(async (c) => {
+      const existing = await findExamGroupById(c, id);
+      assert(existing && existing.tenant_id === actor.tenantId, "Exam not found.", 404);
+      await deleteExamGroup(c, id);
+      return listExamGroups(c, actor.tenantId, null);
+    });
+  }
+
   // ── Exam Schedules ─────────────────────────────────────────────────────────
 
   async getExams(classId, actor) {
@@ -179,18 +247,28 @@ export class AcademicService {
   }
 
   async createExam(classId, input, actor) {
-    const examName = (input.examName || '').trim();
     const subject  = (input.subject  || '').trim();
     const examDate = (input.examDate || '').trim();
-    assert(examName, "Exam name is required.", 400);
     assert(subject,  "Subject is required.", 400);
     assert(examDate, "Exam date is required.", 400);
 
     return this.databaseManager.withTransaction(async (c) => {
       const cls = await findClassById(c, classId);
       assert(cls && cls.tenant_id === actor.tenantId, "Class not found.", 404);
+
+      // Schedule rows belong to an exam record; exam_name mirrors its name.
+      // Free-text examName without examId is still accepted as a legacy path.
+      let examId = input.examId || null;
+      let examName = (input.examName || '').trim();
+      if (examId) {
+        const group = await findExamGroupById(c, examId);
+        assert(group && group.tenant_id === actor.tenantId, "Exam not found.", 404);
+        examName = group.name;
+      }
+      assert(examName, "Exam name is required.", 400);
+
       await insertExam(c, {
-        tenantId: actor.tenantId, classId, examName, subject, examDate,
+        tenantId: actor.tenantId, classId, examId, examName, subject, examDate,
         startTime:  (input.startTime  || '').trim(),
         endTime:    (input.endTime    || '').trim(),
         totalMarks: Number(input.totalMarks || 100),
@@ -257,6 +335,7 @@ export class AcademicService {
     return this.databaseManager.withTransaction(async (c) => {
       const exam = await findExamById(c, examScheduleId);
       assert(exam && exam.tenant_id === actor.tenantId, "Exam not found.", 404);
+      const policies = await getGradingPolicies(c, actor.tenantId);
       for (const entry of entries) {
         if (entry.marksObtained === null || entry.marksObtained === undefined) continue;
         const marks = Number(entry.marksObtained);
@@ -266,7 +345,7 @@ export class AcademicService {
           examScheduleId,
           studentUserId: entry.studentUserId,
           marksObtained: marks,
-          grade:   gradeFor(marks, exam.total_marks),
+          grade:   gradeFor(marks, exam.total_marks, policies),
           remarks: entry.remarks || '',
         });
       }
@@ -397,7 +476,9 @@ export class AcademicService {
     return this.databaseManager.withTransaction(async (c) => {
       if (type === 'sessions') {
         assert(requiredName, "Session name is required.", 400);
-        await createAcademicSession(c, { ...input, id: cryptoId('session'), tenantId: actor.tenantId, name: requiredName });
+        const id = cryptoId('session');
+        await createAcademicSession(c, { ...input, id, tenantId: actor.tenantId, name: requiredName });
+        if (input.isActive) await deactivateOtherSessions(c, actor.tenantId, id);
       } else if (type === 'terms') {
         assert(requiredName, "Term name is required.", 400);
         await createAcademicTerm(c, { ...input, id: cryptoId('term'), tenantId: actor.tenantId, name: requiredName });
@@ -419,6 +500,75 @@ export class AcademicService {
       return listAcademicStructure(c, actor.tenantId);
     });
   }
+
+  async updateStructureRecord(type, id, input, actor) {
+    const requiredName = (input.name || '').trim();
+    return this.databaseManager.withTransaction(async (c) => {
+      if (type === 'sessions') {
+        assert(requiredName, "Session name is required.", 400);
+        await updateAcademicSession(c, actor.tenantId, id, { ...input, name: requiredName });
+        if (input.isActive) await deactivateOtherSessions(c, actor.tenantId, id);
+      } else if (type === 'terms') {
+        assert(requiredName, "Term name is required.", 400);
+        await updateAcademicTerm(c, actor.tenantId, id, { ...input, name: requiredName });
+      } else if (type === 'subjects') {
+        assert(requiredName, "Subject name is required.", 400);
+        await updateSubject(c, actor.tenantId, id, { ...input, name: requiredName });
+      } else if (type === 'grading-policies') {
+        assert(requiredName && input.grade, "Policy name and grade are required.", 400);
+        await updateGradingPolicy(c, actor.tenantId, id, { ...input, name: requiredName });
+      } else {
+        assert(false, "This structure type cannot be edited.", 400);
+      }
+      return listAcademicStructure(c, actor.tenantId);
+    });
+  }
+
+  async deleteStructureRecord(type, id, actor) {
+    return this.databaseManager.withTransaction(async (c) => {
+      const removed = await deleteStructureRecord(c, actor.tenantId, type, id);
+      assert(removed, "Record not found or cannot be deleted.", 404);
+      return listAcademicStructure(c, actor.tenantId);
+    });
+  }
+
+  // Year-end helper: promote every active student of a class in one action.
+  // Reuses the per-student movement (audit log + profile update) so each
+  // student still gets an individual movement record.
+  async bulkPromote(input, actor) {
+    const { fromClassId, toClassId } = input;
+    assert(fromClassId && toClassId, "Both source and destination class are required.", 400);
+    assert(fromClassId !== toClassId, "Source and destination class must differ.", 400);
+    const effectiveDate = (input.effectiveDate || '').trim() || new Date().toISOString().slice(0, 10);
+
+    return this.databaseManager.withTransaction(async (c) => {
+      const fromCls = await findClassById(c, fromClassId);
+      const toCls = await findClassById(c, toClassId);
+      assert(fromCls && fromCls.tenant_id === actor.tenantId, "Source class not found.", 404);
+      assert(toCls && toCls.tenant_id === actor.tenantId, "Destination class not found.", 404);
+
+      const students = await listStudentsByClass(c, fromClassId);
+      for (const student of students) {
+        await createStudentMovement(c, {
+          id: cryptoId('move'),
+          tenantId: actor.tenantId,
+          studentUserId: student.user_id,
+          movementType: 'promotion',
+          fromClassId,
+          toClassId,
+          fromSection: fromCls.section || '',
+          toSection: input.toSection || toCls.section || '',
+          fromSessionId: fromCls.session_id || null,
+          toSessionId: toCls.session_id || input.toSessionId || null,
+          effectiveDate,
+          reason: input.reason || `Bulk promotion from ${fromCls.name}`,
+          createdBy: actor.id,
+        });
+      }
+      return { promotedCount: students.length };
+    });
+  }
+
   async listTeachers(tenantId) {
     return this.databaseManager.withClient(c => listTeachersByTenant(c, tenantId));
   }

@@ -224,6 +224,42 @@ export class AcademicController {
     try { res.status(201).json(await this.academicService.createStructureRecord(req.params.type, req.body, req.currentUser)); }
     catch (err) { next(err); }
   };
+
+  updateStructureRecord = async (req, res, next) => {
+    try { res.json(await this.academicService.updateStructureRecord(req.params.type, req.params.id, req.body, req.currentUser)); }
+    catch (err) { next(err); }
+  };
+
+  deleteStructureRecord = async (req, res, next) => {
+    try { res.json(await this.academicService.deleteStructureRecord(req.params.type, req.params.id, req.currentUser)); }
+    catch (err) { next(err); }
+  };
+
+  listExamGroups = async (req, res, next) => {
+    try { res.json({ examGroups: await this.academicService.listExamGroups(req.currentUser, req.query.sessionId || null) }); }
+    catch (err) { next(err); }
+  };
+
+  createExamGroup = async (req, res, next) => {
+    try { res.status(201).json({ examGroups: await this.academicService.createExamGroup(req.body, req.currentUser) }); }
+    catch (err) { next(err); }
+  };
+
+  updateExamGroup = async (req, res, next) => {
+    try { res.json({ examGroups: await this.academicService.updateExamGroup(req.params.id, req.body, req.currentUser) }); }
+    catch (err) { next(err); }
+  };
+
+  deleteExamGroup = async (req, res, next) => {
+    try { res.json({ examGroups: await this.academicService.deleteExamGroup(req.params.id, req.currentUser) }); }
+    catch (err) { next(err); }
+  };
+
+  bulkPromote = async (req, res, next) => {
+    try { res.status(201).json(await this.academicService.bulkPromote(req.body, req.currentUser)); }
+    catch (err) { next(err); }
+  };
+
   listTeachers = async (req, res, next) => {
     try {
       const teachers = await this.academicService.listTeachers(req.currentUser.tenantId);

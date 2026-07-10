@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Loader2, X, Save, Calendar } from 'lucide-react';
 import { useAuth } from '../../../app/App.jsx';
-import { listClasses, getRoutine, saveRoutineEntry, deleteRoutineEntry, listTeachersForAcademic } from '../../../services/api/academicApi.js';
+import { listClasses, getRoutine, saveRoutineEntry, deleteRoutineEntry, listTeachersForAcademic, getAcademicStructure } from '../../../services/api/academicApi.js';
 
 // Deleting a routine entry is adminOnly on the backend — admin/teacher can
 // both add/edit periods (POST is staffAndAdmin), only admin can delete.
@@ -24,6 +24,8 @@ export default function RoutineTab() {
   const [classId, setClassId]   = useState('');
   const [routine, setRoutine]   = useState([]);
   const [teachers, setTeachers] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [assignments, setAssignments] = useState([]);
   const [loading, setLoading]   = useState(false);
   const [modal, setModal]       = useState(null);
   const [form, setForm]         = useState(EMPTY_FORM);
@@ -31,14 +33,30 @@ export default function RoutineTab() {
   const [deleting, setDeleting] = useState(null);
 
   useEffect(() => {
-    Promise.all([listClasses(), listTeachersForAcademic()])
-      .then(([c, t]) => {
+    Promise.all([listClasses(), listTeachersForAcademic(), getAcademicStructure().catch(() => null)])
+      .then(([c, t, structure]) => {
         const cls = c.classes || [];
         setClasses(cls);
         setTeachers(t.teachers || []);
+        setSubjects((structure?.subjects || []).filter(s => s.is_active !== false));
+        setAssignments(structure?.assignments || []);
         if (cls.length) { setClassId(cls[0].id); }
       });
   }, []);
+
+  // Teachers assigned to this class (and, when a subject is picked, to that
+  // subject). Falls back to all teachers when no assignments cover the class,
+  // so schools that skipped assignments aren't blocked.
+  function teachersForForm() {
+    const classAssignments = assignments.filter(a => a.class_id === classId);
+    if (!classAssignments.length) return teachers;
+    const subjectMatches = form.subject
+      ? classAssignments.filter(a => a.subject_name === form.subject)
+      : classAssignments;
+    const pool = subjectMatches.length ? subjectMatches : classAssignments;
+    const ids = new Set(pool.map(a => a.teacher_id));
+    return teachers.filter(t => ids.has(t.id));
+  }
 
   useEffect(() => {
     if (!classId) return;
@@ -163,14 +181,24 @@ export default function RoutineTab() {
               </div>
               <div>
                 <label className="label-sm">Subject <span className="text-red-500">*</span></label>
-                <input className="input" value={form.subject} onChange={e => set('subject', e.target.value)} placeholder="e.g. Mathematics" />
+                {subjects.length ? (
+                  <select className="input" value={form.subject} onChange={e => set('subject', e.target.value)}>
+                    <option value="">— Select subject —</option>
+                    {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                  </select>
+                ) : (
+                  <input className="input" value={form.subject} onChange={e => set('subject', e.target.value)} placeholder="e.g. Mathematics" />
+                )}
               </div>
               <div>
                 <label className="label-sm">Teacher</label>
                 <select className="input" value={form.teacherId} onChange={e => set('teacherId', e.target.value)}>
                   <option value="">— None —</option>
-                  {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  {teachersForForm().map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
+                {assignments.some(a => a.class_id === classId) && (
+                  <p className="mt-1 text-[11px] text-slate-400">Filtered to teachers assigned to this class in Structure → Teacher Assignments.</p>
+                )}
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>

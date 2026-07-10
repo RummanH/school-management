@@ -46,3 +46,14 @@ export const getMyAttendance = (classId) => apiRequest(`/academic/me/attendance?
 // Academic structure
 export const getAcademicStructure = () => apiRequest('/academic/structure');
 export const createAcademicStructureRecord = (type, data) => apiRequest(`/academic/structure/${type}`, { method: 'POST', body: data });
+export const updateAcademicStructureRecord = (type, id, data) => apiRequest(`/academic/structure/${type}/${id}`, { method: 'PUT', body: data });
+export const deleteAcademicStructureRecord = (type, id) => apiRequest(`/academic/structure/${type}/${id}`, { method: 'DELETE' });
+
+// Exam groups (first-class exams: name + term + session)
+export const listExamGroups   = (sessionId) => apiRequest(`/academic/exam-groups${sessionId ? `?sessionId=${sessionId}` : ''}`);
+export const createExamGroup  = (data)      => apiRequest('/academic/exam-groups', { method: 'POST', body: data });
+export const updateExamGroup  = (id, data)  => apiRequest(`/academic/exam-groups/${id}`, { method: 'PUT', body: data });
+export const deleteExamGroup  = (id)        => apiRequest(`/academic/exam-groups/${id}`, { method: 'DELETE' });
+
+// Year-end bulk promotion
+export const bulkPromoteClass = (data) => apiRequest('/academic/promote', { method: 'POST', body: data });
