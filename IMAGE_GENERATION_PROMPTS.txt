@@ -1,0 +1,163 @@
+IMAGE GENERATION PROMPTS — copy one block at a time into ChatGPT (DALL-E 3)
+=============================================================================
+
+NOTE: Items 2-13 depict people. ChatGPT's content policy is sometimes
+inconsistent about photorealistic images that include children — if one
+gets declined, come back and I'll rewrite that single prompt in an
+illustrated style instead.
+
+DALL-E 3 only outputs three fixed sizes — pick the closest one to the
+"Dimensions" line under each prompt:
+  Square    = 1024 x 1024 px
+  Landscape = 1792 x 1024 px
+  Portrait  = 1024 x 1792 px
+
+Brand colors (for reference / for the dashboard mockups, 14-17):
+  Brand indigo   #4F46E5
+  Deep indigo    #312E81
+  Accent violet  #6366F1
+
+Where each image goes is listed in the mapping table at the very end of
+this file — the prompts below are copy-paste only, no clutter.
+
+
+-----------------------------------------------------------------------------
+1. HERO PHOTO
+Dimensions: 1792 x 1024 px (Landscape)
+-----------------------------------------------------------------------------
+Professional editorial photography style, a modern school building exterior with large windows and a green courtyard, students walking between classes in the background, natural warm afternoon light, diverse South Asian students, clean and welcoming architecture, a subtle indigo or violet accent visible somewhere in the scene (e.g. a school sign, banner, or door trim), high resolution, no text or logos in the image.
+
+
+-----------------------------------------------------------------------------
+2. FACULTY PORTRAIT (male, 40s)
+Dimensions: 1024 x 1024 px (Square)
+-----------------------------------------------------------------------------
+Professional editorial headshot photography style, a friendly South Asian male teacher in his 40s wearing a simple collared shirt, standing in front of a whiteboard, warm natural lighting, confident and approachable expression, high resolution, no text or logos.
+
+
+-----------------------------------------------------------------------------
+3. FACULTY PORTRAIT (female, 30s)
+Dimensions: 1024 x 1024 px (Square)
+-----------------------------------------------------------------------------
+Professional editorial headshot photography style, a friendly South Asian female teacher in her 30s wearing a simple kurta, standing in a classroom, warm natural lighting, confident and approachable expression, high resolution, no text or logos.
+
+
+-----------------------------------------------------------------------------
+4. FACULTY PORTRAIT (male, 20s-30s)
+Dimensions: 1024 x 1024 px (Square)
+-----------------------------------------------------------------------------
+Professional editorial headshot photography style, a friendly South Asian male teacher in his 20s-30s wearing a casual shirt, standing near bookshelves, warm natural lighting, approachable expression, high resolution, no text or logos.
+
+
+-----------------------------------------------------------------------------
+5. FACULTY PORTRAIT (female, 20s)
+Dimensions: 1024 x 1024 px (Square)
+-----------------------------------------------------------------------------
+Professional editorial headshot photography style, a friendly South Asian female teacher in her 20s wearing a simple professional outfit, standing in a computer lab, warm natural lighting, approachable expression, high resolution, no text or logos.
+
+
+-----------------------------------------------------------------------------
+6. CAMPUS — Teacher Teaching Class
+Dimensions: 1792 x 1024 px (Landscape)
+-----------------------------------------------------------------------------
+Professional editorial photography style, a South Asian teacher standing at the front of a classroom explaining a lesson, diverse students (boys and girls) seated at desks listening attentively, natural window light, warm and engaging atmosphere, high resolution, no text or logos.
+
+
+-----------------------------------------------------------------------------
+7. CAMPUS — Active Learning (hand raised)
+Dimensions: 1024 x 1024 px (Square)
+-----------------------------------------------------------------------------
+Professional editorial photography style, a classroom scene with one student raising their hand to answer a question, teacher gesturing toward them at the whiteboard, other diverse students visible around, natural lighting, engaged expressions, high resolution, no text or logos.
+
+
+-----------------------------------------------------------------------------
+8. CAMPUS — Focused Study Time
+Dimensions: 1024 x 1024 px (Square)
+-----------------------------------------------------------------------------
+Professional editorial photography style, students seated at classroom desks writing in notebooks, focused expressions, natural window light, tidy modern classroom, high resolution, no text or logos.
+
+
+-----------------------------------------------------------------------------
+9. CAMPUS — Modern Empty Classroom
+Dimensions: 1024 x 1024 px (Square)
+-----------------------------------------------------------------------------
+Professional editorial photography style, an empty modern classroom with clean rows of desks and chairs, a whiteboard at the front, bright natural light through large windows, minimal and tidy, a subtle indigo or violet accent on a wall poster or chair trim, high resolution, no text or logos.
+
+
+-----------------------------------------------------------------------------
+10. CAMPUS — Science Lab Glassware
+Dimensions: 1024 x 1024 px (Square)
+-----------------------------------------------------------------------------
+Professional editorial close-up photography style, science laboratory glassware — beakers and a flask with a pipette — on a clean white lab bench, soft natural lighting, sharp focus, high resolution, no text or logos.
+
+
+-----------------------------------------------------------------------------
+11. CAMPUS — Hands-on Experiment
+Dimensions: 1024 x 1024 px (Square)
+-----------------------------------------------------------------------------
+Professional editorial close-up photography style, a student's hand using a pipette to drop liquid into a multi-well lab tray, shallow depth of field, clean lab setting, high resolution, no text or logos.
+
+
+-----------------------------------------------------------------------------
+12. CAMPUS — Library
+Dimensions: 1024 x 1024 px (Square)
+-----------------------------------------------------------------------------
+Professional editorial photography style, a school library aisle with tall bookshelves full of books, a student walking through with a backpack, soft ambient lighting, warm and quiet atmosphere, high resolution, no text or logos.
+
+
+-----------------------------------------------------------------------------
+13. CAMPUS — Digital Learning
+Dimensions: 1024 x 1024 px (Square)
+-----------------------------------------------------------------------------
+Professional editorial photography style, a student wearing headphones looking closely at a laptop screen doing schoolwork, warm natural lighting, focused expression, high resolution, no text or logos.
+
+
+-----------------------------------------------------------------------------
+14. DASHBOARD MOCKUP — Attendance
+Dimensions: 1792 x 1024 px (Landscape)
+-----------------------------------------------------------------------------
+A clean, modern SaaS web dashboard screenshot mockup showing a class attendance grid with student names, checkmark present/absent toggles, and an exam schedule sidebar. Color scheme: brand indigo #4F46E5, deep indigo #312E81, and accent violet #6366F1 on a white background. Minimal flat UI design, rounded cards, soft shadows, sans-serif typography, no real logos or text branding, Notion/Linear-style interface design.
+
+
+-----------------------------------------------------------------------------
+15. DASHBOARD MOCKUP — Fees
+Dimensions: 1792 x 1024 px (Landscape)
+-----------------------------------------------------------------------------
+A clean, modern SaaS web dashboard screenshot mockup showing a fee invoice summary with a bar chart of monthly collections, a table of student payment statuses (paid/due), and a "generate invoice" button. Color scheme: brand indigo #4F46E5, deep indigo #312E81, and accent violet #6366F1 on a white background. Minimal flat UI design, rounded cards, soft shadows, sans-serif typography, no real logos or text branding, Notion/Linear-style interface design.
+
+
+-----------------------------------------------------------------------------
+16. DASHBOARD MOCKUP — Communication
+Dimensions: 1792 x 1024 px (Landscape)
+-----------------------------------------------------------------------------
+A clean, modern SaaS web dashboard screenshot mockup showing a messaging inbox interface with a conversation list on the left and a chat thread between a teacher and a parent on the right, read receipts visible. Color scheme: brand indigo #4F46E5, deep indigo #312E81, and accent violet #6366F1 on a white background. Minimal flat UI design, rounded chat bubbles, soft shadows, sans-serif typography, no real logos or text branding, Notion/Linear-style interface design.
+
+
+-----------------------------------------------------------------------------
+17. DASHBOARD MOCKUP — Reports
+Dimensions: 1792 x 1024 px (Landscape)
+-----------------------------------------------------------------------------
+A clean, modern SaaS web dashboard screenshot mockup showing an analytics dashboard with a class-wise enrollment bar chart, a circular attendance percentage gauge, and a small exam pass-rate table. Color scheme: brand indigo #4F46E5, deep indigo #312E81, and accent violet #6366F1 on a white background. Minimal flat UI design, rounded cards, soft shadows, sans-serif typography, no real logos or text branding, Notion/Linear-style interface design.
+
+
+=============================================================================
+WHERE EACH ONE GOES (send images back and I'll wire these in for you)
+=============================================================================
+ 1            frontend/src/features/landing/constants.js                        HERO_IMAGE
+ 2-5          frontend/src/features/landing/components/AboutSection.jsx         FALLBACK_FACULTY[].photoUrl / PHOTO_FALLBACKS[]
+ 6-13         frontend/src/features/landing/components/CampusGallerySection.jsx CAMPUS_PHOTOS[].url
+ 14-17        frontend/src/features/landing/components/PlatformFeaturesSection.jsx  FEATURE_IMAGES.attendance/.fees/.communication/.reports
+
+
+A NOTE ON "BEAUTIFUL GIRLS"
+=============================================================================
+Skipped intentionally, same as before. This platform holds real children's
+data (attendance, grades, guardian contacts) for real schools, and these
+images are meant to represent that student body. I've kept every people-
+prompt to standard, appropriate education-photography language — "diverse
+students," "engaged," "focused" — rather than anything framed around
+appearance. Prompts 6-8 already specify "diverse students (boys and
+girls)" so girls are represented normally, alongside boys, the way any
+real classroom photo would show them. If there's a different goal behind
+the request (e.g. showing a more visibly gender-balanced or diverse
+student body), tell me and I'll adjust the wording toward that instead.

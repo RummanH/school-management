@@ -10,7 +10,13 @@
       "Read(//c/Users/ASUS/**)",
       "Read(//c/mnt/**)",
       "Read(//c/Users/ASUS/AppData/Local/Temp/claude/**)",
-      "Read(//c/Users/ASUS/.claude/**)"
+      "Read(//c/Users/ASUS/.claude/**)",
+      "Bash(sleep 2 && tail -6 /tmp/vite.log && curl -s \"http://localhost:5175/src/index.css\" | grep -o -- \"--brand-strong: [^;]*;\")",
+      "Read(//tmp/**)",
+      "Bash(sleep 2 && tail -8 /tmp/vite.log && echo \"---\" && curl -s http://localhost:5175/ -o /dev/null -w \"landing: HTTP %{http_code}\\\\n\" && curl -s http://localhost:5175/login -o /dev/null -w \"login: HTTP %{http_code}\\\\n\" && curl -s \"http://localhost:5175/src/index.css\" | grep -o \"overflow-x: hidden\" | head -2)",
+      "Bash(node -e ' *)",
+      "Bash(node --check app.js)",
+      "Bash(curl -s -b cookies.txt http://localhost:3001/api/communication/threads -w \"\\\\ncommunication: HTTP %{http_code}\\\\n\")"
     ]
   }
 }

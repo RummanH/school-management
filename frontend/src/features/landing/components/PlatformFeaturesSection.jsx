@@ -33,7 +33,7 @@ const GRID_FEATURES = [
 
 function PlaceholderVisual({ icon: Icon, label }) {
   return (
-    <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/10 bg-[#14113a]">
+    <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/10 bg-[var(--brand-strong)]">
       <div className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-indigo-500/25 blur-3xl" />
       <div className="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-violet-500/20 blur-3xl" />
       <div

@@ -16,9 +16,10 @@ export default {
     notice: 'Notice Board',
   },
   hero: {
-    eyebrow: 'Welcome to Greenfield Academy',
-    title: 'Building Tomorrow\'s Leaders Today',
-    subtitle: 'A centre of excellence providing quality education from Pre-Primary to Higher Secondary level, fostering academic brilliance and character development.',
+    eyebrow: 'School Management Platform',
+    title: 'Run Your School. Not Your Spreadsheets.',
+    subtitle: 'Attendance, exams, fees, staff, admissions, and parent communication — one connected platform, built for schools done stitching tools together.',
+    featuresCta: 'Explore Features',
     admissionCta: 'Apply for Admission',
     learnMore: 'Learn More',
     slide1Title: 'Quality Education for All',

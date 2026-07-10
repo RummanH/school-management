@@ -9,7 +9,8 @@ import { createApiRouter } from "./routes/api.js";
 export function createApp({
   env, contactService, authService, tenantService,
   userService, studentService, teacherService, academicService,
-  guardianService, noticeService, galleryService, admissionService, feeService, databaseManager,
+  guardianService, noticeService, galleryService, admissionService, feeService,
+  communicationService, hrService, databaseManager,
 }) {
   const app = express();
 
@@ -22,7 +23,8 @@ export function createApp({
   app.use("/api", createApiRouter({
     env, contactService, authService, tenantService,
     userService, studentService, teacherService, academicService,
-    guardianService, noticeService, galleryService, admissionService, feeService, databaseManager,
+    guardianService, noticeService, galleryService, admissionService, feeService,
+    communicationService, hrService, databaseManager,
   }));
 
   const staticRoot = fs.existsSync(backendDistPath) ? backendDistPath : frontendDistPath;

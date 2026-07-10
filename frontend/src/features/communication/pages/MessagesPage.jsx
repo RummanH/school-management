@@ -79,7 +79,18 @@ function ComposePanel({ currentUser, onCreated }) {
       {error && <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block"><span className="label-sm">Recipient Type</span><select className="input" value={role} onChange={(e) => setRole(e.target.value)}>{options.map((o) => <option key={o.role} value={o.role}>{o.label}</option>)}</select></label>
-        <label className="block"><span className="label-sm">Recipient</span><select className="input" value={form.recipientUserId} onChange={(e) => setForm((f) => ({ ...f, recipientUserId: e.target.value }))} required>{loadingRecipients ? <option>Loading...</option> : recipients.map((r) => <option key={r.id} value={r.id}>{r.name} ({r.email})</option>)}</select></label>
+        <label className="block">
+          <span className="label-sm">Recipient</span>
+          <select className="input" value={form.recipientUserId} onChange={(e) => setForm((f) => ({ ...f, recipientUserId: e.target.value }))} required disabled={!loadingRecipients && recipients.length === 0}>
+            {loadingRecipients ? (
+              <option>Loading...</option>
+            ) : recipients.length === 0 ? (
+              <option value="">No {(options.find((o) => o.role === role)?.label || 'recipient').toLowerCase()}s found yet</option>
+            ) : (
+              recipients.map((r) => <option key={r.id} value={r.id}>{r.name} ({r.email})</option>)
+            )}
+          </select>
+        </label>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block"><span className="label-sm">Related Student</span><select className="input" value={form.studentUserId} onChange={(e) => setForm((f) => ({ ...f, studentUserId: e.target.value }))}><option value="">Not linked to a student</option>{students.map((s) => <option key={s.userId} value={s.userId}>{s.name} {s.className ? `- ${s.className}` : ''}</option>)}</select></label>
@@ -111,7 +122,10 @@ export default function MessagesPage() {
     return nextId;
   }
 
-  useEffect(() => { loadThreads().catch(() => {}).finally(() => setLoading(false)); }, []);
+  useEffect(() => {
+    if (currentUser?.role === 'system_developer') { setLoading(false); return; }
+    loadThreads().catch(() => {}).finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
     if (!activeId) { setActive(null); setMessages([]); return; }
@@ -133,6 +147,19 @@ export default function MessagesPage() {
   }
 
   if (loading) return <div className="flex h-48 items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-[var(--brand)]" /></div>;
+
+  if (currentUser?.role === 'system_developer') {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-20 text-center">
+        <Inbox className="mb-3 h-9 w-9 text-slate-300" />
+        <p className="text-sm font-medium text-slate-600">Messaging is scoped per school.</p>
+        <p className="mt-1 max-w-sm text-xs text-slate-400">
+          Platform accounts aren't attached to a specific school, so there's no conversation list to show here.
+          Sign in as a school admin, teacher, or guardian to send and receive messages.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
