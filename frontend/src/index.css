@@ -18,17 +18,17 @@
     --surface-line: rgba(var(--slate-900), 0.08);
     --shadow-soft: 0 20px 55px rgba(var(--slate-900), 0.08);
     --shadow-crisp: 0 12px 30px rgba(var(--slate-900), 0.07);
-    /* Brand = modern indigo/violet */
-    --brand: #4f46e5;
-    --brand-strong: #312e81;
+    /* Brand = deep navy from the landing footer direction */
+    --brand: #201b46;
+    --brand-strong: #161233;
     --brand-soft: color-mix(in srgb, var(--brand) 12%, white);
-    --secondary: #6366f1;
-    --secondary-strong: #4338ca;
+    --secondary: #2b2559;
+    --secondary-strong: #161233;
     --secondary-soft: color-mix(in srgb, var(--secondary) 12%, white);
-    --secondary-shadow: rgba(99, 102, 241, 0.24);
-    --secondary-shadow-strong: rgba(99, 102, 241, 0.3);
-    --bg-dark: #312e81;
-    --login-hero-bg: #eef0ff;
+    --secondary-shadow: rgba(32, 27, 70, 0.24);
+    --secondary-shadow-strong: rgba(22, 18, 51, 0.3);
+    --bg-dark: #161233;
+    --login-hero-bg: #eef1f7;
     --bg-grad-start: color-mix(in srgb, var(--brand) 3%, white);
     --bg-grad-mid: color-mix(in srgb, var(--brand) 5%, white);
     --bg-grad-end: color-mix(in srgb, var(--brand) 7%, white);
@@ -56,8 +56,8 @@
     --surface-white: #f8f8f9;
     --muted: #8c8f9e;
     --highlight: #c4c5cd;
-    --text-strong: #312e81;
-    --text-soft: #5d5c7d;
+    --text-strong: #161233;
+    --text-soft: #55607a;
 
     --slate-50: 248 250 252;
     --slate-100: 241 245 249;
@@ -410,3 +410,4 @@ body.landing-page-active #root {
   min-height: 100vh !important;
   overflow: visible !important;
 }
+
