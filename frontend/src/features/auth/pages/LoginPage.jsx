@@ -54,13 +54,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[var(--brand-strong)] to-[#2e8b57] px-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0f0c2e] px-4">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -left-24 -top-24 h-[26rem] w-[26rem] rounded-full bg-indigo-500/30 blur-3xl" />
+        <div className="absolute -right-24 bottom-0 h-96 w-96 rounded-full bg-violet-500/20 blur-3xl" />
+      </div>
       <div
-        className="pointer-events-none fixed inset-0 opacity-5"
+        className="pointer-events-none fixed inset-0 opacity-[0.03]"
         style={{
-          backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
+          backgroundImage: 'radial-gradient(rgba(255,255,255,0.8) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
         }}
       />
 

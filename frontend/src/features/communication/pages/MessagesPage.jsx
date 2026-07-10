@@ -5,11 +5,18 @@ import { createThread, getThread, listRecipients, listThreads, replyToThread } f
 import { getMyWards } from '../../../services/api/guardianApi.js';
 import { listStudents } from '../../../services/api/studentApi.js';
 
+// communication_threads has one column per role, so same-role pairs (two
+// teachers, two admins) aren't supported yet â€” recipient type options exclude
+// the sender's own role. See communicationService.js for the backend side.
+const CHAT_ROLES = [
+  { role: 'admin', label: 'Admin' },
+  { role: 'teacher', label: 'Teacher' },
+  { role: 'guardian', label: 'Guardian' },
+];
 const ROLE_OPTIONS = {
-  guardian: [{ role: 'teacher', label: 'Teacher' }, { role: 'admin', label: 'Admin' }],
-  teacher: [{ role: 'guardian', label: 'Guardian' }],
-  admin: [{ role: 'guardian', label: 'Guardian' }],
-  system_developer: [{ role: 'guardian', label: 'Guardian' }],
+  admin: CHAT_ROLES.filter((r) => r.role !== 'admin'),
+  teacher: CHAT_ROLES.filter((r) => r.role !== 'teacher'),
+  guardian: CHAT_ROLES.filter((r) => r.role !== 'guardian'),
 };
 
 function timeText(value) {
@@ -142,14 +149,14 @@ export default function MessagesPage() {
             <button key={thread.id} onClick={() => setActiveId(thread.id)} className={`block w-full border-b border-slate-100 p-4 text-left transition hover:bg-slate-50 ${activeId === thread.id ? 'bg-emerald-50/60' : ''}`}>
               <div className="flex items-start justify-between gap-3"><div><p className="font-black text-slate-800">{participantLabel(thread, currentUser)}</p><p className="mt-0.5 text-xs font-semibold text-slate-400">{thread.topic || 'Direct message'}</p></div>{thread.unreadCount > 0 && <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-black text-white">{thread.unreadCount}</span>}</div>
               <p className="mt-2 line-clamp-2 text-sm text-slate-500">{thread.lastMessage || 'No messages yet.'}</p>
-              <p className="mt-2 text-[11px] font-semibold text-slate-400">{timeText(thread.lastMessageAt || thread.updatedAt)} · {thread.messageCount} delivered</p>
+              <p className="mt-2 text-[11px] font-semibold text-slate-400">{timeText(thread.lastMessageAt || thread.updatedAt)} ï¿½ {thread.messageCount} delivered</p>
             </button>
           )) : <div className="flex flex-col items-center py-16 text-slate-400"><Inbox className="mb-3 h-9 w-9" /><p className="text-sm font-medium">No conversations yet.</p></div>}
         </div>
 
         <div className="card min-h-[520px] p-0">
           {!activeId ? <div className="flex h-full min-h-[420px] items-center justify-center text-sm text-slate-400">Select or create a conversation.</div> : detailLoading ? <div className="flex h-64 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-[var(--brand)]" /></div> : <>
-            <div className="border-b border-slate-100 p-5"><p className="font-black text-slate-800">{active ? participantLabel(active, currentUser) : 'Conversation'}</p><p className="mt-1 text-sm text-slate-500">{active?.topic || 'Direct message'}{active?.studentName ? ` · Student: ${active.studentName}` : ''}</p></div>
+            <div className="border-b border-slate-100 p-5"><p className="font-black text-slate-800">{active ? participantLabel(active, currentUser) : 'Conversation'}</p><p className="mt-1 text-sm text-slate-500">{active?.topic || 'Direct message'}{active?.studentName ? ` ï¿½ Student: ${active.studentName}` : ''}</p></div>
             <div className="max-h-[420px] space-y-3 overflow-y-auto p-5">
               {messages.map((m) => {
                 const mine = m.senderUserId === currentUser?.id;

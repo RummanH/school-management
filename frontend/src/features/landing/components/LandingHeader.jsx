@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Menu, X, GraduationCap, LogIn } from 'lucide-react';
 import { useLanguage, navigate } from '../../../app/App.jsx';
 
-const NAV_KEYS = ['home', 'about', 'academics', 'admission', 'notice', 'gallery', 'contact'];
+const NAV_KEYS = ['home', 'features', 'about', 'academics', 'admission', 'notice', 'gallery', 'contact'];
 const NAV_HREFS = {
   home: '#hero',
+  features: '#features',
   about: '#about',
   academics: '#academics',
   admission: '#admission',

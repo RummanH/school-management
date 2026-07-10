@@ -2,9 +2,9 @@ import { GraduationCap, Facebook, Youtube, Mail, Phone, MapPin } from 'lucide-re
 import { useLanguage } from '../../../app/App.jsx';
 import { SCHOOL_ADDRESS, SCHOOL_EMAIL, SCHOOL_PHONE, SCHOOL_FB, SCHOOL_YT } from '../constants.js';
 
-const QUICK_LINKS = ['home', 'about', 'academics', 'admission', 'notice', 'gallery', 'contact'];
+const QUICK_LINKS = ['home', 'features', 'about', 'academics', 'admission', 'notice', 'gallery', 'contact'];
 const HREFS = {
-  home: '#hero', about: '#about', academics: '#academics', admission: '#admission',
+  home: '#hero', features: '#features', about: '#about', academics: '#academics', admission: '#admission',
   notice: '#notice', gallery: '#gallery', contact: '#contact',
 };
 

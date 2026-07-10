@@ -1,7 +1,9 @@
 import LandingHeader from '../components/LandingHeader.jsx';
 import HeroSection from '../components/HeroSection.jsx';
+import PlatformFeaturesSection from '../components/PlatformFeaturesSection.jsx';
 import WhyChooseUsSection from '../components/WhyChooseUsSection.jsx';
 import AboutSection from '../components/AboutSection.jsx';
+import CampusGallerySection from '../components/CampusGallerySection.jsx';
 import StatsSection from '../components/StatsSection.jsx';
 import NoticeSection from '../components/NoticeSection.jsx';
 import AcademicsSection from '../components/AcademicsSection.jsx';
@@ -15,8 +17,10 @@ export default function LandingPage() {
     <div className="min-h-screen overflow-x-hidden bg-white">
       <LandingHeader />
       <HeroSection />
+      <PlatformFeaturesSection />
       <WhyChooseUsSection />
       <AboutSection />
+      <CampusGallerySection />
       <StatsSection />
       <NoticeSection />
       <AcademicsSection />

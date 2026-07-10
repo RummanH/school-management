@@ -4,6 +4,7 @@ import { listStudents, createStudent, updateStudent, deleteStudent } from '../..
 import { listClasses } from '../../../services/api/academicApi.js';
 import { listUsers } from '../../../services/api/userApi.js';
 import { listGuardiansForStudent, linkWard, unlinkWard } from '../../../services/api/guardianApi.js';
+import { listAdmissions } from '../../../services/api/admissionApi.js';
 
 const GENDERS      = ['Male', 'Female', 'Other'];
 const BLOOD_GROUPS = ['A+', 'A−', 'B+', 'B−', 'O+', 'O−', 'AB+', 'AB−'];
@@ -93,6 +94,8 @@ function StudentModal({ initial, onClose, onSaved }) {
   } : { ...EMPTY });
   const [classes, setClasses] = useState([]);
   const [guardians, setGuardians] = useState([]);
+  const [admissions, setAdmissions] = useState([]);
+  const [selectedAdmissionId, setSelectedAdmissionId] = useState('');
   const [selectedGuardianId, setSelectedGuardianId] = useState('');
   const [previousGuardianId, setPreviousGuardianId] = useState('');
   const [saving, setSaving] = useState(false);
@@ -109,10 +112,50 @@ function StudentModal({ initial, onClose, onSaved }) {
           setPreviousGuardianId(linked);
         })
         .catch(() => {});
+    } else {
+      listAdmissions('accepted').then(d => setAdmissions(d.applications || [])).catch(() => {});
     }
   }, []);
 
   function set(field, value) { setForm(f => ({ ...f, [field]: value })); setError(''); }
+
+  // "Enroll in Class" is the single source of truth for class name/section —
+  // className/section on the profile just follow it so reports and table
+  // views (which read className/section, not classId) stay in sync.
+  function handleClassChange(classId) {
+    const cls = classes.find(c => c.id === classId);
+    setForm(f => ({
+      ...f,
+      classId,
+      className: cls ? cls.name : f.className,
+      section: cls ? (cls.section || '') : f.section,
+    }));
+  }
+
+  function handleAdmissionSelect(admissionId) {
+    setSelectedAdmissionId(admissionId);
+    if (!admissionId) return;
+    const app = admissions.find(a => a.id === admissionId);
+    if (!app) return;
+
+    const target = (app.applyingForClass || '').trim().toLowerCase();
+    const matchedClass = classes.find(c => {
+      const label = `${c.name}${c.section ? ` - ${c.section}` : ''}`.toLowerCase();
+      return label === target || c.name.toLowerCase() === target;
+    });
+
+    setForm(f => ({
+      ...f,
+      name: app.applicantName || f.name,
+      dateOfBirth: app.dateOfBirth || f.dateOfBirth,
+      gender: app.gender || f.gender,
+      guardianName: app.guardianName || f.guardianName,
+      guardianPhone: app.guardianPhone || f.guardianPhone,
+      classId: matchedClass ? matchedClass.id : f.classId,
+      className: matchedClass ? matchedClass.name : f.className,
+      section: matchedClass ? (matchedClass.section || f.section) : f.section,
+    }));
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -156,6 +199,26 @@ function StudentModal({ initial, onClose, onSaved }) {
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {error && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
+            {/* Prefill from admission */}
+            {!isEdit && (
+              <>
+                <SectionDivider label="Prefill From Admission" />
+                <div>
+                  <FieldLabel>Admission Application</FieldLabel>
+                  <Select value={selectedAdmissionId} onChange={e => handleAdmissionSelect(e.target.value)}>
+                    <option value="">— None, fill in manually —</option>
+                    {admissions.map(a => (
+                      <option key={a.id} value={a.id}>{a.applicantName} — {a.referenceCode} ({a.applyingForClass})</option>
+                    ))}
+                  </Select>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Selecting an accepted application fills in name, date of birth, gender, guardian name/phone,
+                    and matches the applied-for class below.
+                  </p>
+                </div>
+              </>
+            )}
+
             {/* Login credentials */}
             <SectionDivider label="Login Credentials" />
             <div className="rounded-xl border border-purple-100 bg-purple-50 px-4 py-2.5 text-xs text-purple-700">
@@ -189,7 +252,7 @@ function StudentModal({ initial, onClose, onSaved }) {
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="sm:col-span-3">
                 <FieldLabel>Enroll in Class</FieldLabel>
-                <Select value={form.classId} onChange={e => set('classId', e.target.value)}>
+                <Select value={form.classId} onChange={e => handleClassChange(e.target.value)}>
                   <option value="">— Not assigned —</option>
                   {classes.map(c => <option key={c.id} value={c.id}>{c.name}{c.section ? ` — ${c.section}` : ''}{c.academicYear ? ` (${c.academicYear})` : ''}</option>)}
                 </Select>
@@ -197,10 +260,6 @@ function StudentModal({ initial, onClose, onSaved }) {
               <div>
                 <FieldLabel>Student ID</FieldLabel>
                 <Input value={form.studentId} onChange={e => set('studentId', e.target.value)} placeholder="e.g. STU-001" />
-              </div>
-              <div>
-                <FieldLabel>Class / Grade</FieldLabel>
-                <Input value={form.className} onChange={e => set('className', e.target.value)} placeholder="e.g. Class 8, 1st Year" />
               </div>
               <div>
                 <FieldLabel>Section</FieldLabel>

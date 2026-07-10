@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ArrowRight, GraduationCap, Users, Award } from 'lucide-react';
+import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { useLanguage } from '../../../app/App.jsx';
 import { HERO_IMAGE } from '../constants.js';
 
 const SLIDES = ['slide1', 'slide2', 'slide3'];
 
-const SLIDE_COLORS = [
-  'from-[#0d3d22] to-[#1a6b3c]',
-  'from-[#0d3d22] to-[#0f4d2e]',
-  'from-[#1a3a1a] to-[#1a6b3c]',
+// Subtle per-slide tint on the glow orbs — same deep indigo base throughout,
+// just a different accent hue drifting through so slides feel distinct
+// without the background flatly repainting itself.
+const SLIDE_GLOW = [
+  { a: 'bg-indigo-500/30', b: 'bg-violet-500/20' },
+  { a: 'bg-violet-500/30', b: 'bg-fuchsia-500/15' },
+  { a: 'bg-blue-500/25', b: 'bg-indigo-500/25' },
 ];
 
 export default function HeroSection() {
@@ -20,120 +23,73 @@ export default function HeroSection() {
     return () => clearInterval(id);
   }, []);
 
-  function prev() { setCurrent((c) => (c - 1 + SLIDES.length) % SLIDES.length); }
-  function next() { setCurrent((c) => (c + 1) % SLIDES.length); }
+  const glow = SLIDE_GLOW[current];
 
   return (
-    <section id="hero" className={`relative flex min-h-[92vh] items-center bg-gradient-to-br pt-16 ${SLIDE_COLORS[current]} transition-colors duration-700`}>
-      {/* Decorative grid */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-5"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-        }}
-      />
+    <section id="hero" className="relative flex min-h-[90vh] items-center bg-[#0f0c2e] pt-16">
+      {/* Layered glow orbs, clipped to this wrapper only so the floating
+          content around it is never at risk of being cut off. */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className={`absolute -left-40 -top-40 h-[32rem] w-[32rem] rounded-full blur-3xl transition-colors duration-[1500ms] ${glow.a}`} />
+        <div className={`absolute -right-32 bottom-0 h-[28rem] w-[28rem] rounded-full blur-3xl transition-colors duration-[1500ms] ${glow.b}`} />
+      </div>
 
-      <div className="landing-container relative z-10 py-16">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
+      <div className="landing-container relative z-10 py-20">
+        <div className="grid items-center gap-16 lg:grid-cols-[1.1fr_0.9fr]">
           {/* Left: copy */}
           <div className="text-white">
-            <p className="text-xs font-black uppercase tracking-widest text-white/60">
+            <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest text-white/70">
               {t('hero.eyebrow')}
             </p>
-            <h1 className="mt-4 text-4xl font-black leading-[1.06] tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="mt-6 text-5xl font-black leading-[1.04] tracking-tight sm:text-6xl lg:text-[3.75rem]">
               {t(`hero.${SLIDES[current]}Title`)}
             </h1>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">
+            <p className="mt-6 max-w-lg text-base leading-relaxed text-white/60 sm:text-lg">
               {t(`hero.${SLIDES[current]}Sub`)}
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-9 flex flex-wrap items-center gap-4">
               <a
                 href="#admission"
-                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-[var(--brand-strong)] shadow-md transition hover:-translate-y-0.5 hover:shadow-lg"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-[#1e1b4b] shadow-[0_16px_36px_rgba(99,102,241,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_44px_rgba(99,102,241,0.45)]"
               >
                 {t('hero.admissionCta')}
                 <ArrowRight className="h-4 w-4" />
               </a>
               <a
                 href="#about"
-                className="inline-flex items-center gap-2 rounded-full border border-white/30 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
+                className="inline-flex items-center gap-1.5 text-sm font-bold text-white/70 transition hover:text-white"
               >
                 {t('hero.learnMore')}
+                <ArrowUpRight className="h-4 w-4" />
               </a>
             </div>
 
-            {/* Slide indicators */}
-            <div className="mt-10 flex items-center gap-3">
-              <button onClick={prev} className="rounded-full p-2 text-white/60 transition hover:bg-white/10 hover:text-white">
-                <ChevronLeft className="h-5 w-5" />
-              </button>
+            {/* Slide indicators — minimal, no carousel chrome */}
+            <div className="mt-14 flex items-center gap-2.5">
               {SLIDES.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrent(i)}
-                  className={`h-2 rounded-full transition-all ${i === current ? 'w-8 bg-white' : 'w-2 bg-white/30'}`}
+                  aria-label={`Slide ${i + 1}`}
+                  className={`h-1.5 rounded-full transition-all ${i === current ? 'w-9 bg-white' : 'w-1.5 bg-white/25 hover:bg-white/40'}`}
                 />
               ))}
-              <button onClick={next} className="rounded-full p-2 text-white/60 transition hover:bg-white/10 hover:text-white">
-                <ChevronRight className="h-5 w-5" />
-              </button>
             </div>
           </div>
 
-          {/* Right: photo + floating stat badges */}
-          <div className="relative mx-auto mt-6 max-w-md pb-6 pl-4 pr-2 lg:mt-0 lg:max-w-none">
-            {/* Decorative diagonal accent, sits behind the photo */}
-            <div
-              className="pointer-events-none absolute -right-3 -top-8 h-32 w-32 bg-white/10"
-              style={{ clipPath: 'polygon(35% 0, 100% 0, 100% 65%)' }}
-            />
-
-            <div className="relative rounded-3xl border border-white/10 bg-white/5 p-3 shadow-2xl">
+          {/* Right: single clean photo, no overlapping badge clutter */}
+          <div className="relative mx-auto w-full max-w-md lg:max-w-none">
+            <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-indigo-500/30 to-violet-500/10 blur-xl" />
+            <div className="relative overflow-hidden rounded-[1.75rem] border border-white/10 shadow-2xl">
               <img
                 src={HERO_IMAGE}
                 alt={t('school.name')}
-                className="h-72 w-full rounded-2xl object-cover sm:h-80"
+                className="h-80 w-full object-cover sm:h-[26rem]"
                 loading="lazy"
               />
-
-              {/* Identity chip */}
-              <div className="absolute -top-5 left-4 rounded-2xl bg-white px-4 py-2.5 shadow-lg">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('school.established')}</p>
-                <p className="text-sm font-black text-[var(--brand-strong)]">{t('school.name')}</p>
-              </div>
-
-              {/* Students */}
-              <div className="absolute -bottom-5 -left-4 flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-lg">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                  <GraduationCap className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="text-base font-black leading-none text-slate-800">2,400+</p>
-                  <p className="mt-1 text-[11px] leading-none text-slate-400">{t('stats.students')}</p>
-                </div>
-              </div>
-
-              {/* Teachers */}
-              <div className="absolute right-0 top-1/3 flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-lg">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                  <Users className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="text-base font-black leading-none text-slate-800">80+</p>
-                  <p className="mt-1 text-[11px] leading-none text-slate-400">{t('stats.teachers')}</p>
-                </div>
-              </div>
-
-              {/* Years of excellence */}
-              <div className="absolute -bottom-5 right-2 flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-lg">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                  <Award className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="text-base font-black leading-none text-slate-800">27</p>
-                  <p className="mt-1 text-[11px] leading-none text-slate-400">{t('stats.yearsOfExcellence')}</p>
-                </div>
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent p-5">
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/60">{t('school.established')}</p>
+                <p className="text-base font-black text-white">{t('school.name')}</p>
               </div>
             </div>
           </div>
