@@ -71,29 +71,38 @@ export default function HeroSection() {
           </div>
 
           <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
-            <div className="absolute -inset-6 rounded-[2.5rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.18),rgba(255,255,255,0.03))] blur-2xl" />
+            <div className="absolute -left-6 top-10 h-48 w-48 rounded-full bg-cyan-300/12 blur-3xl" />
+            <div className="absolute -right-6 bottom-8 h-56 w-56 rounded-full bg-emerald-300/12 blur-3xl" />
 
-            <div className="relative rounded-[2rem] border border-white/14 bg-white/10 p-3 backdrop-blur-md">
-              <div className="overflow-hidden rounded-[1.5rem] border border-white/12 bg-slate-950/20">
-                <img
-                  src={HERO_IMAGE}
-                  alt={t('school.name')}
-                  className="aspect-[4/3] w-full object-cover lg:aspect-[5/4]"
-                  loading="lazy"
-                />
+            <div className="relative mx-auto max-w-[34rem]">
+              <div className="absolute inset-0 translate-x-5 translate-y-5 rounded-[2rem] border border-white/10 bg-white/5" />
+              <div className="relative overflow-hidden rounded-[2rem] border border-white/14 bg-white/10 p-3 backdrop-blur-md">
+                <div className="overflow-hidden rounded-[1.55rem] border border-white/10">
+                  <img
+                    src={HERO_IMAGE}
+                    alt={t('school.name')}
+                    className="aspect-[4/4.4] w-full object-cover sm:aspect-[4/4.1] lg:aspect-[4/4.45]"
+                    loading="lazy"
+                  />
+                </div>
+
+                <div className="absolute inset-x-6 bottom-6 rounded-[1.45rem] border border-white/12 bg-slate-950/38 p-5 backdrop-blur-md">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">{t('school.established')}</p>
+                  <p className="mt-2 text-xl font-black text-white">{t('school.name')}</p>
+                  <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/68">Structured academics, disciplined school culture, and connected school operations in one place.</p>
+                </div>
               </div>
 
-              <div className="grid gap-3 p-3 sm:grid-cols-[1.1fr_0.9fr]">
-                <div className="rounded-[1.35rem] border border-white/10 bg-slate-950/28 p-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">{t('school.established')}</p>
-                  <p className="mt-2 text-lg font-black text-white">{t('school.name')}</p>
-                  <p className="mt-2 text-sm leading-relaxed text-white/68">Structured academics, disciplined school culture, and connected school operations in one place.</p>
-                </div>
-                <div className="rounded-[1.35rem] border border-emerald-300/20 bg-emerald-400/10 p-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-100/70">Digital campus</p>
-                  <p className="mt-2 text-3xl font-black text-white">24/7</p>
-                  <p className="mt-1 text-sm leading-relaxed text-white/68">Admissions, attendance, notices, fees, and family communication running together.</p>
-                </div>
+              <div className="absolute -left-8 top-8 hidden w-44 rounded-[1.35rem] border border-white/12 bg-white/12 p-4 backdrop-blur-md lg:block">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/50">Campus model</p>
+                <p className="mt-2 text-3xl font-black text-white">24/7</p>
+                <p className="mt-1 text-sm leading-relaxed text-white/65">Admissions, notices, fees, attendance, and family updates moving together.</p>
+              </div>
+
+              <div className="absolute -right-8 bottom-16 hidden w-48 rounded-[1.35rem] border border-emerald-300/20 bg-emerald-400/12 p-4 backdrop-blur-md lg:block">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-100/70">Trusted journey</p>
+                <p className="mt-2 text-base font-black text-white">Parents stay connected</p>
+                <p className="mt-2 text-sm leading-relaxed text-white/68">Results, communication, and school notices remain accessible in one flow.</p>
               </div>
             </div>
           </div>
