@@ -172,7 +172,7 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
                   ) : recipients.length === 0 ? (
                     <option value="">No {(options.find((o) => o.role === role)?.label || 'recipient').toLowerCase()}s found yet</option>
                   ) : (
-                    recipients.map((r) => <option key={r.id} value={r.id}>{r.name} ({r.email})</option>)
+                    recipients.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)
                   )}
                 </select>
               </label>
@@ -230,7 +230,6 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
 
 function ThreadListItem({ thread, active, currentUser, onSelect }) {
   const name = participantLabel(thread, currentUser);
-  const descriptor = participantDescriptor(thread, currentUser);
 
   return (
     <button
@@ -247,26 +246,10 @@ function ThreadListItem({ thread, active, currentUser, onSelect }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-black tracking-tight text-slate-950">{name}</p>
-              <p className="mt-0.5 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{descriptor}</p>
-            </div>
-            <div className="shrink-0 text-right">
-              <p className="text-[11px] font-semibold text-slate-400">{shortTimeText(thread.lastMessageAt || thread.updatedAt)}</p>
-              {thread.unreadCount > 0 && (
-                <span className="mt-2 inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-black text-white">
-                  {thread.unreadCount}
-                </span>
-              )}
-            </div>
+            <p className="min-w-0 truncate text-sm font-black tracking-tight text-slate-950">{name}</p>
+            <p className="shrink-0 text-[11px] font-semibold text-slate-400">{timeText(thread.lastMessageAt || thread.updatedAt)}</p>
           </div>
-          <p className="mt-3 truncate text-sm font-bold text-slate-600">{thread.topic || 'Direct message'}</p>
-          <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-slate-600">{thread.lastMessage || 'No messages yet.'}</p>
-          <div className="mt-3 flex items-center gap-2 text-[11px] font-semibold text-slate-400">
-            <span>{timeText(thread.lastMessageAt || thread.updatedAt)}</span>
-            <span className="text-slate-300">/</span>
-            <span>{thread.messageCount} delivered</span>
-          </div>
+          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-600">{thread.lastMessage || 'No messages yet.'}</p>
         </div>
       </div>
     </button>
@@ -280,6 +263,7 @@ export default function MessagesPage() {
   const [active, setActive] = useState(null);
   const [messages, setMessages] = useState([]);
   const [reply, setReply] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [showCompose, setShowCompose] = useState(false);
@@ -348,12 +332,17 @@ export default function MessagesPage() {
 
   async function submitReply(e) {
     e.preventDefault();
-    if (!reply.trim() || !activeId) return;
-    const data = await replyToThread(activeId, { body: reply });
-    setReply('');
-    setActive(data.thread);
-    setMessages(data.messages || []);
-    loadThreads(activeId).catch(() => {});
+    if (!reply.trim() || !activeId || sendingReply) return;
+    setSendingReply(true);
+    try {
+      const data = await replyToThread(activeId, { body: reply });
+      setReply('');
+      setActive(data.thread);
+      setMessages(data.messages || []);
+      loadThreads(activeId).catch(() => {});
+    } finally {
+      setSendingReply(false);
+    }
   }
 
   if (loading) {
@@ -378,33 +367,6 @@ export default function MessagesPage() {
   return (
     <>
       <div className="flex h-[calc(100dvh-7rem)] min-h-[32rem] min-w-0 flex-col overflow-hidden sm:h-[calc(100dvh-8rem)]">
-        <div className="mb-4 bg-[linear-gradient(135deg,rgba(255,255,255,1),rgba(238,242,255,0.96))] px-4 py-5 sm:px-6">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-[var(--brand-soft)] px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--brand)]">
-                <Sparkles className="h-3.5 w-3.5" />
-                Messaging workspace
-              </div>
-              <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-900">School communication</h2>
-              <p className="mt-1 text-sm text-slate-500">Private, role-based conversations between admins, teachers, and guardians.</p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3 xl:w-[31rem]">
-              <div className="rounded-[1.35rem] border border-slate-300/80 bg-white px-4 py-3">
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Conversations</p>
-                <p className="mt-1 text-2xl font-black text-slate-900">{threads.length}</p>
-              </div>
-              <div className="rounded-[1.35rem] border border-slate-300/80 bg-white px-4 py-3">
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Unread</p>
-                <p className="mt-1 text-2xl font-black text-slate-900">{unreadTotal}</p>
-              </div>
-              <button onClick={() => setShowCompose(true)} className="btn-primary h-full min-h-[4.5rem] rounded-[1.35rem] justify-center">
-                <PencilLine className="h-4 w-4" />
-                New message
-              </button>
-            </div>
-          </div>
-        </div>
 
         <div className="grid min-h-0 flex-1 overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(244,247,255,0.96))] lg:grid-cols-[360px_minmax(0,1fr)]">
           <aside className={`${activeId ? 'hidden lg:flex' : 'flex'} flex-col border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(241,245,249,0.96),rgba(255,255,255,0.98))] lg:border-b-0 lg:border-r`}>
@@ -447,7 +409,7 @@ export default function MessagesPage() {
             </div>
           </aside>
 
-          <section className={`${!activeId ? 'hidden lg:flex' : 'flex'} min-w-0 flex-col bg-[radial-gradient(circle_at_top,rgba(79,70,229,0.04),transparent_30%),linear-gradient(180deg,#ffffff,#f8fafc)]`}>
+          <section className={`${!activeId ? 'hidden lg:flex' : 'flex'} min-h-0 min-w-0 flex-col bg-[radial-gradient(circle_at_top,rgba(79,70,229,0.04),transparent_30%),linear-gradient(180deg,#ffffff,#f8fafc)]`}>
             {!activeId ? (
               <div className="flex h-full items-center justify-center">
                 <EmptyState
@@ -488,7 +450,7 @@ export default function MessagesPage() {
                   </div>
                 </div>
 
-                <div ref={scrollRef} className="premium-scrollbar flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
+                <div ref={scrollRef} className="premium-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
                   {messages.map((m, index) => {
                     const mine = m.senderUserId === currentUser?.id;
                     const prev = messages[index - 1];
@@ -511,7 +473,6 @@ export default function MessagesPage() {
                                 <span>{timeText(m.createdAt)}</span>
                                 {mine && (
                                   <>
-                                    <span>/</span>
                                     <CheckCheck className="h-3.5 w-3.5" />
                                     <span>{m.readAt ? `Read ${shortTimeText(m.readAt)}` : 'Delivered'}</span>
                                   </>
@@ -534,9 +495,9 @@ export default function MessagesPage() {
                         onChange={(e) => setReply(e.target.value)}
                         placeholder="Write a reply..."
                       />
-                      <button className="btn-primary h-12 rounded-2xl px-5" disabled={!reply.trim()}>
-                        <Send className="h-4 w-4" />
-                        Send
+                      <button className="btn-primary h-12 rounded-2xl px-5" disabled={!reply.trim() || sendingReply}>
+                        {sendingReply ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        {sendingReply ? 'Sending...' : 'Send'}
                       </button>
                     </div>
                   </form>
@@ -560,6 +521,14 @@ export default function MessagesPage() {
     </>
   );
 }
+
+
+
+
+
+
+
+
 
 
 
