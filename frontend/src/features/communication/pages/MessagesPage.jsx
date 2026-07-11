@@ -463,13 +463,13 @@ export default function MessagesPage() {
                           </div>
                           <div>
                             {showMeta && (
-                              <p className={`mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400 ${mine ? 'text-right' : 'text-left'}`}>
+                              <p className={`mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.16em] ${mine ? 'text-right text-[var(--brand-strong)]/55' : 'text-left text-slate-400'}`}>
                                 {mine ? 'You' : activeParticipant}
                               </p>
                             )}
-                            <div className={`rounded-[1.6rem] px-4 py-3.5 ${mine ? 'rounded-br-md bg-[linear-gradient(135deg,var(--brand),var(--secondary))] text-white' : 'rounded-bl-md border border-slate-200 bg-slate-900 text-white'}`}>
+                            <div className={`rounded-[1.6rem] px-4 py-3.5 ${mine ? 'rounded-br-md border border-[color-mix(in_srgb,var(--brand)_14%,white)] bg-[color-mix(in_srgb,var(--brand)_8%,white)] text-[var(--brand-strong)]' : 'rounded-bl-md border border-slate-200 bg-slate-900 text-white'}`}>
                               <p className="text-sm leading-relaxed">{m.body}</p>
-                              <div className={`mt-3 flex items-center gap-1.5 text-[11px] font-medium ${mine ? 'text-white/70' : 'text-slate-400'}`}>
+                              <div className={`mt-3 flex items-center gap-1.5 text-[11px] font-medium ${mine ? 'text-[var(--brand-strong)]/58' : 'text-slate-400'}`}>
                                 <span>{timeText(m.createdAt)}</span>
                                 {mine && (
                                   <>
@@ -521,6 +521,13 @@ export default function MessagesPage() {
     </>
   );
 }
+
+
+
+
+
+
+
 
 
 

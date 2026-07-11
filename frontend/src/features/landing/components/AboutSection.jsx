@@ -1,10 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
 import { Award, BookOpenCheck, Building2, Eye, GraduationCap, Landmark, Target, UserRound } from 'lucide-react';
 import { useLanguage } from '../../../app/App.jsx';
-import { listPublicTeachers } from '../../../services/api/teacherApi.js';
 import { ACCENT_COLORS } from '../constants.js';
 
-const FALLBACK_FACULTY = [
+const FACULTY = [
   {
     userId: 'public-teacher-1',
     name: 'Dr. Mahbub Islam',
@@ -97,15 +95,6 @@ function InfoCard({ icon: Icon, title, children, colorIndex = 0 }) {
 
 export default function AboutSection() {
   const { t } = useLanguage();
-  const [teachers, setTeachers] = useState([]);
-
-  useEffect(() => {
-    listPublicTeachers()
-      .then((data) => setTeachers(data.teachers || []))
-      .catch(() => setTeachers([]));
-  }, []);
-
-  const faculty = useMemo(() => (teachers.length ? teachers : FALLBACK_FACULTY).slice(0, 8), [teachers]);
 
   return (
     <section id="about" className="dot-pattern bg-white py-20">
@@ -192,7 +181,7 @@ export default function AboutSection() {
             </div>
           </div>
           <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {faculty.map((teacher, index) => <FacultyCard key={teacher.userId || teacher.id || teacher.name} teacher={teacher} index={index} />)}
+            {FACULTY.map((teacher, index) => <FacultyCard key={teacher.userId || teacher.name} teacher={teacher} index={index} />)}
           </div>
         </div>
 
