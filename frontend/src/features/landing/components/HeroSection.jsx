@@ -75,9 +75,9 @@ export default function HeroSection() {
             <div className="absolute -right-6 bottom-8 h-56 w-56 rounded-full bg-emerald-300/10 blur-3xl" />
 
             <div className="relative mx-auto max-w-[34rem]">
-              <div className="absolute inset-0 translate-x-5 translate-y-5 rounded-[2rem] border border-white/8 bg-white/[0.04]" />
-              <div className="relative overflow-hidden rounded-[2rem] border border-white/12 bg-white/[0.07] p-3 backdrop-blur-md">
-                <div className="overflow-hidden rounded-[1.55rem] border border-white/10">
+              <div className="absolute inset-0 translate-x-5 translate-y-5 rounded-[2.2rem] border border-white/8 bg-white/[0.04]" />
+              <div className="relative overflow-hidden rounded-[2.2rem] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.06))] p-3 shadow-[0_32px_90px_rgba(5,10,30,0.38)] backdrop-blur-md">
+                <div className="overflow-hidden rounded-[1.75rem] border border-white/10">
                   <img
                     src={HERO_IMAGE}
                     alt={t('school.name')}
@@ -85,24 +85,6 @@ export default function HeroSection() {
                     loading="lazy"
                   />
                 </div>
-
-                <div className="absolute inset-x-6 bottom-6 rounded-[1.45rem] border border-white/10 bg-slate-950/42 p-5 backdrop-blur-md">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/42">{t('school.established')}</p>
-                  <p className="mt-2 text-xl font-black text-white">{t('school.name')}</p>
-                  <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/66">Structured academics, disciplined school culture, and connected school operations in one place.</p>
-                </div>
-              </div>
-
-              <div className="absolute -left-8 top-8 hidden w-44 rounded-[1.35rem] border border-white/10 bg-white/[0.08] p-4 backdrop-blur-md lg:block">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/46">Campus model</p>
-                <p className="mt-2 text-3xl font-black text-white">24/7</p>
-                <p className="mt-1 text-sm leading-relaxed text-white/64">Admissions, notices, fees, attendance, and family updates moving together.</p>
-              </div>
-
-              <div className="absolute -right-8 bottom-16 hidden w-48 rounded-[1.35rem] border border-emerald-200/14 bg-emerald-300/[0.08] p-4 backdrop-blur-md lg:block">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-100/68">Trusted journey</p>
-                <p className="mt-2 text-base font-black text-white">Parents stay connected</p>
-                <p className="mt-2 text-sm leading-relaxed text-white/66">Results, communication, and school notices remain accessible in one flow.</p>
               </div>
             </div>
           </div>
