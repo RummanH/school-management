@@ -315,11 +315,15 @@ const PAGE_TITLES = {
 // other sub-route (Students, Teachers, Users, Tenants, Notices, Gallery) is
 // admin/system_developer only on the backend, so the UI must not even try to
 // render them for a teacher (URL bar access, not just hidden nav links).
-const TEACHER_ALLOWED_PATHS = ['/dashboard', '/dashboard/contacts', '/dashboard/messages', '/dashboard/academic', '/dashboard/documents'];
+// '/dashboard' itself is intentionally excluded from this list and checked
+// separately as an exact match below — including it here as a prefix entry
+// would make `pathname.startsWith(p + '/')` match *every* /dashboard/* route
+// (since they all start with '/dashboard/'), silently defeating the allowlist.
+const TEACHER_ALLOWED_PATHS = ['/dashboard/contacts', '/dashboard/messages', '/dashboard/academic', '/dashboard/documents'];
 
 // Accountants only get the finance side of the dashboard (fees/accounting +
 // payroll marking, the latter server-gated to payroll-only within HR & Staff).
-const ACCOUNTANT_ALLOWED_PATHS = ['/dashboard', '/dashboard/fees', '/dashboard/hr', '/dashboard/messages', '/dashboard/documents'];
+const ACCOUNTANT_ALLOWED_PATHS = ['/dashboard/fees', '/dashboard/hr', '/dashboard/messages', '/dashboard/documents'];
 
 /* Root layout */
 
@@ -337,14 +341,16 @@ export default function DashboardPage() {
   const title = PAGE_TITLES[pathname] ?? 'Dashboard';
 
   const isTeacher = currentUser?.role === 'teacher';
-  const teacherAllowed = TEACHER_ALLOWED_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
+  const teacherAllowed = pathname === '/dashboard'
+    || TEACHER_ALLOWED_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
   if (isTeacher && !teacherAllowed) {
     navigate('/dashboard/academic');
     return null;
   }
 
   const isAccountant = currentUser?.role === 'accountant';
-  const accountantAllowed = ACCOUNTANT_ALLOWED_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
+  const accountantAllowed = pathname === '/dashboard'
+    || ACCOUNTANT_ALLOWED_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
   if (isAccountant && !accountantAllowed) {
     navigate('/dashboard/fees');
     return null;

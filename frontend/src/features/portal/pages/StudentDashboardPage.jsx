@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Loader2, ClipboardList, BookMarked, Calendar, FileText, Award, CreditCard, BadgeCheck, IdCard, Send } from 'lucide-react';
+import { navigate } from '../../../app/App.jsx';
 import DashboardHeader from '../../dashboard/components/DashboardHeader.jsx';
 import StudentSidebar from '../components/StudentSidebar.jsx';
 import { Card, InfoRow } from '../components/Card.jsx';
