@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   BadgeDollarSign, Plus, Save, Trash2, Pencil, Loader2, ReceiptText, CreditCard, WalletCards,
   AlertTriangle, BookOpen, Tags, UserCog, CalendarDays, Banknote, X, Search, Sparkles, ArrowRight,
+  CheckCircle2, Copy,
 } from 'lucide-react';
 import { listStudents } from '../../../services/api/studentApi.js';
 import { listClasses } from '../../../services/api/academicApi.js';
@@ -25,6 +26,12 @@ const TABS = [
   { key: 'Expenses', icon: Banknote },
 ];
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const BILLING_CYCLE_META = {
+  monthly: { label: 'Monthly recurring', short: 'Monthly', help: 'Automatically included in each monthly bill. Use for tuition, transport, hostel, or coaching.' },
+  term: { label: 'Every term', short: 'Term', help: 'Collected only when you create an additional billing run for that term. Use for term or exam fees.' },
+  annual: { label: 'Once each year', short: 'Annual', help: 'Collected through an annual billing run. Use for session, development, sports, or annual charges.' },
+  one_time: { label: 'Once per student', short: 'One-time', help: 'Can be billed only once to a student. Use for admission, ID card, caution money, or registration.' },
+};
 const today = () => new Date().toISOString().slice(0, 10);
 const month = () => new Date().toISOString().slice(0, 7);
 const money = (n) => `৳${Number(n || 0).toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -37,6 +44,11 @@ function Field({ label, children }) {
 function Input(props) { return <input {...props} className={`input ${props.className || ''}`} />; }
 function Select(props) { return <select {...props} className={`input ${props.className || ''}`} />; }
 function Textarea(props) { return <textarea {...props} className={`input min-h-[76px] ${props.className || ''}`} />; }
+function CycleBadge({ cycle }) {
+  const meta = BILLING_CYCLE_META[cycle] || { short: cycle || 'Not set' };
+  const tone = cycle === 'monthly' ? 'bg-blue-50 text-blue-700' : cycle === 'term' ? 'bg-amber-50 text-amber-700' : cycle === 'annual' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600';
+  return <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${tone}`}>{meta.short}</span>;
+}
 function Empty({ icon: Icon, title, children, action }) {
   return <div className="flex flex-col items-center rounded-2xl border-2 border-dashed border-slate-200 py-14 text-center">
     {Icon && <Icon className="mb-3 h-9 w-9 text-slate-300" />}
@@ -122,9 +134,12 @@ function CategoryForm({ initial, onSaved, onCancel }) {
     {error && <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
     <div className="grid gap-4 sm:grid-cols-2">
       <Field label="Category Name *"><Input required autoFocus value={form.name} onChange={e => set('name', e.target.value)} placeholder="Tuition Fee" /></Field>
-      <Field label="Billing Cycle"><Select value={form.billingCycle} onChange={e => set('billingCycle', e.target.value)}><option value="monthly">Monthly</option><option value="term">Term</option><option value="annual">Annual</option><option value="one_time">One-time</option></Select></Field>
+      <Field label="How this fee is billed"><Select value={form.billingCycle} onChange={e => set('billingCycle', e.target.value)}>{Object.entries(BILLING_CYCLE_META).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}</Select></Field>
       <Field label="Default Amount"><Input type="number" min="0" step="0.01" value={form.defaultAmount} onChange={e => set('defaultAmount', e.target.value)} /></Field>
       <Field label="Late Fee (after due date)"><Input type="number" min="0" step="0.01" value={form.lateFeeAmount} onChange={e => set('lateFeeAmount', e.target.value)} placeholder="0 = no auto fine" /></Field>
+    </div>
+    <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-relaxed text-blue-700">
+      <strong>{BILLING_CYCLE_META[form.billingCycle]?.label}:</strong> {BILLING_CYCLE_META[form.billingCycle]?.help}
     </div>
     <Field label="Description"><Input value={form.description} onChange={e => set('description', e.target.value)} placeholder="Optional" /></Field>
     <FormFooter saving={saving} onCancel={onCancel} />
@@ -147,12 +162,14 @@ function StructureForm({ initial, classes, categories, onSaved, onCancel }) {
     try { await (initial ? updateFeeStructure(initial.id, form) : createFeeStructure(form)); onSaved(); }
     catch (err) { setError(err.message || 'Save failed.'); setSaving(false); }
   }
+  const selectedCategory = categories.find(c => c.id === form.categoryId);
+  const amountLabel = selectedCategory ? `${BILLING_CYCLE_META[selectedCategory.billingCycle]?.short || 'Fee'} amount *` : 'Amount *';
   return <form onSubmit={submit} className="space-y-4">
     {error && <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
     <div className="grid gap-4 sm:grid-cols-2">
       <Field label="Class"><Select value={form.classId} onChange={e => set('classId', e.target.value)}><option value="">All Classes</option>{classes.map(c => <option key={c.id} value={c.id}>{c.name} {c.section}</option>)}</Select></Field>
       <Field label="Fee Category *"><Select required autoFocus value={form.categoryId} onChange={e => set('categoryId', e.target.value)}><option value="">Select category</option>{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</Select></Field>
-      <Field label="Amount / month *"><Input required type="number" min="0" step="0.01" value={form.amount} onChange={e => set('amount', e.target.value)} /></Field>
+      <Field label={amountLabel}><Input required type="number" min="0" step="0.01" value={form.amount} onChange={e => set('amount', e.target.value)} /></Field>
       <Field label="Status"><Select value={form.isActive ? '1' : '0'} onChange={e => set('isActive', e.target.value === '1')}><option value="1">Active</option><option value="0">Inactive</option></Select></Field>
     </div>
     <FormFooter saving={saving} onCancel={onCancel} />
@@ -199,28 +216,110 @@ function AssignmentForm({ initial, students, categories, onSaved, onCancel }) {
   </form>;
 }
 
-function GenerateForm({ students, onGenerated, onCancel }) {
-  const [form, setForm] = useState({ period: month(), title: '', dueDate: today(), studentUserIds: [] });
+function GenerateForm({ students, categories, onGenerated, onCancel }) {
+  const [form, setForm] = useState({ billingMode: 'monthly', period: month(), title: '', dueDate: today(), categoryIds: [], studentUserIds: [], notes: '' });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const [error, setError] = useState('');
+  const additionalCategories = categories.filter(category => category.isActive && category.billingCycle !== 'monthly');
+  const isMonthly = form.billingMode === 'monthly';
+  const set = (key, value) => { setForm(current => ({ ...current, [key]: value })); setError(''); setMessage(''); };
+
+  function changeMode(billingMode) {
+    setForm(current => ({
+      ...current, billingMode, period: billingMode === 'monthly' ? month() : '', title: '', categoryIds: [],
+    }));
+    setError('');
+    setMessage('');
+  }
+
+  function toggleCategory(categoryId, checked) {
+    set('categoryIds', checked
+      ? [...form.categoryIds, categoryId]
+      : form.categoryIds.filter(id => id !== categoryId));
+  }
+
   async function submit(e) {
-    e.preventDefault(); setSaving(true); setMessage('');
-    try { const r = await generateFeeInvoices(form); setMessage(`${r.created.length} invoice(s) generated, ${r.skipped.length} skipped (already billed).`); onGenerated(); }
-    catch (err) { setMessage(err.message || 'Generation failed.'); }
+    e.preventDefault();
+    if (!isMonthly && !form.categoryIds.length) { setError('Select at least one exam or additional fee.'); return; }
+    setSaving(true); setMessage(''); setError('');
+    try {
+      const result = await generateFeeInvoices(form);
+      setMessage(`${result.created.length} bill(s) created. ${result.skipped.length} skipped because that reference was already billed.`);
+      await onGenerated();
+    } catch (err) { setError(err.message || 'Billing run failed.'); }
     finally { setSaving(false); }
   }
-  return <form onSubmit={submit} className="space-y-4">
-    <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">Invoices for the current month generate automatically. Use this to backfill a missed period or bill a one-off term/annual charge.</div>
-    {message && <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">{message}</div>}
-    <div className="grid gap-4 sm:grid-cols-2">
-      <Field label="Period *"><Input required autoFocus value={form.period} onChange={e => set('period', e.target.value)} placeholder="2026-07" /></Field>
-      <Field label="Due Date"><Input type="date" value={form.dueDate} onChange={e => set('dueDate', e.target.value)} /></Field>
+
+  return <form onSubmit={submit} className="space-y-5">
+    <div className="grid gap-3 sm:grid-cols-2">
+      <button type="button" onClick={() => changeMode('monthly')} className={`rounded-2xl border p-4 text-left transition ${isMonthly ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-100' : 'border-slate-200 hover:bg-slate-50'}`}>
+        <span className="text-sm font-black text-slate-800">Monthly recurring bill</span>
+        <span className="mt-1 block text-xs leading-relaxed text-slate-500">Tuition, transport, hostel, and other monthly categories only.</span>
+      </button>
+      <button type="button" onClick={() => changeMode('selected')} className={`rounded-2xl border p-4 text-left transition ${!isMonthly ? 'border-amber-300 bg-amber-50 ring-2 ring-amber-100' : 'border-slate-200 hover:bg-slate-50'}`}>
+        <span className="text-sm font-black text-slate-800">Exam or additional charge</span>
+        <span className="mt-1 block text-xs leading-relaxed text-slate-500">Select term, annual, or one-time fees and bill them separately.</span>
+      </button>
     </div>
-    <Field label="Title"><Input value={form.title} onChange={e => set('title', e.target.value)} placeholder="July 2026 Fees" /></Field>
-    <Field label="Students"><Select multiple value={form.studentUserIds} onChange={e => set('studentUserIds', Array.from(e.target.selectedOptions).map(o => o.value))} className="min-h-[100px]"><option value="" disabled>All students unless selected</option>{students.map(s => <option key={s.userId} value={s.userId}>{s.name}</option>)}</Select></Field>
-    <FormFooter saving={saving} onCancel={onCancel} saveLabel="Generate" />
+
+    <div className={`rounded-xl border px-4 py-3 text-sm leading-relaxed ${isMonthly ? 'border-blue-100 bg-blue-50 text-blue-700' : 'border-amber-100 bg-amber-50 text-amber-800'}`}>
+      {isMonthly
+        ? 'The automatic scheduler uses this same rule and includes only categories marked Monthly recurring.'
+        : 'Use a unique reference for each charge, for example 2026-HALF-YEARLY-EXAM or 2026-SPORTS. One-time fees cannot be billed to the same student twice.'}
+    </div>
+
+    {error && <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+    {message && <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div>}
+
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Field label={isMonthly ? 'Billing month *' : 'Unique billing reference *'}>
+        <Input required autoFocus type={isMonthly ? 'month' : 'text'} value={form.period} onChange={e => set('period', e.target.value)} placeholder={isMonthly ? '2026-07' : '2026-HALF-YEARLY-EXAM'} />
+      </Field>
+      <Field label="Due date"><Input type="date" value={form.dueDate} onChange={e => set('dueDate', e.target.value)} /></Field>
+    </div>
+    <Field label="Bill title"><Input value={form.title} onChange={e => set('title', e.target.value)} placeholder={isMonthly ? 'July 2026 Monthly Fees' : 'Half-Yearly Examination Fee 2026'} /></Field>
+
+    {!isMonthly && <Field label="Fees to include *">
+      {additionalCategories.length ? <div className="grid gap-2 sm:grid-cols-2">
+        {additionalCategories.map(category => <label key={category.id} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${form.categoryIds.includes(category.id) ? 'border-amber-300 bg-amber-50' : 'border-slate-200 bg-white'}`}>
+          <input type="checkbox" className="mt-1" checked={form.categoryIds.includes(category.id)} onChange={e => toggleCategory(category.id, e.target.checked)} />
+          <span><span className="block text-sm font-bold text-slate-700">{category.name}</span><span className="mt-0.5 block text-xs text-slate-400">{BILLING_CYCLE_META[category.billingCycle]?.label} · Default {money(category.defaultAmount)}</span></span>
+        </label>)}
+      </div> : <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">Create a Term, Annual, or One-time category first.</div>}
+    </Field>}
+
+    <Field label="Students">
+      <Select multiple value={form.studentUserIds} onChange={e => set('studentUserIds', Array.from(e.target.selectedOptions).map(option => option.value))} className="min-h-[110px]">
+        <option value="" disabled>Leave all unselected to bill every eligible student</option>
+        {students.map(student => <option key={student.userId} value={student.userId}>{student.name} · {student.className || 'No class'} {student.rollNumber ? `· Roll ${student.rollNumber}` : ''}</option>)}
+      </Select>
+      <span className="mt-1 block text-xs text-slate-400">No selection means all active students covered by the chosen class fee rules.</span>
+    </Field>
+    <Field label="Internal note"><Textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Optional note stored with each bill" /></Field>
+    <FormFooter saving={saving} onCancel={onCancel} saveLabel={isMonthly ? 'Generate monthly bills' : 'Create additional bills'} />
   </form>;
+}
+
+function InvoiceBreakdown({ invoice }) {
+  return <div className="space-y-3">
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-4 py-3">
+      <div><p className="font-bold text-slate-800">{invoice.studentName}</p><p className="text-xs text-slate-400">{invoice.title} · {invoice.period}</p></div>
+      <div className="text-right"><p className="text-xs font-bold uppercase tracking-wide text-slate-400">Balance due</p><p className="text-lg font-black text-red-600">{money(invoice.dueAmount)}</p></div>
+    </div>
+    <div className="overflow-hidden rounded-xl border border-slate-200">
+      <div className="grid grid-cols-[1fr_auto] bg-slate-50 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400"><span>Charge</span><span>Net amount</span></div>
+      {(invoice.items || []).map(item => <div key={item.id} className="grid grid-cols-[1fr_auto] gap-4 border-t border-slate-100 px-4 py-3">
+        <div><p className="text-sm font-bold text-slate-700">{item.description}</p>{item.amount !== item.totalAmount && <p className="mt-0.5 text-xs text-slate-400">Gross {money(item.amount)} · Adjustments {money(item.amount + item.fineAmount - item.totalAmount)}</p>}</div>
+        <p className="text-sm font-black text-slate-800">{money(item.totalAmount)}</p>
+      </div>)}
+      <div className="grid grid-cols-[1fr_auto] border-t border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black text-slate-800"><span>Bill total</span><span>{money(invoice.totalAmount)}</span></div>
+    </div>
+    {!!invoice.payments?.length && <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3">
+      <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700">Payments already received</p>
+      <div className="mt-2 space-y-2">{invoice.payments.map(payment => <div key={payment.id} className="flex items-center justify-between gap-3 text-xs"><span className="text-slate-500">{payment.paymentDate} · {payment.receiptNumber} · <span className="capitalize">{payment.method}</span></span><span className="font-black text-emerald-700">{money(payment.amount)}</span></div>)}</div>
+    </div>}
+  </div>;
 }
 
 function PaymentForm({ invoiceId, onPaid, onCancel }) {
@@ -229,6 +328,7 @@ function PaymentForm({ invoiceId, onPaid, onCancel }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [loadError, setLoadError] = useState('');
+  const [receipt, setReceipt] = useState(null);
   useEffect(() => {
     getFeeInvoice(invoiceId)
       .then(d => { setInvoice(d.invoice); setForm(f => ({ ...f, amount: d.invoice.dueAmount })); })
@@ -236,16 +336,28 @@ function PaymentForm({ invoiceId, onPaid, onCancel }) {
   }, [invoiceId]);
   async function submit(e) {
     e.preventDefault(); setSaving(true); setError('');
-    try { await recordFeePayment(invoiceId, form); onPaid(); }
+    try {
+      const result = await recordFeePayment(invoiceId, form);
+      setReceipt(result.payment);
+      await onPaid();
+    }
     catch (err) { setError(err.message || 'Payment failed.'); setSaving(false); }
   }
   if (loadError) return <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{loadError}</div>;
   if (!invoice) return <div className="flex h-32 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-[var(--brand)]" /></div>;
-  return <form onSubmit={submit} className="space-y-4">
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-4 py-3">
-      <div><p className="font-bold text-slate-800">{invoice.studentName}</p><p className="text-xs text-slate-400">{invoice.title} · {invoice.period}</p></div>
-      <p className="text-lg font-black text-red-600">Due {money(invoice.dueAmount)}</p>
+  if (receipt) return <div className="space-y-5 text-center">
+    <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600"><CheckCircle2 className="h-7 w-7" /></span>
+    <div><h3 className="text-lg font-black text-slate-800">Payment collected</h3><p className="mt-1 text-sm text-slate-500">The payment is posted to the invoice and cash book.</p></div>
+    <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 text-left">
+      <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700">Official receipt</p>
+      <div className="mt-3 flex items-center justify-between gap-3"><span className="font-mono text-sm font-black text-slate-800">{receipt.receiptNumber}</span><button type="button" onClick={() => navigator.clipboard?.writeText(receipt.receiptNumber)} className="rounded-lg p-2 text-slate-400 hover:bg-white hover:text-slate-700" title="Copy receipt number"><Copy className="h-4 w-4" /></button></div>
+      <div className="mt-4 grid grid-cols-2 gap-3 border-t border-emerald-100 pt-4 text-sm"><div><p className="text-xs text-slate-400">Amount</p><p className="font-black text-emerald-700">{money(receipt.amount)}</p></div><div><p className="text-xs text-slate-400">Method</p><p className="font-bold capitalize text-slate-700">{receipt.method}</p></div><div><p className="text-xs text-slate-400">Date</p><p className="font-bold text-slate-700">{receipt.paymentDate}</p></div><div><p className="text-xs text-slate-400">Reference</p><p className="font-bold text-slate-700">{receipt.referenceNo || '—'}</p></div></div>
     </div>
+    <button type="button" onClick={onCancel} className="btn-primary w-full justify-center">Done</button>
+  </div>;
+  if (invoice.dueAmount <= 0) return <div className="space-y-5"><InvoiceBreakdown invoice={invoice} /><div className="rounded-xl bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-700">This invoice is fully paid.</div><button type="button" onClick={onCancel} className="btn-secondary w-full justify-center">Close</button></div>;
+  return <form onSubmit={submit} className="space-y-4">
+    <InvoiceBreakdown invoice={invoice} />
     {error && <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
     <div className="grid gap-4 sm:grid-cols-2">
       <Field label="Amount *"><Input required autoFocus type="number" min="0.01" step="0.01" max={invoice.dueAmount} value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} /></Field>
@@ -456,7 +568,7 @@ export default function FeesPage() {
 
   return <div>
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-      <div><h2 className="text-lg font-black text-slate-800">Fees & Accounting</h2><p className="mt-0.5 text-sm text-slate-500">Set class-wise fee rules, generate monthly invoices automatically, collect payments, and reconcile the cash book.</p></div>
+      <div><h2 className="text-lg font-black text-slate-800">Fees & Accounting</h2><p className="mt-0.5 text-sm text-slate-500">Manage monthly tuition, exam and other charges, student adjustments, collections, receipts, dues, and the cash book.</p></div>
     </div>
 
     <div className="mb-6 flex flex-wrap gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1">
@@ -478,24 +590,24 @@ export default function FeesPage() {
           <div className="flex flex-wrap gap-3">
             {!categories.length ? <button onClick={() => { setActive('Categories'); setModal({ type: 'category' }); }} className="btn-primary">Create your first fee category<ArrowRight className="h-4 w-4" /></button>
               : !structures.length ? <button onClick={() => { setActive('Fee Rules'); setModal({ type: 'structure' }); }} className="btn-primary">Set a class-wise fee rule<ArrowRight className="h-4 w-4" /></button>
-              : <button onClick={() => { setActive('Invoices'); setModal({ type: 'generate' }); }} className="btn-secondary">Generate / backfill invoices</button>}
+              : <button onClick={() => { setActive('Invoices'); setModal({ type: 'generate' }); }} className="btn-secondary">Create a billing run</button>}
             <button onClick={() => setActive('Cash Book')} className="btn-secondary">View Cash Book</button>
           </div>
         </div>
       </div>}
 
       {active === 'Categories' && <>
-        <TabIntro>Define the kinds of fees your school charges (Tuition, Transport, Exam Fee, etc.). Set an amount for each in the <strong className="mx-1">Fee Rules</strong> tab, per class.</TabIntro>
+        <TabIntro>Create each kind of charge once, then choose how it is billed. Monthly categories recur automatically; Exam, Term, Annual, and One-time categories are collected only through a deliberate additional billing run.</TabIntro>
         <Toolbar newLabel="New Category" onNew={() => setModal({ type: 'category' })} />
-        {categories.length ? <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white"><table className="w-full text-sm"><thead><tr className="bg-slate-50 text-left text-xs font-bold uppercase text-slate-400"><th className="px-4 py-3">Category</th><th>Default Amount</th><th>Late Fee</th><th>Description</th><th></th></tr></thead><tbody>{categories.map(c => <tr key={c.id} className="border-b border-slate-50"><td className="px-4 py-3 font-bold text-slate-800">{c.name}<p className="text-xs font-normal text-slate-400">{c.billingCycle}</p></td><td>{money(c.defaultAmount)}</td><td>{c.lateFeeAmount > 0 ? money(c.lateFeeAmount) : '—'}</td><td className="text-slate-500">{c.description || '—'}</td><td className="px-4 py-3"><RowActions onEdit={() => setModal({ type: 'category', initial: c })} onDelete={() => askDelete({ title: 'Delete Category', message: `Delete "${c.name}"? Fee rules using it will stop applying.`, run: () => deleteFeeCategory(c.id) })} /></td></tr>)}</tbody></table></div>
+        {categories.length ? <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white"><table className="w-full text-sm"><thead><tr className="bg-slate-50 text-left text-xs font-bold uppercase text-slate-400"><th className="px-4 py-3">Fee type</th><th>Billing</th><th>Default amount</th><th>Late fee</th><th>Description</th><th></th></tr></thead><tbody>{categories.map(c => <tr key={c.id} className="border-b border-slate-50"><td className="px-4 py-3 font-bold text-slate-800">{c.name}</td><td><CycleBadge cycle={c.billingCycle} /></td><td>{money(c.defaultAmount)}</td><td>{c.lateFeeAmount > 0 ? money(c.lateFeeAmount) : '—'}</td><td className="max-w-xs text-slate-500">{c.description || BILLING_CYCLE_META[c.billingCycle]?.help || '—'}</td><td className="px-4 py-3"><RowActions onEdit={() => setModal({ type: 'category', initial: c })} onDelete={() => askDelete({ title: 'Delete Category', message: `Delete "${c.name}"? Fee rules using it will stop applying.`, run: () => deleteFeeCategory(c.id) })} /></td></tr>)}</tbody></table></div>
           : <Empty icon={Tags} title="No fee categories yet" action={<button onClick={() => setModal({ type: 'category' })} className="btn-primary mt-4"><Plus className="h-4 w-4" />New Category</button>}>Start by adding a category like "Tuition Fee" or "Transport Fee".</Empty>}
       </>}
 
       {active === 'Fee Rules' && <>
-        <TabIntro>Set an amount once per <strong className="mx-1">Class + Fee Category</strong>. Every active student in that class is billed automatically when invoices are generated — no per-student setup needed. Pick "All Classes" for a fee that applies to everyone (e.g. admission/exam fee).</TabIntro>
+        <TabIntro>Set the rate once for each <strong className="mx-1">Class + Fee Type</strong>. Monthly rates are included automatically each month. Exam and other rates remain ready but are billed only when you select them in an additional billing run.</TabIntro>
         <Toolbar search={structuresSearch} onSearch={setStructuresSearch} searchPlaceholder="Search by class or category…" newLabel="New Rule" onNew={() => categories.length ? setModal({ type: 'structure' }) : setModal({ type: 'category' })} />
         {!categories.length ? <Empty icon={BookOpen} title="Create a fee category first" action={<button onClick={() => setModal({ type: 'category' })} className="btn-primary mt-4"><Plus className="h-4 w-4" />New Category</button>}>Fee rules apply a category's amount to a class — you need at least one category before you can set a rule.</Empty>
-          : filteredStructures.length ? <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white"><table className="w-full text-sm"><thead><tr className="bg-slate-50 text-left text-xs font-bold uppercase text-slate-400"><th className="px-4 py-3">Class</th><th>Category</th><th>Amount / month</th><th>Status</th><th></th></tr></thead><tbody>{filteredStructures.map(s => <tr key={s.id} className="border-b border-slate-50"><td className="px-4 py-3 font-bold text-slate-800">{s.className ? `${s.className} ${s.section}` : 'All Classes'}</td><td>{s.categoryName}</td><td className="font-bold">{money(s.amount)}</td><td>{s.isActive ? <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">Active</span> : <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-500">Inactive</span>}</td><td className="px-4 py-3"><RowActions onEdit={() => setModal({ type: 'structure', initial: s })} onDelete={() => askDelete({ title: 'Delete Fee Rule', message: `Remove the ${s.categoryName} rule for ${s.className ? `${s.className} ${s.section}` : 'All Classes'}?`, run: () => deleteFeeStructure(s.id) })} /></td></tr>)}</tbody></table></div>
+          : filteredStructures.length ? <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white"><table className="w-full text-sm"><thead><tr className="bg-slate-50 text-left text-xs font-bold uppercase text-slate-400"><th className="px-4 py-3">Class</th><th>Fee type</th><th>Billing</th><th>Rate</th><th>Status</th><th></th></tr></thead><tbody>{filteredStructures.map(s => <tr key={s.id} className="border-b border-slate-50"><td className="px-4 py-3 font-bold text-slate-800">{s.className ? `${s.className} ${s.section}` : 'All Classes'}</td><td>{s.categoryName}</td><td><CycleBadge cycle={s.billingCycle} /></td><td className="font-bold">{money(s.amount)}</td><td>{s.isActive ? <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">Active</span> : <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-500">Inactive</span>}</td><td className="px-4 py-3"><RowActions onEdit={() => setModal({ type: 'structure', initial: s })} onDelete={() => askDelete({ title: 'Delete Fee Rule', message: `Remove the ${s.categoryName} rule for ${s.className ? `${s.className} ${s.section}` : 'All Classes'}?`, run: () => deleteFeeStructure(s.id) })} /></td></tr>)}</tbody></table></div>
           : <Empty icon={BookOpen} title={structuresSearch ? 'No matching rules' : 'No class-wise fee rules yet'} action={!structuresSearch && <button onClick={() => setModal({ type: 'structure' })} className="btn-primary mt-4"><Plus className="h-4 w-4" />New Rule</button>}>{structuresSearch ? 'Try a different search.' : 'Set your first rule to start billing a class automatically.'}</Empty>}
       </>}
 
@@ -507,9 +619,9 @@ export default function FeesPage() {
       </>}
 
       {active === 'Invoices' && <>
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          <span>Invoices for the current month generate automatically. Backfill a missed period or bill a one-off charge here.</span>
-          <button onClick={() => setModal({ type: 'generate' })} className="btn-secondary shrink-0 bg-white">Generate Invoices</button>
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-blue-100 bg-blue-50 px-5 py-4 text-sm text-blue-800">
+          <div><p className="font-black">Create the right bill for the right charge</p><p className="mt-1 text-xs leading-relaxed text-blue-700">Use Monthly for tuition and recurring services. Use Additional charge for exam, admission, annual, sports, ID card, or any other selected fee.</p></div>
+          <button onClick={() => setModal({ type: 'generate' })} className="btn-primary shrink-0">Create billing run</button>
         </div>
         <DefaultersPanel classes={classes} />
         <div className="card mb-4 grid gap-4 lg:grid-cols-3">
@@ -517,7 +629,7 @@ export default function FeesPage() {
           <Field label="Class"><Select value={invoiceFilters.className} onChange={e => setInvoiceFilters(f => ({ ...f, className: e.target.value }))}><option value="">All Classes</option>{invoiceClassNames.map(cn => <option key={cn} value={cn}>{cn}</option>)}</Select></Field>
           <Field label="Period"><Select value={invoiceFilters.period} onChange={e => setInvoiceFilters(f => ({ ...f, period: e.target.value }))}><option value="">All Periods</option>{invoicePeriods.map(p => <option key={p} value={p}>{p}</option>)}</Select></Field>
         </div>
-        {filteredInvoices.length ? <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white"><table className="w-full text-sm"><thead><tr className="bg-slate-50 text-left text-xs font-bold uppercase text-slate-400"><th className="px-4 py-3">Student</th><th>Period</th><th>Total</th><th>Paid</th><th>Due</th><th>Status</th><th></th></tr></thead><tbody>{filteredInvoices.map(i => <tr key={i.id} className="border-b border-slate-50"><td className="px-4 py-3 font-bold text-slate-800">{i.studentName}<p className="text-xs font-normal text-slate-400">{i.title}</p></td><td>{i.period}</td><td>{money(i.totalAmount)}</td><td>{money(i.paidAmount)}</td><td className="font-bold text-red-600">{money(i.dueAmount)}</td><td><StatusBadge status={i.status} /></td><td className="px-4 py-3 text-right"><button onClick={() => setModal({ type: 'payment', invoiceId: i.id })} disabled={i.dueAmount <= 0} className="btn-secondary disabled:opacity-40">Collect</button></td></tr>)}</tbody></table></div>
+        {filteredInvoices.length ? <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white"><table className="w-full text-sm"><thead><tr className="bg-slate-50 text-left text-xs font-bold uppercase text-slate-400"><th className="px-4 py-3">Student</th><th>Reference</th><th>Total</th><th>Paid</th><th>Due</th><th>Status</th><th></th></tr></thead><tbody>{filteredInvoices.map(i => <tr key={i.id} className="border-b border-slate-50"><td className="px-4 py-3 font-bold text-slate-800">{i.studentName}<p className="text-xs font-normal text-slate-400">{i.title}</p></td><td>{i.period}</td><td>{money(i.totalAmount)}</td><td>{money(i.paidAmount)}</td><td className="font-bold text-red-600">{money(i.dueAmount)}</td><td><StatusBadge status={i.status} /></td><td className="px-4 py-3 text-right"><button onClick={() => setModal({ type: 'payment', invoiceId: i.id })} className="btn-secondary">{i.dueAmount > 0 ? 'Collect' : 'View'}</button></td></tr>)}</tbody></table></div>
           : <Empty icon={ReceiptText} title="No invoices for this filter">Try clearing a filter, or generate invoices for a period above.</Empty>}
       </>}
 
@@ -535,8 +647,8 @@ export default function FeesPage() {
     {modal?.type === 'category' && <Modal title={modal.initial ? 'Edit Category' : 'New Fee Category'} onClose={closeModal}><CategoryForm initial={modal.initial} onSaved={afterSave} onCancel={closeModal} /></Modal>}
     {modal?.type === 'structure' && <Modal title={modal.initial ? 'Edit Fee Rule' : 'New Fee Rule'} onClose={closeModal}><StructureForm initial={modal.initial} classes={classes} categories={categories} onSaved={afterSave} onCancel={closeModal} /></Modal>}
     {modal?.type === 'assignment' && <Modal title={modal.initial ? 'Edit Override' : 'New Student Override'} maxWidth="max-w-3xl" onClose={closeModal}><AssignmentForm initial={modal.initial} students={students} categories={categories} onSaved={afterSave} onCancel={closeModal} /></Modal>}
-    {modal?.type === 'generate' && <Modal title="Generate Invoices" onClose={closeModal}><GenerateForm students={students} onGenerated={load} onCancel={closeModal} /></Modal>}
-    {modal?.type === 'payment' && <Modal title="Collect Payment" onClose={closeModal}><PaymentForm invoiceId={modal.invoiceId} onPaid={afterSave} onCancel={closeModal} /></Modal>}
+    {modal?.type === 'generate' && <Modal title="Create Billing Run" subtitle="Monthly recurring fees or selected exam and other charges" maxWidth="max-w-3xl" onClose={closeModal}><GenerateForm students={students} categories={categories} onGenerated={load} onCancel={closeModal} /></Modal>}
+    {modal?.type === 'payment' && <Modal title="Invoice & Collection" maxWidth="max-w-2xl" onClose={closeModal}><PaymentForm invoiceId={modal.invoiceId} onPaid={load} onCancel={closeModal} /></Modal>}
     {modal?.type === 'expense' && <Modal title="New Expense" onClose={closeModal}><ExpenseForm onSaved={afterSave} onCancel={closeModal} /></Modal>}
 
     {confirm && <Confirm title={confirm.title} message={confirm.message} onConfirm={runConfirm} onCancel={() => setConfirm(null)} busy={confirmBusy} />}

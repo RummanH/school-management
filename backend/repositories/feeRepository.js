@@ -32,6 +32,7 @@ export function mapFeeStructure(row) {
     categoryId: row.category_id,
     categoryName: row.category_name || '',
     billingCycle: row.billing_cycle || '',
+    billingCycle: row.billing_cycle || '',
     amount: mapMoney(row, 'amount'),
     isActive: Boolean(row.is_active),
     createdAt: row.created_at,
@@ -252,7 +253,7 @@ export async function listActiveFeeStructures(client, tenantId) {
 
 export async function listAssignments(client, tenantId, studentUserId = null) {
   const result = await client.query(
-    `SELECT fa.*, fc.name AS category_name, u.name AS student_name, sp.class_name, sp.section, sp.roll_number,
+    `SELECT fa.*, fc.name AS category_name, fc.billing_cycle, u.name AS student_name, sp.class_name, sp.section, sp.roll_number,
             (fa.amount + fa.fine_amount - fa.discount_amount - fa.waiver_amount - fa.scholarship_amount) AS net_amount
        FROM fee_assignments fa
        JOIN fee_categories fc ON fc.id = fa.category_id
@@ -272,7 +273,7 @@ export async function findAssignmentById(client, id) {
 
 export async function listBillableAssignments(client, tenantId, { studentUserIds, period }) {
   const result = await client.query(
-    `SELECT fa.*, fc.name AS category_name, u.name AS student_name, sp.class_name, sp.section, sp.roll_number,
+    `SELECT fa.*, fc.name AS category_name, fc.billing_cycle, u.name AS student_name, sp.class_name, sp.section, sp.roll_number,
             (fa.amount + fa.fine_amount - fa.discount_amount - fa.waiver_amount - fa.scholarship_amount) AS net_amount
        FROM fee_assignments fa
        JOIN fee_categories fc ON fc.id = fa.category_id AND fc.is_active = true
@@ -287,6 +288,25 @@ export async function listBillableAssignments(client, tenantId, { studentUserIds
     [tenantId, studentUserIds?.length ? studentUserIds : null, period],
   );
   return result.rows.map(mapAssignment);
+}
+
+export async function listPreviouslyBilledOneTimeCategories(client, tenantId, studentUserIds, categoryIds) {
+  if (!studentUserIds?.length || !categoryIds?.length) return [];
+  const result = await client.query(
+    `SELECT DISTINCT fi.student_user_id, fii.category_id
+       FROM fee_invoice_items fii
+       JOIN fee_invoices fi ON fi.id = fii.invoice_id
+       JOIN fee_categories fc ON fc.id = fii.category_id
+      WHERE fi.tenant_id = $1
+        AND fi.student_user_id = ANY($2::text[])
+        AND fii.category_id = ANY($3::text[])
+        AND fc.billing_cycle = 'one_time'`,
+    [tenantId, studentUserIds, categoryIds],
+  );
+  return result.rows.map((row) => ({
+    studentUserId: row.student_user_id,
+    categoryId: row.category_id,
+  }));
 }
 
 export async function insertAssignment(client, data) {
@@ -344,6 +364,19 @@ export async function findInvoiceById(client, id) {
        JOIN users u ON u.id = fi.student_user_id
        LEFT JOIN student_profiles sp ON sp.user_id = fi.student_user_id
       WHERE fi.id = $1 LIMIT 1`,
+    [id],
+  );
+  return mapInvoice(result.rows[0]);
+}
+
+export async function findInvoiceByIdForUpdate(client, id) {
+  const result = await client.query(
+    `SELECT ${invoiceSelect}
+       FROM fee_invoices fi
+       JOIN users u ON u.id = fi.student_user_id
+       LEFT JOIN student_profiles sp ON sp.user_id = fi.student_user_id
+      WHERE fi.id = $1
+      FOR UPDATE OF fi`,
     [id],
   );
   return mapInvoice(result.rows[0]);

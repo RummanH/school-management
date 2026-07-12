@@ -8,8 +8,8 @@ import {
   toMoney,
   listCategories, findCategoryById, insertCategory, updateCategory, deleteCategory,
   listFeeStructures, findFeeStructureById, insertFeeStructure, updateFeeStructure, deleteFeeStructure, listActiveFeeStructures,
-  listAssignments, findAssignmentById, listBillableAssignments, insertAssignment, updateAssignment, deleteAssignment,
-  listInvoices, findInvoiceById, findInvoiceForStudentPeriod, insertInvoice, insertInvoiceItem, listInvoiceItems,
+  listAssignments, findAssignmentById, listBillableAssignments, listPreviouslyBilledOneTimeCategories, insertAssignment, updateAssignment, deleteAssignment,
+  listInvoices, findInvoiceById, findInvoiceByIdForUpdate, findInvoiceForStudentPeriod, insertInvoice, insertInvoiceItem, listInvoiceItems,
   listPayments, receiptNumberExists, insertPayment, updateInvoicePaymentStatus,
   listExpenses, insertExpense, deleteExpense, getFeeReport,
   getDefaulters, getStudentMonthlyLedger, listOverdueInvoicesForFines, applyInvoiceFine,
@@ -17,6 +17,7 @@ import {
 import { insertTransaction } from "../repositories/financeRepository.js";
 
 const BILLING_CYCLES = ["monthly", "term", "annual", "one_time"];
+const BILLING_MODES = ["monthly", "selected"];
 const ASSIGNMENT_STATUSES = ["active", "inactive"];
 const PAYMENT_METHODS = ["cash", "bank", "bkash", "nagad", "rocket", "card", "other"];
 
@@ -28,6 +29,16 @@ function money(value, label) {
 }
 function netFor(input) {
   return Math.max(0, toMoney(input.amount) + toMoney(input.fineAmount) - toMoney(input.discountAmount) - toMoney(input.waiverAmount) - toMoney(input.scholarshipAmount));
+}
+
+export function shouldIncludeFeeForRun(fee, { billingMode, categoryIds = [], previouslyBilledOneTimeIds = [] }) {
+  if (billingMode === "monthly") return fee.billingCycle === "monthly";
+  const selected = categoryIds instanceof Set ? categoryIds : new Set(categoryIds);
+  if (!selected.has(fee.categoryId)) return false;
+  const previouslyBilled = previouslyBilledOneTimeIds instanceof Set
+    ? previouslyBilledOneTimeIds
+    : new Set(previouslyBilledOneTimeIds);
+  return fee.billingCycle !== "one_time" || !previouslyBilled.has(fee.categoryId);
 }
 
 async function generateReceiptNumber(client) {
@@ -194,7 +205,7 @@ export class FeeService {
   // (or applies to all classes), with any per-student fee_assignment for that
   // same category taking precedence, plus any assignment-only categories that
   // have no class rule at all (ad-hoc charges/scholarships).
-  async resolveBillableItems(client, tenantId, { studentUserIds, period }) {
+  async resolveBillableItems(client, tenantId, { studentUserIds, period, billingMode, categoryIds }) {
     const [allStudents, structures, assignments] = await Promise.all([
       listStudents(client, tenantId),
       listActiveFeeStructures(client, tenantId),
@@ -203,16 +214,30 @@ export class FeeService {
 
     const students = allStudents.filter((s) =>
       s.status === "active" && (!studentUserIds || studentUserIds.includes(s.userId)));
+    const selectedCategoryIds = new Set(categoryIds || []);
+    const runOptions = { billingMode, categoryIds: selectedCategoryIds };
+    const structuresForRun = structures.filter((row) => shouldIncludeFeeForRun(row, runOptions));
+    const assignmentsForRun = assignments.filter((row) => shouldIncludeFeeForRun(row, runOptions));
+    const previousPairs = billingMode === "selected"
+      ? await listPreviouslyBilledOneTimeCategories(
+          client, tenantId, students.map((student) => student.userId), [...selectedCategoryIds],
+        )
+      : [];
+    const previousByStudent = new Map();
+    for (const pair of previousPairs) {
+      if (!previousByStudent.has(pair.studentUserId)) previousByStudent.set(pair.studentUserId, new Set());
+      previousByStudent.get(pair.studentUserId).add(pair.categoryId);
+    }
 
     const structuresByClass = new Map();
-    for (const structure of structures) {
+    for (const structure of structuresForRun) {
       const key = structure.classId || "";
       if (!structuresByClass.has(key)) structuresByClass.set(key, []);
       structuresByClass.get(key).push(structure);
     }
 
     const assignmentsByStudent = new Map();
-    for (const assignment of assignments) {
+    for (const assignment of assignmentsForRun) {
       if (!assignmentsByStudent.has(assignment.studentUserId)) assignmentsByStudent.set(assignment.studentUserId, new Map());
       assignmentsByStudent.get(assignment.studentUserId).set(assignment.categoryId, assignment);
     }
@@ -220,6 +245,8 @@ export class FeeService {
     const byStudent = new Map();
     for (const student of students) {
       const overrides = assignmentsByStudent.get(student.userId) || new Map();
+      const previouslyBilledOneTimeIds = previousByStudent.get(student.userId) || new Set();
+      const studentRunOptions = { ...runOptions, previouslyBilledOneTimeIds };
       const applicable = [
         ...(structuresByClass.get(student.classId || "") || []),
         ...(structuresByClass.get("") || []),
@@ -230,14 +257,19 @@ export class FeeService {
         if (seenCategories.has(structure.categoryId)) continue;
         seenCategories.add(structure.categoryId);
         const override = overrides.get(structure.categoryId);
-        items.push(override || {
+        const resolved = override || {
           id: null, studentUserId: student.userId, categoryId: structure.categoryId, categoryName: structure.categoryName,
+          billingCycle: structure.billingCycle,
           amount: structure.amount, discountAmount: 0, waiverAmount: 0, scholarshipAmount: 0, fineAmount: 0,
           netAmount: structure.amount,
-        });
+        };
+        if (shouldIncludeFeeForRun(resolved, studentRunOptions)) items.push(resolved);
       }
       for (const [categoryId, assignment] of overrides.entries()) {
-        if (!seenCategories.has(categoryId)) { items.push(assignment); seenCategories.add(categoryId); }
+        if (!seenCategories.has(categoryId) && shouldIncludeFeeForRun(assignment, studentRunOptions)) {
+          items.push(assignment);
+          seenCategories.add(categoryId);
+        }
       }
       if (items.length) byStudent.set(student.userId, items);
     }
@@ -247,13 +279,32 @@ export class FeeService {
   async generateInvoices(input, actor) {
     const period = cleanText(input.period);
     assert(period, "Billing period is required, e.g. 2026-07 or Term 1.", 400);
-    const title = cleanText(input.title) || `Fees - ${period}`;
+    const billingMode = BILLING_MODES.includes(input.billingMode) ? input.billingMode : "monthly";
+    const categoryIds = [...new Set(Array.isArray(input.categoryIds) ? input.categoryIds.filter(Boolean) : [])];
+    if (billingMode === "monthly") {
+      assert(/^\d{4}-\d{2}$/.test(period), "Monthly billing period must use YYYY-MM format.", 400);
+    } else {
+      assert(categoryIds.length > 0, "Select at least one additional fee category.", 400);
+      assert(!/^\d{4}-\d{2}$/.test(period), "Use a unique reference such as 2026-HALF-YEARLY-EXAM for an additional charge.", 400);
+    }
+    const title = cleanText(input.title) || (billingMode === "monthly" ? `Monthly Fees - ${period}` : `Additional Charges - ${period}`);
     const dueDate = cleanText(input.dueDate);
+    const eligibilityPeriod = billingMode === "monthly"
+      ? period
+      : (/^\d{4}-\d{2}/.test(dueDate) ? dueDate.slice(0, 7) : new Date().toISOString().slice(0, 7));
     const studentUserIds = Array.isArray(input.studentUserIds) && input.studentUserIds.length
       ? input.studentUserIds.filter(Boolean) : null;
 
     return this.databaseManager.withTransaction(async (client) => {
-      const byStudent = await this.resolveBillableItems(client, actor.tenantId, { studentUserIds, period });
+      if (billingMode === "selected") {
+        const categories = await listCategories(client, actor.tenantId);
+        const selected = categories.filter((category) => categoryIds.includes(category.id) && category.isActive);
+        assert(selected.length === categoryIds.length, "One or more selected fee categories are unavailable.", 400);
+        assert(selected.every((category) => category.billingCycle !== "monthly"), "Use the monthly billing run for recurring monthly categories.", 400);
+      }
+      const byStudent = await this.resolveBillableItems(client, actor.tenantId, {
+        studentUserIds, period: eligibilityPeriod, billingMode, categoryIds,
+      });
 
       const created = [];
       const skipped = [];
@@ -286,14 +337,14 @@ export class FeeService {
         }
         created.push(invoice);
       }
-      return { created, skipped, studentCount: byStudent.size };
+      return { created, skipped, studentCount: byStudent.size, billingMode };
     });
   }
 
   // Called by the monthly cron/scheduler (see backend/services/feeCronService.js)
   // to auto-bill every active student in a tenant for the given period.
   async generateMonthlyInvoicesForTenant(tenantId, period) {
-    return this.generateInvoices({ period, studentUserIds: null }, { tenantId });
+    return this.generateInvoices({ period, billingMode: "monthly", studentUserIds: null }, { tenantId });
   }
 
   async generateMonthlyInvoicesForAllTenants(period) {
@@ -332,7 +383,7 @@ export class FeeService {
 
   async recordPayment(invoiceId, input, actor) {
     return this.databaseManager.withTransaction(async (client) => {
-      const invoice = await findInvoiceById(client, invoiceId);
+      const invoice = await findInvoiceByIdForUpdate(client, invoiceId);
       assert(invoice && invoice.tenantId === actor.tenantId, "Invoice not found.", 404);
       const amount = money(input.amount, "Payment amount");
       assert(amount > 0, "Payment amount must be greater than zero.", 400);
