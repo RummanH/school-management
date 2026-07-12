@@ -1,7 +1,7 @@
-export const SCHOOL_PHONE = '+880 1700-000000';
-export const SCHOOL_EMAIL = 'info@greenfieldacademy.edu.bd';
-export const SCHOOL_ADDRESS = '123 Academy Road, Dhaka 1200, Bangladesh';
-export const SCHOOL_FB = 'https://facebook.com/greenfieldacademy';
+export const SCHOOL_PHONE = '+880 1678-560660';
+export const SCHOOL_EMAIL = 'thehasan227@gmail.com';
+export const SCHOOL_ADDRESS = 'Middle Paikpara, Mirpur-1, Dhaka 1216, Bangladesh';
+export const SCHOOL_FB = 'https://www.facebook.com/jahidhasan.rumman.3';
 export const SCHOOL_YT = 'https://youtube.com/@greenfieldacademy';
 
 export const STATS = [

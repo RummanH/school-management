@@ -573,9 +573,9 @@
   contact: {
     title: "Get in Touch",
     subtitle: "We would love to hear from you.",
-    address: "123 Academy Road, Dhaka 1200, Bangladesh",
-    phone: "+880 1700-000000",
-    email: "info@greenfieldacademy.edu.bd",
+    address: "Middle Paikpara, Mirpur-1, Dhaka 1216, Bangladesh",
+    phone: "+880 1678-560660 (WhatsApp)",
+    email: "thehasan227@gmail.com",
     mapTitle: "Our Location",
     form: {
       title: "Send Us a Message",
