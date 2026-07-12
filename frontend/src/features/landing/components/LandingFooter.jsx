@@ -1,8 +1,8 @@
-import { ArrowUpRight, Facebook, GraduationCap, Mail, MapPin, Phone, Youtube } from 'lucide-react';
+import { Facebook, GraduationCap, Mail, MapPin, Phone, Youtube } from 'lucide-react';
 import { useLanguage } from '../../../app/App.jsx';
 import { SCHOOL_ADDRESS, SCHOOL_EMAIL, SCHOOL_PHONE, SCHOOL_FB, SCHOOL_YT } from '../constants.js';
 
-const QUICK_LINKS = ['home', 'features', 'about', 'academics', 'admission', 'notice', 'gallery', 'contact'];
+const QUICK_LINKS = ['home', 'about', 'admission', 'contact'];
 const HREFS = {
   home: '#hero',
   features: '#features',
@@ -33,24 +33,7 @@ export default function LandingFooter() {
       </div>
 
       <div className="landing-container relative z-10 py-16">
-        <div className="rounded-[2rem] border border-white/10 bg-white/6 px-6 py-8 backdrop-blur-sm sm:px-8 lg:flex lg:items-center lg:justify-between lg:gap-10">
-          <div className="max-w-2xl">
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-200/70">Admissions open</p>
-            <h3 className="mt-3 text-2xl font-black tracking-tight text-white sm:text-3xl">Build a stronger school journey with a campus that feels modern from day one.</h3>
-            <p className="mt-3 text-sm leading-relaxed text-white/68 sm:text-base">Bring admissions, communication, fees, notices, and academic visibility into one reliable experience for students, staff, and families.</p>
-          </div>
-          <div className="mt-6 flex shrink-0 flex-wrap gap-3 lg:mt-0 lg:justify-end">
-            <a href="#admission" className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-[var(--brand-strong)] transition hover:-translate-y-0.5">
-              Start Admission
-              <ArrowUpRight className="h-4 w-4" />
-            </a>
-            <a href="#contact" className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/8 px-5 py-3 text-sm font-bold text-white/85 backdrop-blur-sm transition hover:bg-white/12 hover:text-white">
-              Contact School
-            </a>
-          </div>
-        </div>
-
-        <div className="mt-12 grid gap-10 lg:grid-cols-[1.15fr_0.7fr_0.7fr_0.9fr]">
+        <div className="grid gap-10 lg:grid-cols-[1.15fr_0.7fr_0.7fr_0.9fr]">
           <div>
             <div className="flex items-center gap-3">
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">

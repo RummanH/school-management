@@ -33,10 +33,10 @@ export default function AcademicsSection() {
             <Calendar className="h-4 w-4" />
             {t('academics.examSchedule')}
           </button>
-          <button className="btn-cta-outline flex items-center gap-2">
+          <a href="/downloads/demo-syllabus.html" download="greenfield-academy-demo-syllabus-2026.html" className="btn-cta-outline flex items-center gap-2">
             <Download className="h-4 w-4" />
             {t('academics.syllabus')}
-          </button>
+          </a>
           <button className="btn-cta flex items-center gap-2">
             <BookOpen className="h-4 w-4" />
             {t('academics.viewMore')}

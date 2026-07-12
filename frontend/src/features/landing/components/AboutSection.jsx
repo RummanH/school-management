@@ -185,19 +185,65 @@ export default function AboutSection() {
           </div>
         </div>
 
-        <div className="mt-16 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-          <InfoCard icon={Building2} title="Organizational Structure" colorIndex={2}>
-            A clear leadership structure keeps academics, student welfare, admissions, discipline, and guardian communication accountable.
-          </InfoCard>
-          <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-soft">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-16 space-y-6">
+          <div className="rounded-[1.9rem] border border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_55%,#eef6f2_100%)] p-6 shadow-soft sm:p-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                  <Building2 className="h-6 w-6" />
+                </div>
+                <p className="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[var(--brand)]">Organizational Structure</p>
+                <h3 className="mt-3 text-[1.9rem] font-black leading-tight tracking-[-0.03em] text-[var(--brand-strong)] sm:text-[2.15rem]">Leadership with clarity, accountability, and daily direction</h3>
+                <p className="mt-4 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">Each layer of leadership has a defined role, creating a reliable chain from governance and academic planning to student care, discipline, and classroom guidance.</p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3 lg:w-[25rem]">
+                <div className="rounded-2xl border border-white/80 bg-white/80 px-4 py-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Governance</p>
+                  <p className="mt-2 text-sm font-black text-slate-900">Strategic oversight</p>
+                </div>
+                <div className="rounded-2xl border border-white/80 bg-white/80 px-4 py-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Academics</p>
+                  <p className="mt-2 text-sm font-black text-slate-900">Teaching direction</p>
+                </div>
+                <div className="rounded-2xl border border-white/80 bg-white/80 px-4 py-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Students</p>
+                  <p className="mt-2 text-sm font-black text-slate-900">Daily support</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[1.75rem] border border-slate-100 bg-white p-5 shadow-soft sm:p-6">
+            <div className="mb-5 flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--brand)]">Leadership Chain</p>
+                <h3 className="mt-2 text-xl font-black text-[var(--brand-strong)]">Who guides the institution day to day</h3>
+              </div>
+              <div className="hidden rounded-full bg-[var(--brand-soft)] px-3 py-1.5 text-[11px] font-bold text-[var(--brand-strong)] sm:block">
+                Accountable and role-based
+              </div>
+            </div>
+
+            <div className="space-y-4">
               {LEADERSHIP.map((item, index) => (
-                <div key={item.role} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[var(--brand)] shadow-sm">
-                    {index === 0 ? <Award className="h-4 w-4" /> : index === 2 ? <BookOpenCheck className="h-4 w-4" /> : <UserRound className="h-4 w-4" />}
-                  </span>
-                  <p className="mt-3 text-sm font-black text-slate-800">{item.role}</p>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-500">{item.name}</p>
+                <div key={item.role} className="relative rounded-[1.4rem] border border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 sm:p-5">
+                  {index < LEADERSHIP.length - 1 && (
+                    <div className="absolute left-8 top-full h-4 w-px bg-slate-200" />
+                  )}
+                  <div className="flex gap-4">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--brand-soft)] text-[var(--brand)]">
+                      {index === 0 ? <Award className="h-5 w-5" /> : index === 2 ? <BookOpenCheck className="h-5 w-5" /> : <UserRound className="h-5 w-5" />}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-base font-black text-slate-900">{item.role}</p>
+                        <span className="inline-flex w-fit rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                          Level {index + 1}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm leading-relaxed text-slate-500">{item.name}</p>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
