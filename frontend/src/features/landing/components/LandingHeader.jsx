@@ -54,12 +54,12 @@ export default function LandingHeader() {
             href="#admission"
             className="hidden rounded-full bg-white px-4 py-1.5 text-sm font-bold text-[var(--brand-strong)] transition hover:bg-emerald-50 sm:inline-flex"
           >
-            {t('hero.admissionCta')}
+            {language === 'en' ? 'Admission' : 'ভর্তি'}
           </a>
 
           <button
             onClick={() => navigate('/login')}
-            className="hidden items-center gap-1.5 rounded-full border border-white/25 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-white/15 sm:flex"
+            className="hidden whitespace-nowrap items-center gap-1.5 rounded-full border border-white/25 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-white/15 sm:flex"
           >
             <LogIn className="h-3.5 w-3.5" />
             {t('header.signIn')}
@@ -92,11 +92,11 @@ export default function LandingHeader() {
             onClick={() => setMenuOpen(false)}
             className="mt-2 block rounded-lg bg-white px-3 py-2.5 text-center text-sm font-bold text-[var(--brand-strong)]"
           >
-            {t('hero.admissionCta')}
+            {language === 'en' ? 'Admission' : 'ভর্তি'}
           </a>
           <button
             onClick={() => { setMenuOpen(false); navigate('/login'); }}
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-white/20 px-3 py-2.5 text-sm font-bold text-white"
+            className="mt-2 flex w-full whitespace-nowrap items-center justify-center gap-2 rounded-lg border border-white/20 px-3 py-2.5 text-sm font-bold text-white"
           >
             <LogIn className="h-4 w-4" />
             {t('header.signIn')}
@@ -106,3 +106,5 @@ export default function LandingHeader() {
     </header>
   );
 }
+
+
