@@ -107,13 +107,13 @@ function GalleryModal({ initial, onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+      <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <h2 className="text-base font-bold text-slate-800">{isEdit ? 'Edit Gallery Item' : 'New Gallery Item'}</h2>
           <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600"><X className="h-4 w-4" /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 p-6">
+        <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto p-6">
           {error && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
           <div>
@@ -280,7 +280,7 @@ export default function GalleryPage() {
               </div>
               <div className="flex items-center justify-between gap-2 p-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-700">{item.caption || '—'}</p>
+                  <p className="truncate text-sm font-semibold text-slate-700">{item.caption || 'â€”'}</p>
                   <p className="text-xs text-slate-400">Sort: {item.sortOrder}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">

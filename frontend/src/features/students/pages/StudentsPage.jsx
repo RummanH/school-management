@@ -406,7 +406,7 @@ export default function StudentsPage() {
           <button onClick={() => setModal('create')} className="btn-primary mt-5"><Plus className="h-4 w-4" /> Add First Student</button>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-soft">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50 text-left">
@@ -425,7 +425,7 @@ export default function StudentsPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-purple-100 text-xs font-black text-purple-700">
-                        {s.name.charAt(0).toUpperCase()}
+                        {(s.name?.charAt(0) || '?').toUpperCase()}
                       </span>
                       <div>
                         <p className="font-bold text-slate-800">{s.name}</p>

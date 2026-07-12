@@ -20,13 +20,13 @@ const TABS = [
   { id: 'movements', label: 'Promotions & Transfers' },
 ];
 
-const yesNo = (v) => (v ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <span className="text-slate-300">—</span>);
+const yesNo = (v) => (v ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <span className="text-slate-300">â€”</span>);
 const COLUMNS = {
   sessions: [
     { key: 'name', label: 'Session' },
     { key: 'start_date', label: 'Starts' },
     { key: 'end_date', label: 'Ends' },
-    { key: 'is_active', label: 'Active', render: (r) => (r.is_active ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700">Active</span> : <span className="text-slate-300">—</span>) },
+    { key: 'is_active', label: 'Active', render: (r) => (r.is_active ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700">Active</span> : <span className="text-slate-300">â€”</span>) },
   ],
   terms: [
     { key: 'session_name', label: 'Session' },
@@ -43,7 +43,7 @@ const COLUMNS = {
   assignments: [
     { key: 'teacher_name', label: 'Teacher' },
     { key: 'subject_name', label: 'Subject' },
-    { key: 'class_name', label: 'Class', render: (r) => `${r.class_name}${r.section ? ` — ${r.section}` : ''}` },
+    { key: 'class_name', label: 'Class', render: (r) => `${r.class_name}${r.section ? ` â€” ${r.section}` : ''}` },
     { key: 'session_name', label: 'Session' },
   ],
   'grading-policies': [
@@ -58,7 +58,7 @@ const COLUMNS = {
     { key: 'student_name', label: 'Student' },
     { key: 'movement_type', label: 'Type', render: (r) => String(r.movement_type || '').replace('_', ' ') },
     { key: 'from_class_name', label: 'From' },
-    { key: 'to_class_name', label: 'To', render: (r) => `${r.to_class_name || ''}${r.to_section ? ` — ${r.to_section}` : ''}` },
+    { key: 'to_class_name', label: 'To', render: (r) => `${r.to_class_name || ''}${r.to_section ? ` â€” ${r.to_section}` : ''}` },
     { key: 'effective_date', label: 'Date' },
     { key: 'reason', label: 'Reason' },
   ],
@@ -114,11 +114,11 @@ function BulkPromoteCard({ classes, onDone }) {
   const [form, setForm] = useState({ fromClassId: '', toClassId: '', toSection: '', effectiveDate: today(), reason: '' });
   const [running, setRunning] = useState(false);
   const [message, setMessage] = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setMessage(''); };
 
-  async function submit(e) {
-    e.preventDefault();
-    if (!confirm('Promote ALL active students of the source class to the destination class?')) return;
+  async function runPromotion() {
+    setConfirmOpen(false);
     setRunning(true); setMessage('');
     try {
       const result = await bulkPromoteClass(form);
@@ -129,21 +129,37 @@ function BulkPromoteCard({ classes, onDone }) {
   }
 
   return (
-    <form onSubmit={submit} className="card space-y-4 border-indigo-100 bg-indigo-50/40">
-      <div className="flex items-center gap-2">
-        <TrendingUp className="h-4 w-4 text-[var(--brand)]" />
-        <h3 className="font-black text-slate-800">Year-End Bulk Promotion</h3>
-      </div>
-      <p className="text-xs text-slate-500">Moves every active student from one class to another in a single action. Each student still gets an individual promotion record below.</p>
-      {message && <div className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-700">{message}</div>}
-      <div className="grid gap-4 lg:grid-cols-5">
-        <Field label="From Class"><Select required value={form.fromClassId} onChange={e => set('fromClassId', e.target.value)}><option value="">Select</option>{classes.map(c => <option key={c.id} value={c.id}>{c.name}{c.section ? ` — ${c.section}` : ''}{c.academicYear ? ` (${c.academicYear})` : ''}</option>)}</Select></Field>
-        <Field label="To Class"><Select required value={form.toClassId} onChange={e => set('toClassId', e.target.value)}><option value="">Select</option>{classes.map(c => <option key={c.id} value={c.id}>{c.name}{c.section ? ` — ${c.section}` : ''}{c.academicYear ? ` (${c.academicYear})` : ''}</option>)}</Select></Field>
-        <Field label="To Section (optional)"><Input value={form.toSection} onChange={e => set('toSection', e.target.value)} placeholder="Keep class default" /></Field>
-        <Field label="Effective Date"><Input required type="date" value={form.effectiveDate} onChange={e => set('effectiveDate', e.target.value)} /></Field>
-        <div className="flex items-end"><button disabled={running} className="btn-primary w-full justify-center">{running ? <Loader2 className="h-4 w-4 animate-spin" /> : <TrendingUp className="h-4 w-4" />}Promote All</button></div>
-      </div>
-    </form>
+    <>
+      <form onSubmit={(e) => { e.preventDefault(); setConfirmOpen(true); }} className="card space-y-4 border-indigo-100 bg-indigo-50/40">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="h-4 w-4 text-[var(--brand)]" />
+          <h3 className="font-black text-slate-800">Year-End Bulk Promotion</h3>
+        </div>
+        <p className="text-xs text-slate-500">Moves every active student from one class to another in a single action. Each student still gets an individual promotion record below.</p>
+        {message && <div className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-700">{message}</div>}
+        <div className="grid gap-4 lg:grid-cols-5">
+          <Field label="From Class"><Select required value={form.fromClassId} onChange={e => set('fromClassId', e.target.value)}><option value="">Select</option>{classes.map(c => <option key={c.id} value={c.id}>{c.name}{c.section ? ` â€” ${c.section}` : ''}{c.academicYear ? ` (${c.academicYear})` : ''}</option>)}</Select></Field>
+          <Field label="To Class"><Select required value={form.toClassId} onChange={e => set('toClassId', e.target.value)}><option value="">Select</option>{classes.map(c => <option key={c.id} value={c.id}>{c.name}{c.section ? ` â€” ${c.section}` : ''}{c.academicYear ? ` (${c.academicYear})` : ''}</option>)}</Select></Field>
+          <Field label="To Section (optional)"><Input value={form.toSection} onChange={e => set('toSection', e.target.value)} placeholder="Keep class default" /></Field>
+          <Field label="Effective Date"><Input required type="date" value={form.effectiveDate} onChange={e => set('effectiveDate', e.target.value)} /></Field>
+          <div className="flex items-end"><button disabled={running} className="btn-primary w-full justify-center">{running ? <Loader2 className="h-4 w-4 animate-spin" /> : <TrendingUp className="h-4 w-4" />}Promote All</button></div>
+        </div>
+      </form>
+      {confirmOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl">
+            <div className="px-6 py-5">
+              <h3 className="text-base font-bold text-slate-800">Confirm Bulk Promotion</h3>
+              <p className="mt-1 text-sm text-slate-500">Promote ALL active students of the source class to the destination class? This cannot be undone.</p>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-100 px-6 py-4">
+              <button onClick={() => setConfirmOpen(false)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
+              <button onClick={runPromotion} className="rounded-xl bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90">Promote All</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -153,15 +169,15 @@ function StructureModal({ active, data, classes, teachers, students, initialForm
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl">
+      <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <h3 className="text-base font-bold text-slate-800">{title}</h3>
           <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600"><X className="h-4 w-4" /></button>
         </div>
-        <form onSubmit={onSubmit} className="space-y-4 p-6">
+        <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto p-6">
           {error && <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>}
 
-          <div className="grid gap-4 lg:grid-cols-5">
+          <div className="grid gap-4 sm:grid-cols-2">
             {active==='subjects' && <><Field label="Code"><Input value={initialForm.code||''} onChange={e=>set('code',e.target.value)} placeholder="e.g. MATH" /></Field><Field label="Name"><Input required value={initialForm.name||''} onChange={e=>set('name',e.target.value)} placeholder="e.g. Mathematics" /></Field><Field label="Department"><Input value={initialForm.department||''} onChange={e=>set('department',e.target.value)} /></Field><Field label="Description"><Input value={initialForm.description||''} onChange={e=>set('description',e.target.value)} /></Field>{editingId && <label className="flex items-end gap-2 pb-2 text-sm font-semibold"><input type="checkbox" checked={initialForm.isActive !== false} onChange={e=>set('isActive',e.target.checked)} /> Active</label>}</>}
             {active==='sessions' && <><Field label="Name"><Input required value={initialForm.name||''} onChange={e=>set('name',e.target.value)} placeholder="e.g. 2026" /></Field><Field label="Start"><Input type="date" value={initialForm.startDate||''} onChange={e=>set('startDate',e.target.value)} /></Field><Field label="End"><Input type="date" value={initialForm.endDate||''} onChange={e=>set('endDate',e.target.value)} /></Field><label className="flex items-end gap-2 pb-2 text-sm font-semibold"><input type="checkbox" checked={Boolean(initialForm.isActive)} onChange={e=>set('isActive',e.target.checked)} /> Active session</label></>}
             {active==='terms' && <><Field label="Session"><Select value={initialForm.sessionId||''} onChange={e=>set('sessionId',e.target.value)}><option value="">None</option>{data.sessions.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</Select></Field><Field label="Name"><Input required value={initialForm.name||''} onChange={e=>set('name',e.target.value)} placeholder="e.g. First Term" /></Field><Field label="Start"><Input type="date" value={initialForm.startDate||''} onChange={e=>set('startDate',e.target.value)} /></Field><Field label="End"><Input type="date" value={initialForm.endDate||''} onChange={e=>set('endDate',e.target.value)} /></Field></>}
@@ -180,6 +196,25 @@ function StructureModal({ active, data, classes, teachers, students, initialForm
   );
 }
 
+function DeleteConfirm({ label, onConfirm, onCancel }) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl">
+        <div className="px-6 py-5">
+          <h3 className="text-base font-bold text-slate-800">Delete Record</h3>
+          <p className="mt-1 text-sm text-slate-500">
+            Delete <strong>{label}</strong>? Records that reference it may also be affected.
+          </p>
+        </div>
+        <div className="flex justify-end gap-2 border-t border-slate-100 px-6 py-4">
+          <button onClick={onCancel} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
+          <button onClick={onConfirm} className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600">Delete</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function StructureTab() {
   const [data, setData] = useState(null);
   const [classes, setClasses] = useState([]);
@@ -193,6 +228,7 @@ export default function StructureTab() {
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
+  const [confirmDeleteRow, setConfirmDeleteRow] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -219,9 +255,13 @@ export default function StructureTab() {
     finally { setSaving(false); }
   }
 
-  async function handleDelete(row) {
-    const label = row.name || row.subject_name || row.teacher_name || 'this record';
-    if (!confirm(`Delete ${label}? Records that reference it may also be affected.`)) return;
+  function handleDelete(row) {
+    setConfirmDeleteRow(row);
+  }
+
+  async function confirmAndDelete() {
+    const row = confirmDeleteRow;
+    setConfirmDeleteRow(null);
     setDeletingId(row.id); setError('');
     try {
       const result = await deleteAcademicStructureRecord(active, row.id);
@@ -273,6 +313,14 @@ export default function StructureTab() {
         onClose={closeModal}
         onChange={set}
         onSubmit={submit}
+      />
+    )}
+
+    {confirmDeleteRow && (
+      <DeleteConfirm
+        label={confirmDeleteRow.name || confirmDeleteRow.subject_name || confirmDeleteRow.teacher_name || 'this record'}
+        onConfirm={confirmAndDelete}
+        onCancel={() => setConfirmDeleteRow(null)}
       />
     )}
   </div>;

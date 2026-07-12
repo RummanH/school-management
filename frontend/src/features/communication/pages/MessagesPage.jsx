@@ -268,6 +268,8 @@ export default function MessagesPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [showCompose, setShowCompose] = useState(false);
   const [query, setQuery] = useState('');
+  const [threadError, setThreadError] = useState('');
+  const [replyError, setReplyError] = useState('');
   const scrollRef = useRef(null);
 
   async function loadThreads(selectId = activeId) {
@@ -294,12 +296,14 @@ export default function MessagesPage() {
       return;
     }
     setDetailLoading(true);
+    setThreadError('');
     getThread(activeId)
       .then((d) => {
         setActive(d.thread);
         setMessages(d.messages || []);
         loadThreads(activeId).catch(() => {});
       })
+      .catch((err) => setThreadError(err.message || 'Failed to load conversation.'))
       .finally(() => setDetailLoading(false));
   }, [activeId]);
 
@@ -334,12 +338,15 @@ export default function MessagesPage() {
     e.preventDefault();
     if (!reply.trim() || !activeId || sendingReply) return;
     setSendingReply(true);
+    setReplyError('');
     try {
       const data = await replyToThread(activeId, { body: reply });
       setReply('');
       setActive(data.thread);
       setMessages(data.messages || []);
       loadThreads(activeId).catch(() => {});
+    } catch (err) {
+      setReplyError(err.message || 'Failed to send message.');
     } finally {
       setSendingReply(false);
     }
@@ -421,6 +428,10 @@ export default function MessagesPage() {
               <div className="flex h-full items-center justify-center">
                 <Loader2 className="h-7 w-7 animate-spin text-[var(--brand)]" />
               </div>
+            ) : threadError ? (
+              <div className="flex h-full items-center justify-center">
+                <EmptyState title="Couldn't load this conversation" body={threadError} />
+              </div>
             ) : (
               <>
                 <div className="border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(248,250,252,0.92))] px-4 py-4 backdrop-blur sm:px-6">
@@ -487,6 +498,9 @@ export default function MessagesPage() {
                 </div>
 
                 <div className="border-t border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(241,245,249,0.96))] p-4 backdrop-blur sm:p-5">
+                  {replyError && (
+                    <div className="mb-3 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-sm text-red-700">{replyError}</div>
+                  )}
                   <form onSubmit={submitReply} className="rounded-[1.6rem] border border-slate-300 bg-white p-3">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                       <textarea
@@ -521,25 +535,3 @@ export default function MessagesPage() {
     </>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

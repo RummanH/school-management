@@ -24,12 +24,11 @@ const ROLE_COLORS = {
   student:    'bg-purple-100 text-purple-700',
   guardian:   'bg-amber-100 text-amber-700',
 };
+const DEFAULT_ROLE_COLOR = 'bg-slate-100 text-slate-600';
 
 // Teachers and students are created from their dedicated pages (with full profiles).
 // This Users page manages admin, accountant, and guardian accounts.
-function rolesFor(actorRole) {
-  return ['admin', 'accountant', 'guardian'];
-}
+const CREATABLE_ROLES = ['admin', 'accountant', 'guardian'];
 
 /* ─── Confirmation dialog ─── */
 function Confirm({ title, message, confirmLabel = 'Confirm', tone = 'rose', onConfirm, onCancel }) {
@@ -186,7 +185,7 @@ function WardsModal({ guardian, onClose }) {
 /* ─── User form modal ─── */
 function UserModal({ initial, actor, tenantsList, onClose, onSaved }) {
   const isEdit = Boolean(initial?.id);
-  const roles = rolesFor(actor.role);
+  const roles = CREATABLE_ROLES;
   const needsTenant = actor.role === 'system_developer' && !isEdit;
 
   const [form, setForm] = useState({
@@ -412,7 +411,7 @@ export default function UsersPage() {
           </button>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-soft">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50 text-left">
@@ -433,7 +432,7 @@ export default function UsersPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand)]/10 text-xs font-black text-[var(--brand)]">
-                        {user.name.charAt(0).toUpperCase()}
+                        {(user.name?.charAt(0) || '?').toUpperCase()}
                       </span>
                       <span className="font-bold text-slate-800">{user.name}</span>
                       {user.id === actor?.id && (
@@ -446,7 +445,7 @@ export default function UsersPage() {
                     <td className="px-4 py-3 text-xs text-slate-500">{user.tenantName || '—'}</td>
                   )}
                   <td className="px-4 py-3">
-                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${ROLE_COLORS[user.role] || ROLE_COLORS.operator}`}>
+                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${ROLE_COLORS[user.role] || DEFAULT_ROLE_COLOR}`}>
                       {ROLE_LABELS[user.role] || user.role}
                     </span>
                   </td>

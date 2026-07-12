@@ -239,6 +239,7 @@ export default function TeachersPage() {
   const [modal, setModal] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [brokenPhotoIds, setBrokenPhotoIds] = useState(() => new Set());
 
   useEffect(() => {
     listTeachers()
@@ -283,7 +284,7 @@ export default function TeachersPage() {
           <button onClick={() => setModal('create')} className="btn-primary mt-5"><Plus className="h-4 w-4" /> Add First Teacher</button>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-soft">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50 text-left">
@@ -301,11 +302,12 @@ export default function TeachersPage() {
                 <tr key={t.userId} className="transition hover:bg-slate-50/60">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
-                      {t.photoUrl ? (
-                        <img src={t.photoUrl} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                      {t.photoUrl && !brokenPhotoIds.has(t.userId) ? (
+                        <img src={t.photoUrl} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover"
+                          onError={() => setBrokenPhotoIds((prev) => new Set(prev).add(t.userId))} />
                       ) : (
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-700">
-                          {t.name.charAt(0).toUpperCase()}
+                          {(t.name?.charAt(0) || '?').toUpperCase()}
                         </span>
                       )}
                       <div>

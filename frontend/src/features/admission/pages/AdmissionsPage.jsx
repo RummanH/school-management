@@ -230,7 +230,7 @@ export default function AdmissionsPage() {
           <p className="text-sm font-medium">No applications yet</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-soft">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50 text-left">

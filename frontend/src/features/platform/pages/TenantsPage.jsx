@@ -46,11 +46,13 @@ function TenantModal({ initial, onClose, onSaved }) {
   } : EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [slugTouched, setSlugTouched] = useState(false);
 
   function set(field, value) {
     setForm((f) => {
       const next = { ...f, [field]: value };
-      if (field === 'name' && !isEdit) next.slug = slugify(value);
+      if (field === 'slug') setSlugTouched(true);
+      if (field === 'name' && !isEdit && !slugTouched) next.slug = slugify(value);
       return next;
     });
     setError('');
@@ -256,7 +258,7 @@ export default function TenantsPage() {
           </button>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-soft">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50 text-left">

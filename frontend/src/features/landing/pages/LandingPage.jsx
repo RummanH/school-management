@@ -1,5 +1,6 @@
 import LandingHeader from '../components/LandingHeader.jsx';
 import HeroSection from '../components/HeroSection.jsx';
+import DashboardPreviewSection from '../components/DashboardPreviewSection.jsx';
 import PlatformFeaturesSection from '../components/PlatformFeaturesSection.jsx';
 import WhyChooseUsSection from '../components/WhyChooseUsSection.jsx';
 import AboutSection from '../components/AboutSection.jsx';
@@ -9,6 +10,8 @@ import NoticeSection from '../components/NoticeSection.jsx';
 import AcademicsSection from '../components/AcademicsSection.jsx';
 import AdmissionSection from '../components/AdmissionSection.jsx';
 import GallerySection from '../components/GallerySection.jsx';
+import TestimonialsSection from '../components/TestimonialsSection.jsx';
+import FaqDemoSection from '../components/FaqDemoSection.jsx';
 import ContactSection from '../components/ContactSection.jsx';
 import LandingFooter from '../components/LandingFooter.jsx';
 
@@ -18,6 +21,7 @@ export default function LandingPage() {
       <LandingHeader />
       <HeroSection />
       <PlatformFeaturesSection />
+      <DashboardPreviewSection />
       <WhyChooseUsSection />
       <AboutSection />
       <CampusGallerySection />
@@ -26,6 +30,8 @@ export default function LandingPage() {
       <AcademicsSection />
       <AdmissionSection />
       <GallerySection />
+      <TestimonialsSection />
+      <FaqDemoSection />
       <ContactSection />
       <LandingFooter />
     </div>

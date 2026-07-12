@@ -6,6 +6,7 @@ export default function SecurityPage() {
   const [logs, setLogs] = useState([]);
   const [matrix, setMatrix] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     Promise.all([getAuditLogs(), getPermissionMatrix()])
@@ -13,6 +14,7 @@ export default function SecurityPage() {
         setLogs(audit.logs || []);
         setMatrix(permissions.matrix || []);
       })
+      .catch((err) => setError(err.message || 'Failed to load security data.'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -27,9 +29,11 @@ export default function SecurityPage() {
         <p className="mt-0.5 text-sm text-slate-500">Audit trails, role permissions, login throttling, and export controls.</p>
       </div>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-4">
+      {error && <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+
+      <section className="card">
         <div className="mb-3 flex items-center gap-2 font-bold text-slate-700"><ShieldCheck className="h-4 w-4" /> Role Permission Matrix</div>
-        <div className="overflow-auto rounded-xl border border-slate-100">
+        <div className="overflow-x-auto rounded-xl border border-slate-100">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase text-slate-400">
               <tr><th className="px-3 py-2">Role</th>{permissionKeys.map((key) => <th key={key} className="px-3 py-2">{key}</th>)}</tr>
@@ -43,7 +47,7 @@ export default function SecurityPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-4">
+      <section className="card">
         <div className="mb-3 font-bold text-slate-700">Recent Audit Logs</div>
         <div className="divide-y divide-slate-100">
           {logs.map((log) => (

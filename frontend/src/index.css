@@ -1,4 +1,4 @@
-﻿@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap");
+﻿@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -175,7 +175,7 @@
   html {
     height: 100%;
     overflow-x: hidden;
-    font-family: "Plus Jakarta Sans", "Noto Sans Bengali", "Segoe UI Variable", "Segoe UI", "Avenir Next", "Trebuchet MS", sans-serif;
+    font-family: "Manrope", "Noto Sans Bengali", "Segoe UI Variable", "Segoe UI", "Avenir Next", "Trebuchet MS", sans-serif;
   }
 
   body {
@@ -415,5 +415,6 @@ body.landing-page-active #root {
   min-height: 100vh !important;
   overflow: visible !important;
 }
+
 
 
