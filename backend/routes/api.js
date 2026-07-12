@@ -204,6 +204,10 @@ export function createApiRouter({
   router.post("/hr/leaves", ...adminOnly, hrController.requestLeave);
   router.patch("/hr/leaves/:id", ...adminOnly, hrController.reviewLeave);
   router.post("/hr/payroll", ...payrollAdmin, hrController.savePayroll);
+  // Teachers aren't in staff_profiles, but they're payable through the same
+  // Pay Salary flow — accountants need this list too, but the main /teachers
+  // route is adminOnly, so expose it again here under payrollAdmin.
+  router.get("/hr/payroll/teachers", ...payrollAdmin, teacherController.list);
   router.post("/hr/documents", ...adminOnly, hrController.addDocument);
   router.post("/hr/notes", ...adminOnly, hrController.addNote);
 

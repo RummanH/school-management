@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BriefcaseBusiness, CalendarCheck, FileText, Loader2, Plus, Save, Star, Trash2, WalletCards, Wallet, AlertTriangle, X } from 'lucide-react';
 import { addPerformanceNote, addStaffDocument, deleteStaff, getHrOverview, markStaffAttendance, requestStaffLeave, reviewStaffLeave, savePayroll, saveStaff } from '../../../services/api/hrApi.js';
 import { getFinanceBalance } from '../../../services/api/feeApi.js';
+import { listTeachersForPayroll } from '../../../services/api/teacherApi.js';
 import { useAuth } from '../../../app/App.jsx';
 
 const ALL_TABS = ['Staff', 'Attendance', 'Leave', 'Salary Payments', 'Documents', 'Performance'];
@@ -49,8 +50,11 @@ function Confirm({ name, onConfirm, onCancel }) {
   );
 }
 
-function PaySalaryModal({ staff, payrollRecords, initialStaffId, balance, onClose, onSaved }) {
-  const [staffId, setStaffId] = useState(initialStaffId || '');
+// `payees` combines non-teaching staff and teachers into one pickable list,
+// since both are paid through this same flow but live in separate tables:
+// { id, name, baseSalary, type: 'staff' | 'teacher' }.
+function PaySalaryModal({ payees, payrollRecords, initialPayeeKey, balance, onClose, onSaved }) {
+  const [payeeKey, setPayeeKey] = useState(initialPayeeKey || '');
   const [period, setPeriod] = useState(month());
   const [amount, setAmount] = useState('');
   const [paymentDate, setPaymentDate] = useState(today());
@@ -59,12 +63,14 @@ function PaySalaryModal({ staff, payrollRecords, initialStaffId, balance, onClos
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const selected = staff.find(s => s.id === staffId);
-  const existing = payrollRecords.find(p => p.staffId === staffId && p.period === period);
+  const selected = payees.find(p => `${p.type}:${p.id}` === payeeKey);
+  const existing = selected && payrollRecords.find(p =>
+    p.period === period && (selected.type === 'teacher' ? p.teacherId === selected.id : p.staffId === selected.id));
 
-  // Re-prefill whenever staff or period changes: edit the existing payment for
-  // that month if one exists (so re-paying the same period corrects it rather
-  // than creating a duplicate), otherwise default to the staff's base salary.
+  // Re-prefill whenever the payee or period changes: edit the existing
+  // payment for that month if one exists (so re-paying the same period
+  // corrects it rather than creating a duplicate), otherwise default to
+  // their base salary.
   useEffect(() => {
     if (existing) {
       setAmount(String(existing.netSalary));
@@ -78,7 +84,7 @@ function PaySalaryModal({ staff, payrollRecords, initialStaffId, balance, onClos
       setNotes('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [staffId, period]);
+  }, [payeeKey, period]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -86,7 +92,9 @@ function PaySalaryModal({ staff, payrollRecords, initialStaffId, balance, onClos
     setError('');
     try {
       await savePayroll({
-        staffId, period, baseSalary: Number(amount) || 0, allowances: 0, deductions: 0,
+        staffId: selected.type === 'staff' ? selected.id : undefined,
+        teacherId: selected.type === 'teacher' ? selected.id : undefined,
+        period, baseSalary: Number(amount) || 0, allowances: 0, deductions: 0,
         status: 'paid', paidAt: paymentDate, method, notes,
       });
       onSaved();
@@ -98,6 +106,8 @@ function PaySalaryModal({ staff, payrollRecords, initialStaffId, balance, onClos
   }
 
   const wouldGoNegative = balance != null && Number(amount) > balance;
+  const teachers = payees.filter(p => p.type === 'teacher');
+  const staffOnly = payees.filter(p => p.type === 'staff');
 
   return (
     <Modal title={existing ? 'Update Salary Payment' : 'Pay Salary'} onClose={onClose}>
@@ -111,10 +121,19 @@ function PaySalaryModal({ staff, payrollRecords, initialStaffId, balance, onClos
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Staff">
-            <Select required value={staffId} onChange={e => setStaffId(e.target.value)}>
-              <option value="">Select staff</option>
-              {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          <Field label="Staff or Teacher">
+            <Select required value={payeeKey} onChange={e => setPayeeKey(e.target.value)}>
+              <option value="">Select…</option>
+              {teachers.length > 0 && (
+                <optgroup label="Teachers">
+                  {teachers.map(p => <option key={`teacher:${p.id}`} value={`teacher:${p.id}`}>{p.name}</option>)}
+                </optgroup>
+              )}
+              {staffOnly.length > 0 && (
+                <optgroup label="Non-Teaching Staff">
+                  {staffOnly.map(p => <option key={`staff:${p.id}`} value={`staff:${p.id}`}>{p.name}</option>)}
+                </optgroup>
+              )}
             </Select>
           </Field>
           <Field label="Period">
@@ -145,7 +164,7 @@ function PaySalaryModal({ staff, payrollRecords, initialStaffId, balance, onClos
 
         <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
           <button type="button" onClick={onClose} disabled={saving} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
-          <button disabled={saving || !staffId} className="btn-primary">
+          <button disabled={saving || !payeeKey} className="btn-primary">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
             {existing ? 'Update Payment' : 'Pay Salary'}
           </button>
@@ -191,8 +210,9 @@ export default function HrPage() {
   const [error, setError] = useState('');
   const [modal, setModal] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [payModal, setPayModal] = useState(null); // null | { staffId }
+  const [payModal, setPayModal] = useState(null); // null | { payeeKey }
   const [balance, setBalance] = useState(null);
+  const [teachers, setTeachers] = useState([]);
 
   const [staffForm, setStaffForm] = useState({ name: '', staffType: 'non_teaching', employeeId: '', designation: '', department: '', qualification: '', phone: '', email: '', joiningDate: today(), contractType: 'permanent', baseSalary: 0, status: 'active' });
   const [attendance, setAttendance] = useState({ staffId: '', attendanceDate: today(), status: 'present', note: '' });
@@ -211,6 +231,7 @@ export default function HrPage() {
       setLoading(false);
     }
     getFinanceBalance().then(b => setBalance(b.balance?.balance ?? null)).catch(() => setBalance(null));
+    listTeachersForPayroll().then(t => setTeachers(t.teachers || [])).catch(() => setTeachers([]));
   }
   useEffect(() => { load(); }, []);
 
@@ -223,6 +244,10 @@ export default function HrPage() {
 
   const staff = data?.staff || [];
   const currentPeriod = month();
+  const payees = [
+    ...teachers.map(t => ({ id: t.id, name: t.name, baseSalary: t.baseSalary, type: 'teacher' })),
+    ...staff.map(s => ({ id: s.id, name: s.name, baseSalary: s.baseSalary, type: 'staff' })),
+  ];
 
   async function submitStaff(e) { e.preventDefault(); await saveStaff(staffForm); setStaffForm({ ...staffForm, name: '', employeeId: '', designation: '', department: '', qualification: '', phone: '', email: '', baseSalary: 0 }); setModal(null); load(); }
   async function submitAttendance(e) { e.preventDefault(); await markStaffAttendance(attendance); setModal(null); load(); }
@@ -235,20 +260,20 @@ export default function HrPage() {
   return <div className="space-y-5"><div><h2 className="text-lg font-black text-slate-800">HR & Staff Management</h2><p className="text-sm text-slate-500">Non-teaching staff, attendance, leave, salary payments, contracts, and performance records.</p></div>
     {error && <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Stat icon={BriefcaseBusiness} label="Active Staff" value={staff.filter(s => s.status === 'active').length} color="bg-emerald-50 text-emerald-600" /><Stat icon={CalendarCheck} label="Attendance Records" value={data?.attendance?.length || 0} color="bg-blue-50 text-blue-600" /><Stat icon={WalletCards} label="Cash in Hand" value={balance == null ? '—' : money(balance)} color="bg-amber-50 text-amber-600" /><Stat icon={Star} label="Performance Notes" value={data?.notes?.length || 0} color="bg-purple-50 text-purple-600" /></div>
-    <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex flex-wrap gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1">{TABS.map(t => <button key={t} onClick={() => setActive(t)} className={`rounded-xl px-3 py-2 text-sm font-bold ${active === t ? 'bg-white text-[var(--brand)] shadow-soft' : 'text-slate-500'}`}>{t}</button>)}</div><button onClick={() => active === 'Salary Payments' ? setPayModal({ staffId: '' }) : setModal(active)} className="btn-primary"><Plus className="h-4 w-4" />New</button></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex flex-wrap gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1">{TABS.map(t => <button key={t} onClick={() => setActive(t)} className={`rounded-xl px-3 py-2 text-sm font-bold ${active === t ? 'bg-white text-[var(--brand)] shadow-soft' : 'text-slate-500'}`}>{t}</button>)}</div><button onClick={() => active === 'Salary Payments' ? setPayModal({ payeeKey: '' }) : setModal(active)} className="btn-primary"><Plus className="h-4 w-4" />New</button></div>
     {active === 'Staff' && <>{staff.length ? <Table rows={staff} cols={['name', 'designation', 'department', 'staffType', 'baseSalary', 'status']} action={s => {
       const paidRecord = (data?.payroll || []).find(p => p.staffId === s.id && p.period === currentPeriod);
       return <div className="flex items-center justify-end gap-2">
         {paidRecord
           ? <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700">Paid {money(paidRecord.netSalary)} · {currentPeriod}</span>
           : <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">Unpaid this month</span>}
-        <button onClick={() => setPayModal({ staffId: s.id })} title="Pay Salary" className="rounded-lg p-1.5 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"><Wallet className="h-4 w-4" /></button>
+        <button onClick={() => setPayModal({ payeeKey: `staff:${s.id}` })} title="Pay Salary" className="rounded-lg p-1.5 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"><Wallet className="h-4 w-4" /></button>
         <button onClick={() => setConfirmDelete(s)} className="btn-danger"><Trash2 className="h-4 w-4" /></button>
       </div>;
     }} /> : <Empty>No staff records yet.</Empty>}</>}
     {active === 'Attendance' && <Table rows={data?.attendance} cols={['attendanceDate', 'staffName', 'status', 'note']} />}
     {active === 'Leave' && <Table rows={data?.leaves} cols={['staffName', 'leaveType', 'startDate', 'endDate', 'status', 'reason']} action={l => <div className="flex gap-1"><button onClick={() => reviewStaffLeave(l.id, 'approved').then(load)} className="btn-secondary">Approve</button><button onClick={() => reviewStaffLeave(l.id, 'rejected').then(load)} className="btn-danger">Reject</button></div>} />}
-    {active === 'Salary Payments' && <Table rows={data?.payroll} cols={['period', 'staffName', 'netSalary', 'method', 'paidAt', 'notes']} colLabels={{ period: 'Period', staffName: 'Staff', netSalary: 'Amount', method: 'Method', paidAt: 'Paid On', notes: 'Notes' }} moneyCols={['netSalary']} action={p => <button onClick={() => setPayModal({ staffId: p.staffId })} title="Edit Payment" className="rounded-lg p-1.5 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"><Wallet className="h-4 w-4" /></button>} />}
+    {active === 'Salary Payments' && <Table rows={data?.payroll} cols={['period', 'staffName', 'netSalary', 'method', 'paidAt', 'notes']} colLabels={{ period: 'Period', staffName: 'Staff / Teacher', netSalary: 'Amount', method: 'Method', paidAt: 'Paid On', notes: 'Notes' }} moneyCols={['netSalary']} action={p => <button onClick={() => setPayModal({ payeeKey: p.teacherId ? `teacher:${p.teacherId}` : `staff:${p.staffId}` })} title="Edit Payment" className="rounded-lg p-1.5 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"><Wallet className="h-4 w-4" /></button>} />}
     {active === 'Documents' && <Table rows={data?.documents} cols={['staffName', 'documentType', 'title', 'fileUrl', 'notes']} />}
     {active === 'Performance' && <Table rows={data?.notes} cols={['staffName', 'rating', 'note', 'createdAt']} />}
 
@@ -260,9 +285,9 @@ export default function HrPage() {
     {confirmDelete && <Confirm name={confirmDelete.name} onConfirm={confirmAndDelete} onCancel={() => setConfirmDelete(null)} />}
     {payModal && (
       <PaySalaryModal
-        staff={staff}
+        payees={payees}
         payrollRecords={data?.payroll || []}
-        initialStaffId={payModal.staffId}
+        initialPayeeKey={payModal.payeeKey}
         balance={balance}
         onClose={() => setPayModal(null)}
         onSaved={() => { setPayModal(null); load(); }}
