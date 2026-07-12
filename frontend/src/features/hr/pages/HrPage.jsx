@@ -5,8 +5,8 @@ import { getFinanceBalance } from '../../../services/api/feeApi.js';
 import { listTeachersForPayroll } from '../../../services/api/teacherApi.js';
 import { useAuth } from '../../../app/App.jsx';
 
-const ALL_TABS = ['Staff', 'Attendance', 'Leave', 'Salary Payments', 'Documents', 'Performance'];
-const ACCOUNTANT_TABS = ['Salary Payments'];
+const ALL_TABS = ['Staff', 'Attendance', 'Leave', 'Salary Payments', 'Dues', 'Documents', 'Performance'];
+const ACCOUNTANT_TABS = ['Salary Payments', 'Dues'];
 const PAYMENT_METHODS = ['cash', 'bank', 'bkash', 'nagad', 'rocket', 'card', 'other'];
 const today = () => new Date().toISOString().slice(0, 10);
 const month = () => new Date().toISOString().slice(0, 7);
@@ -213,6 +213,7 @@ export default function HrPage() {
   const [payModal, setPayModal] = useState(null); // null | { payeeKey }
   const [balance, setBalance] = useState(null);
   const [teachers, setTeachers] = useState([]);
+  const [duesPeriod, setDuesPeriod] = useState(month());
 
   const [staffForm, setStaffForm] = useState({ name: '', staffType: 'non_teaching', employeeId: '', designation: '', department: '', qualification: '', phone: '', email: '', joiningDate: today(), contractType: 'permanent', baseSalary: 0, status: 'active' });
   const [attendance, setAttendance] = useState({ staffId: '', attendanceDate: today(), status: 'present', note: '' });
@@ -249,6 +250,13 @@ export default function HrPage() {
     ...staff.map(s => ({ id: s.id, name: s.name, baseSalary: s.baseSalary, type: 'staff' })),
   ];
 
+  const duesRows = payees.map(p => {
+    const paidRecord = (data?.payroll || []).find(r => r.period === duesPeriod &&
+      (p.type === 'teacher' ? r.teacherId === p.id : r.staffId === p.id));
+    const paid = paidRecord ? paidRecord.netSalary : 0;
+    return { ...p, typeLabel: p.type === 'teacher' ? 'Teacher' : 'Staff', paid, due: Math.max(0, p.baseSalary - paid) };
+  }).sort((a, b) => b.due - a.due);
+
   async function submitStaff(e) { e.preventDefault(); await saveStaff(staffForm); setStaffForm({ ...staffForm, name: '', employeeId: '', designation: '', department: '', qualification: '', phone: '', email: '', baseSalary: 0 }); setModal(null); load(); }
   async function submitAttendance(e) { e.preventDefault(); await markStaffAttendance(attendance); setModal(null); load(); }
   async function submitLeave(e) { e.preventDefault(); await requestStaffLeave(leave); setModal(null); load(); }
@@ -274,6 +282,12 @@ export default function HrPage() {
     {active === 'Attendance' && <Table rows={data?.attendance} cols={['attendanceDate', 'staffName', 'status', 'note']} />}
     {active === 'Leave' && <Table rows={data?.leaves} cols={['staffName', 'leaveType', 'startDate', 'endDate', 'status', 'reason']} action={l => <div className="flex gap-1"><button onClick={() => reviewStaffLeave(l.id, 'approved').then(load)} className="btn-secondary">Approve</button><button onClick={() => reviewStaffLeave(l.id, 'rejected').then(load)} className="btn-danger">Reject</button></div>} />}
     {active === 'Salary Payments' && <Table rows={data?.payroll} cols={['period', 'staffName', 'netSalary', 'method', 'paidAt', 'notes']} colLabels={{ period: 'Period', staffName: 'Staff / Teacher', netSalary: 'Amount', method: 'Method', paidAt: 'Paid On', notes: 'Notes' }} moneyCols={['netSalary']} action={p => <button onClick={() => setPayModal({ payeeKey: p.teacherId ? `teacher:${p.teacherId}` : `staff:${p.staffId}` })} title="Edit Payment" className="rounded-lg p-1.5 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"><Wallet className="h-4 w-4" /></button>} />}
+    {active === 'Dues' && <>
+      <div className="mb-3 flex items-center gap-2"><label className="flex items-center gap-2 text-sm font-semibold text-slate-600">Period<Input type="month" className="w-40" value={duesPeriod} onChange={e => setDuesPeriod(e.target.value)} /></label></div>
+      <Table rows={duesRows} cols={['name', 'typeLabel', 'baseSalary', 'paid']} colLabels={{ name: 'Name', typeLabel: 'Type', baseSalary: 'Base Salary', paid: 'Paid' }} moneyCols={['baseSalary', 'paid']} action={p => p.due > 0
+        ? <div className="flex items-center justify-end gap-2"><span className="rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-600">Due {money(p.due)}</span><button onClick={() => setPayModal({ payeeKey: `${p.type}:${p.id}` })} title="Pay Salary" className="rounded-lg p-1.5 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"><Wallet className="h-4 w-4" /></button></div>
+        : <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700">Fully Paid</span>} />
+    </>}
     {active === 'Documents' && <Table rows={data?.documents} cols={['staffName', 'documentType', 'title', 'fileUrl', 'notes']} />}
     {active === 'Performance' && <Table rows={data?.notes} cols={['staffName', 'rating', 'note', 'createdAt']} />}
 
