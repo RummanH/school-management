@@ -12,12 +12,6 @@ import {
   markThreadMessagesRead,
 } from "../repositories/communicationRepository.js";
 
-// communication_threads has one column per role (guardian/teacher/admin), so a
-// thread can hold at most one participant of each — same-role pairs (two
-// teachers, two admins) have nowhere to go without a schema change. Cross-role
-// pairing among these three is otherwise fully open.
-const CHAT_ROLES = ['admin', 'teacher', 'guardian'];
-
 function cleanText(value) {
   return String(value || '').trim();
 }
@@ -110,40 +104,30 @@ export class CommunicationService {
 
   async recipients(actor, role) {
     assertTenant(actor);
-    const allowed = allowedRecipientRoles(actor.role);
-    assert(allowed.includes(role), "This recipient type is not allowed.", 403);
-    return this.databaseManager.withClient((client) => listMessageRecipients(client, actor.tenantId, role));
+    return this.databaseManager.withClient((client) => listMessageRecipients(client, actor.tenantId, actor.id, role || null));
   }
 }
 
 async function buildThreadData(client, actor, recipient, { studentUserId, topic }) {
-  assert(CHAT_ROLES.includes(actor.role), "Messaging is available for admins, teachers, and guardians.", 403);
-  assert(CHAT_ROLES.includes(recipient.role), "Recipient must be an admin, teacher, or guardian.", 400);
-  assert(actor.role !== recipient.role, `Direct messaging between two ${actor.role}s isn't supported yet — try a different recipient type.`, 400);
-
   if (studentUserId) {
-    const guardianId = actor.role === 'guardian' ? actor.id : recipient.role === 'guardian' ? recipient.id : null;
-    assert(guardianId, "A student can only be linked to a conversation that includes that student's guardian.", 400);
-    const allowed = await isWardOfGuardian(client, guardianId, studentUserId);
-    assert(allowed, "Guardian is not linked to that student.", 400);
+    const directMatch = actor.id === studentUserId || recipient.id === studentUserId;
+    if (!directMatch) {
+      const guardian = actor.role === 'guardian' ? actor : recipient.role === 'guardian' ? recipient : null;
+      assert(guardian, "That student isn't linked to either participant.", 400);
+      const allowed = await isWardOfGuardian(client, guardian.id, studentUserId);
+      assert(allowed, "Guardian is not linked to that student.", 400);
+    }
   }
 
-  const data = { topic, studentUserId: studentUserId || null, guardianUserId: null, teacherUserId: null, adminUserId: null };
-  data[`${actor.role}UserId`] = actor.id;
-  data[`${recipient.role}UserId`] = recipient.id;
-  return data;
+  return { topic, studentUserId: studentUserId || null, participantOneUserId: actor.id, participantTwoUserId: recipient.id };
 }
 
 function canAccessThread(actor, thread) {
   if (actor.role === 'admin' || actor.role === 'system_developer') return actor.tenantId === thread.tenantId;
-  return [thread.guardianUserId, thread.teacherUserId, thread.adminUserId].includes(actor.id);
+  return [thread.participantOneUserId, thread.participantTwoUserId].includes(actor.id);
 }
 
 function recipientForReply(actor, thread) {
-  const parties = [thread.guardianUserId, thread.teacherUserId, thread.adminUserId];
+  const parties = [thread.participantOneUserId, thread.participantTwoUserId];
   return parties.find((id) => id && id !== actor.id) || null;
-}
-
-function allowedRecipientRoles(role) {
-  return CHAT_ROLES.includes(role) ? CHAT_ROLES.filter((r) => r !== role) : [];
 }

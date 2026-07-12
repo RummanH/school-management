@@ -17,17 +17,14 @@ import { createThread, getThread, listRecipients, listThreads, replyToThread } f
 import { getMyWards } from '../../../services/api/guardianApi.js';
 import { listStudents } from '../../../services/api/studentApi.js';
 
-const CHAT_ROLES = [
-  { role: 'admin', label: 'Admin' },
-  { role: 'teacher', label: 'Teacher' },
-  { role: 'guardian', label: 'Guardian' },
-];
-
-const ROLE_OPTIONS = {
-  admin: CHAT_ROLES.filter((r) => r.role !== 'admin'),
-  teacher: CHAT_ROLES.filter((r) => r.role !== 'teacher'),
-  guardian: CHAT_ROLES.filter((r) => r.role !== 'guardian'),
+const ROLE_LABELS = {
+  admin: 'Admin',
+  teacher: 'Teacher',
+  guardian: 'Guardian',
+  student: 'Student',
+  accountant: 'Accountant',
 };
+const ROLE_GROUP_ORDER = ['teacher', 'guardian', 'admin', 'student', 'accountant'];
 
 function timeText(value) {
   if (!value) return '';
@@ -57,19 +54,23 @@ function initials(name) {
     .join('') || 'C';
 }
 
+function otherParticipant(thread, currentUser) {
+  if (thread.participantOneUserId && thread.participantOneUserId !== currentUser?.id) {
+    return { name: thread.participantOneName, role: thread.participantOneRole };
+  }
+  if (thread.participantTwoUserId && thread.participantTwoUserId !== currentUser?.id) {
+    return { name: thread.participantTwoName, role: thread.participantTwoRole };
+  }
+  return null;
+}
+
 function participantLabel(thread, currentUser) {
-  const parts = [];
-  if (thread.guardianUserId && thread.guardianUserId !== currentUser?.id) parts.push(thread.guardianName || 'Guardian');
-  if (thread.teacherUserId && thread.teacherUserId !== currentUser?.id) parts.push(thread.teacherName || 'Teacher');
-  if (thread.adminUserId && thread.adminUserId !== currentUser?.id) parts.push(thread.adminName || 'Admin');
-  return parts.join(', ') || 'Conversation';
+  return otherParticipant(thread, currentUser)?.name || 'Conversation';
 }
 
 function participantDescriptor(thread, currentUser) {
-  if (thread.guardianUserId && thread.guardianUserId !== currentUser?.id) return 'Guardian channel';
-  if (thread.teacherUserId && thread.teacherUserId !== currentUser?.id) return 'Teacher channel';
-  if (thread.adminUserId && thread.adminUserId !== currentUser?.id) return 'Admin channel';
-  return 'Direct conversation';
+  const role = otherParticipant(thread, currentUser)?.role;
+  return role ? `${ROLE_LABELS[role] || role} channel` : 'Direct conversation';
 }
 
 function EmptyState({ title, body, compact = false }) {
@@ -85,35 +86,34 @@ function EmptyState({ title, body, compact = false }) {
 }
 
 function ComposeModal({ currentUser, onClose, onCreated }) {
-  const options = ROLE_OPTIONS[currentUser?.role] || [];
-  const [role, setRole] = useState(options[0]?.role || '');
   const [recipients, setRecipients] = useState([]);
   const [students, setStudents] = useState([]);
   const [form, setForm] = useState({ recipientUserId: '', studentUserId: '', topic: '', body: '' });
-  const [loadingRecipients, setLoadingRecipients] = useState(false);
+  const [loadingRecipients, setLoadingRecipients] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!role) return;
     setLoadingRecipients(true);
-    listRecipients(role)
-      .then((d) => {
-        const nextRecipients = d.recipients || [];
-        setRecipients(nextRecipients);
-        setForm((f) => ({ ...f, recipientUserId: nextRecipients[0]?.id || '' }));
-      })
+    listRecipients()
+      .then((d) => setRecipients(d.recipients || []))
       .catch(() => setRecipients([]))
       .finally(() => setLoadingRecipients(false));
-  }, [role]);
+  }, []);
 
+  const canTagStudent = currentUser?.role !== 'student';
   useEffect(() => {
+    if (!canTagStudent) return;
     if (currentUser?.role === 'guardian') {
       getMyWards().then((d) => setStudents(d.wards || [])).catch(() => setStudents([]));
-    } else if (['teacher', 'admin', 'system_developer'].includes(currentUser?.role)) {
+    } else {
       listStudents().then((d) => setStudents(d.students || [])).catch(() => setStudents([]));
     }
-  }, [currentUser?.role]);
+  }, [currentUser?.role, canTagStudent]);
+
+  const recipientsByRole = ROLE_GROUP_ORDER
+    .map((role) => ({ role, people: recipients.filter((r) => r.role === role) }))
+    .filter((g) => g.people.length > 0);
 
   async function submit(e) {
     e.preventDefault();
@@ -140,7 +140,7 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--brand)]">New message</p>
             <h3 className="mt-1 text-xl font-black text-slate-900">Start a conversation</h3>
-            <p className="mt-1 text-sm text-slate-500">Send a direct message to a teacher, guardian, or admin.</p>
+            <p className="mt-1 text-sm text-slate-500">Send a direct message to anyone in your school.</p>
           </div>
           <button type="button" onClick={onClose} className="icon-btn shrink-0">
             <X className="h-4 w-4" />
@@ -152,13 +152,7 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
             {error && <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>}
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="label-sm">Recipient Type</span>
-                <select className="input" value={role} onChange={(e) => setRole(e.target.value)}>
-                  {options.map((o) => <option key={o.role} value={o.role}>{o.label}</option>)}
-                </select>
-              </label>
-              <label className="block">
+              <label className="block sm:col-span-2">
                 <span className="label-sm">Recipient</span>
                 <select
                   className="input"
@@ -167,26 +161,30 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
                   required
                   disabled={!loadingRecipients && recipients.length === 0}
                 >
-                  {loadingRecipients ? (
-                    <option>Loading...</option>
-                  ) : recipients.length === 0 ? (
-                    <option value="">No {(options.find((o) => o.role === role)?.label || 'recipient').toLowerCase()}s found yet</option>
-                  ) : (
-                    recipients.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)
+                  <option value="">{loadingRecipients ? 'Loading...' : 'Select…'}</option>
+                  {!loadingRecipients && recipients.length === 0 && (
+                    <option value="" disabled>No one else found yet</option>
                   )}
+                  {recipientsByRole.map((g) => (
+                    <optgroup key={g.role} label={ROLE_LABELS[g.role] || g.role}>
+                      {g.people.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    </optgroup>
+                  ))}
                 </select>
               </label>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="label-sm">Related Student</span>
-                <select className="input" value={form.studentUserId} onChange={(e) => setForm((f) => ({ ...f, studentUserId: e.target.value }))}>
-                  <option value="">Not linked to a student</option>
-                  {students.map((s) => <option key={s.userId} value={s.userId}>{s.name} {s.className ? `- ${s.className}` : ''}</option>)}
-                </select>
-              </label>
-              <label className="block">
+              {canTagStudent && (
+                <label className="block">
+                  <span className="label-sm">Related Student</span>
+                  <select className="input" value={form.studentUserId} onChange={(e) => setForm((f) => ({ ...f, studentUserId: e.target.value }))}>
+                    <option value="">Not linked to a student</option>
+                    {students.map((s) => <option key={s.userId} value={s.userId}>{s.name} {s.className ? `- ${s.className}` : ''}</option>)}
+                  </select>
+                </label>
+              )}
+              <label className={`block ${canTagStudent ? '' : 'sm:col-span-2'}`}>
                 <span className="label-sm">Topic</span>
                 <input className="input" value={form.topic} onChange={(e) => setForm((f) => ({ ...f, topic: e.target.value }))} placeholder="Attendance follow-up" />
               </label>
@@ -378,15 +376,24 @@ export default function MessagesPage() {
         <div className="grid min-h-0 flex-1 overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(244,247,255,0.96))] lg:grid-cols-[360px_minmax(0,1fr)]">
           <aside className={`${activeId ? 'hidden lg:flex' : 'flex'} min-h-0 flex-col overflow-hidden border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(241,245,249,0.96),rgba(255,255,255,0.98))] lg:border-b-0 lg:border-r`}>
             <div className="border-b border-slate-200/80 px-4 py-4 sm:px-5">
-              <label className="relative block">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[var(--secondary)] focus:ring-4 focus:ring-[var(--secondary-soft)]"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search conversations"
-                />
-              </label>
+              <div className="flex items-center gap-2">
+                <label className="relative block flex-1">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[var(--secondary)] focus:ring-4 focus:ring-[var(--secondary-soft)]"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search conversations"
+                  />
+                </label>
+                <button
+                  onClick={() => setShowCompose(true)}
+                  title="New message"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--brand)] text-white transition hover:opacity-90"
+                >
+                  <PencilLine className="h-5 w-5" />
+                </button>
+              </div>
               <div className="mt-4 flex items-center justify-between text-xs font-semibold text-slate-400">
                 <span>{filteredThreads.length} visible</span>
                 <span>{unreadTotal} unread</span>

@@ -698,6 +698,22 @@ export async function createSchema(pool) {
     ALTER TABLE staff_payroll_records ALTER COLUMN staff_id DROP NOT NULL;
     ALTER TABLE staff_payroll_records ADD COLUMN IF NOT EXISTS teacher_id TEXT REFERENCES teacher_profiles(id) ON DELETE CASCADE;
 
+    -- Messaging used one fixed column per role (guardian/teacher/admin_user_id),
+    -- so a thread could only ever hold one participant of each of those three
+    -- roles — no same-role pairs, no student/accountant participants at all.
+    -- Generic two-participant columns replace that going forward; the old
+    -- columns are kept (unused) rather than dropped.
+    ALTER TABLE communication_threads ADD COLUMN IF NOT EXISTS participant_one_user_id TEXT REFERENCES users(id) ON DELETE SET NULL;
+    ALTER TABLE communication_threads ADD COLUMN IF NOT EXISTS participant_two_user_id TEXT REFERENCES users(id) ON DELETE SET NULL;
+    UPDATE communication_threads
+       SET participant_one_user_id = COALESCE(guardian_user_id, teacher_user_id, admin_user_id),
+           participant_two_user_id = (
+             SELECT x FROM (VALUES (guardian_user_id),(teacher_user_id),(admin_user_id)) AS v(x)
+             WHERE x IS NOT NULL AND x != COALESCE(guardian_user_id, teacher_user_id, admin_user_id)
+             LIMIT 1
+           )
+     WHERE participant_one_user_id IS NULL;
+
     -- Backfill the new cash-book ledger from existing fee payments, expenses,
     -- and paid payroll records so it isn't empty on rollout.
     INSERT INTO finance_transactions (id, tenant_id, direction, source_type, source_id, amount, method, category, transaction_date, recorded_by, notes, created_at)
@@ -785,6 +801,8 @@ export async function createSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_expenses_tenant_date      ON expenses(tenant_id, expense_date DESC);
     CREATE INDEX IF NOT EXISTS idx_donations_tenant_date     ON donations(tenant_id, donation_date DESC);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_staff_payroll_teacher_period ON staff_payroll_records(teacher_id, period);
+    CREATE INDEX IF NOT EXISTS idx_comm_threads_participant_one ON communication_threads(tenant_id, participant_one_user_id);
+    CREATE INDEX IF NOT EXISTS idx_comm_threads_participant_two ON communication_threads(tenant_id, participant_two_user_id);
     CREATE INDEX IF NOT EXISTS idx_finance_tx_tenant_date    ON finance_transactions(tenant_id, transaction_date DESC);
     CREATE INDEX IF NOT EXISTS idx_finance_tx_source         ON finance_transactions(source_type, source_id);
     CREATE INDEX IF NOT EXISTS idx_staff_profiles_tenant    ON staff_profiles(tenant_id, status);

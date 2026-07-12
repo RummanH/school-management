@@ -317,7 +317,7 @@ const TEACHER_ALLOWED_PATHS = ['/dashboard', '/dashboard/contacts', '/dashboard/
 
 // Accountants only get the finance side of the dashboard (fees/accounting +
 // payroll marking, the latter server-gated to payroll-only within HR & Staff).
-const ACCOUNTANT_ALLOWED_PATHS = ['/dashboard', '/dashboard/fees', '/dashboard/hr'];
+const ACCOUNTANT_ALLOWED_PATHS = ['/dashboard', '/dashboard/fees', '/dashboard/hr', '/dashboard/messages'];
 
 /* Root layout */
 

@@ -5,12 +5,12 @@ export function mapThread(row) {
     topic: row.topic || '',
     studentUserId: row.student_user_id || null,
     studentName: row.student_name || '',
-    guardianUserId: row.guardian_user_id || null,
-    guardianName: row.guardian_name || '',
-    teacherUserId: row.teacher_user_id || null,
-    teacherName: row.teacher_name || '',
-    adminUserId: row.admin_user_id || null,
-    adminName: row.admin_name || '',
+    participantOneUserId: row.participant_one_user_id || null,
+    participantOneName: row.participant_one_name || '',
+    participantOneRole: row.participant_one_role || '',
+    participantTwoUserId: row.participant_two_user_id || null,
+    participantTwoName: row.participant_two_name || '',
+    participantTwoRole: row.participant_two_role || '',
     createdBy: row.created_by || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -43,18 +43,16 @@ export async function listCommunicationThreads(client, actor) {
   const result = await client.query(
     `SELECT ct.*,
             su.name AS student_name,
-            gu.name AS guardian_name,
-            tu.name AS teacher_name,
-            au.name AS admin_name,
+            p1.name AS participant_one_name, p1.role AS participant_one_role,
+            p2.name AS participant_two_name, p2.role AS participant_two_role,
             lm.body AS last_message,
             lm.created_at AS last_message_at,
             COUNT(cm.id)::int AS message_count,
             COUNT(cm.id) FILTER (WHERE cm.recipient_user_id = $2 AND cm.read_at IS NULL)::int AS unread_count
        FROM communication_threads ct
        LEFT JOIN users su ON su.id = ct.student_user_id
-       LEFT JOIN users gu ON gu.id = ct.guardian_user_id
-       LEFT JOIN users tu ON tu.id = ct.teacher_user_id
-       LEFT JOIN users au ON au.id = ct.admin_user_id
+       LEFT JOIN users p1 ON p1.id = ct.participant_one_user_id
+       LEFT JOIN users p2 ON p2.id = ct.participant_two_user_id
        LEFT JOIN LATERAL (
          SELECT body, created_at
            FROM communication_messages
@@ -66,11 +64,10 @@ export async function listCommunicationThreads(client, actor) {
       WHERE ct.tenant_id = $1
         AND (
           $3::text IN ('admin', 'system_developer')
-          OR ct.guardian_user_id = $2
-          OR ct.teacher_user_id = $2
-          OR ct.admin_user_id = $2
+          OR ct.participant_one_user_id = $2
+          OR ct.participant_two_user_id = $2
         )
-      GROUP BY ct.id, su.name, gu.name, tu.name, au.name, lm.body, lm.created_at
+      GROUP BY ct.id, su.name, p1.name, p1.role, p2.name, p2.role, lm.body, lm.created_at
       ORDER BY COALESCE(lm.created_at, ct.updated_at) DESC`,
     [actor.tenantId, actor.id, actor.role],
   );
@@ -81,18 +78,16 @@ export async function findCommunicationThread(client, id) {
   const result = await client.query(
     `SELECT ct.*,
             su.name AS student_name,
-            gu.name AS guardian_name,
-            tu.name AS teacher_name,
-            au.name AS admin_name,
+            p1.name AS participant_one_name, p1.role AS participant_one_role,
+            p2.name AS participant_two_name, p2.role AS participant_two_role,
             '' AS last_message,
             NULL AS last_message_at,
             0 AS unread_count,
             0 AS message_count
        FROM communication_threads ct
        LEFT JOIN users su ON su.id = ct.student_user_id
-       LEFT JOIN users gu ON gu.id = ct.guardian_user_id
-       LEFT JOIN users tu ON tu.id = ct.teacher_user_id
-       LEFT JOIN users au ON au.id = ct.admin_user_id
+       LEFT JOIN users p1 ON p1.id = ct.participant_one_user_id
+       LEFT JOIN users p2 ON p2.id = ct.participant_two_user_id
       WHERE ct.id = $1
       LIMIT 1`,
     [id],
@@ -103,11 +98,11 @@ export async function findCommunicationThread(client, id) {
 export async function insertCommunicationThread(client, data) {
   const result = await client.query(
     `INSERT INTO communication_threads
-       (id, tenant_id, topic, student_user_id, guardian_user_id, teacher_user_id, admin_user_id, created_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       (id, tenant_id, topic, student_user_id, participant_one_user_id, participant_two_user_id, created_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7)
      RETURNING *`,
-    [data.id, data.tenantId, data.topic || '', data.studentUserId || null, data.guardianUserId || null,
-     data.teacherUserId || null, data.adminUserId || null, data.createdBy],
+    [data.id, data.tenantId, data.topic || '', data.studentUserId || null,
+     data.participantOneUserId, data.participantTwoUserId, data.createdBy],
   );
   return result.rows[0];
 }
@@ -150,15 +145,16 @@ export async function markThreadMessagesRead(client, threadId, userId) {
   );
 }
 
-export async function listMessageRecipients(client, tenantId, role) {
+export async function listMessageRecipients(client, tenantId, actorId, role = null) {
   const result = await client.query(
     `SELECT id, name, email, role
        FROM users
       WHERE tenant_id = $1
         AND status = 'active'
-        AND role = $2
-      ORDER BY name ASC`,
-    [tenantId, role],
+        AND id != $2
+        AND ($3::text IS NULL OR role = $3)
+      ORDER BY role ASC, name ASC`,
+    [tenantId, actorId, role],
   );
   return result.rows.map((r) => ({ id: r.id, name: r.name, email: r.email, role: r.role }));
 }

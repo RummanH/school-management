@@ -1,0 +1,145 @@
+School Management Product - What To Do Now
+Date: 2026-07-12
+
+Current position
+----------------
+The product is good enough for demos and early pilot sales, but not yet strong
+enough to scale confidently across Indian schools as a polished commercial
+product.
+
+Main goal now
+-------------
+Move from "good demo product" to "school-ready pilot product" and then to
+"repeatable commercial product".
+
+Priority 1 - Finish the money system
+------------------------------------
+This is the most important area for real schools.
+
+Do now:
+- Finalize all common fee types: tuition, admission, exam, annual, transport,
+  hostel, library, fine, miscellaneous
+- Add discount, waiver, scholarship, and concession flows
+- Add late fee rules
+- Add refund and adjustment handling
+- Add clear due reports and collection reports
+- Add accountant-friendly cashbook and reconciliation views
+- Add printable/downloadable receipt design
+
+Why:
+- Schools will judge the seriousness of the system by how fees are handled.
+
+Priority 2 - Strengthen admin reporting
+---------------------------------------
+Do now:
+- Class-wise student count
+- Gender-wise student count
+- Daily and monthly attendance percentage
+- Fee due and collection summaries
+- Admission pipeline summary
+- Exam pass-rate summary
+- Export to PDF/Excel/CSV
+
+Why:
+- Admins need operational visibility, not only data entry screens.
+
+Priority 3 - Add school-trust documents
+---------------------------------------
+Do now:
+- Better report card design
+- Fee receipt PDF
+- Admit card
+- Transfer certificate
+- Student ID card
+- Certificate templates
+
+Why:
+- These are high-visibility outputs. Schools care a lot about them.
+
+Priority 4 - Improve communication
+----------------------------------
+Do now:
+- SMS integration readiness
+- WhatsApp-ready notification design
+- Delivery history
+- Read/unread tracking
+- Fee due alerts
+- Admission update alerts
+- Attendance absence alerts
+
+Why:
+- Indian schools often expect communication outside the app.
+
+Priority 5 - Fix Indian school operational fit
+----------------------------------------------
+Do now:
+- Academic session/year management
+- Terms/exams structure
+- Promotion to next class
+- Section change and transfer flows
+- Better class-section-subject handling
+- Transport module if target schools need it
+
+Why:
+- Schools buy based on daily workflows, not only features on the landing page.
+
+Priority 6 - Production hardening
+---------------------------------
+Do now:
+- Audit logs for sensitive admin actions
+- Stronger permission review per module
+- Backup and restore plan
+- Error monitoring
+- Better test coverage
+- API and end-to-end testing for core flows
+- Deployment checklist
+
+Why:
+- A school will tolerate missing polish more than unreliable data handling.
+
+Priority 7 - Sales readiness
+----------------------------
+Do now:
+- Prepare one clean demo school dataset
+- Prepare one strong demo script for owner/principal/accountant
+- Prepare pricing structure
+- Prepare feature comparison sheet
+- Prepare onboarding checklist
+- Prepare support process for first pilot school
+
+Why:
+- Many products fail to sell because the demo and onboarding are weak, not the
+  code alone.
+
+Best order of execution
+-----------------------
+1. Finish fees and receipts
+2. Finish reports and exports
+3. Finish school documents
+4. Add communication alerts
+5. Harden security, backups, and tests
+6. Prepare demo, pricing, and onboarding
+
+What not to do right now
+------------------------
+- Do not overbuild advanced analytics
+- Do not overbuild theme/CMS features
+- Do not chase large enterprise features
+- Do not expand too many modules before fees, documents, and reports are solid
+
+Definition of "sellable pilot in India"
+---------------------------------------
+You can start selling confidently to a pilot school when:
+- fees work clearly for real-world school cases
+- receipts and key documents look professional
+- admin reports answer daily operational questions
+- communication alerts are usable
+- the system feels stable and trustworthy in live usage
+
+Immediate recommendation
+------------------------
+The next best move is:
+
+Build the remaining real-world fee workflows first, then documents, then
+reports. After that, package one polished pilot demo and start showing it to
+real schools.

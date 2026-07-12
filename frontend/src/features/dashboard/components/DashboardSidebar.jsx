@@ -49,6 +49,7 @@ const PLATFORM_NAV_GROUPS = [
 const ACCOUNTANT_NAV_GROUPS = [
   { label: null, items: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+    { label: 'Messages',  icon: MessageSquare,   path: '/dashboard/messages' },
   ]},
   { label: 'Finance & HR', items: [
     { label: 'Fees',      icon: BadgeDollarSign,   path: '/dashboard/fees' },
