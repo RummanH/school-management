@@ -1,13 +1,13 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { MapPin, Phone, Mail, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../../../app/App.jsx';
 import { submitContact } from '../../../services/api/contactApi.js';
-import { SCHOOL_ADDRESS, SCHOOL_EMAIL, SCHOOL_PHONE, ACCENT_COLORS } from '../constants.js';
+import { ACCENT_COLORS } from '../constants.js';
 
 export default function ContactSection() {
   const { t } = useLanguage();
   const [form, setForm] = useState({ name: '', phone: '', message: '' });
-  const [status, setStatus] = useState('idle'); // idle | loading | success | error
+  const [status, setStatus] = useState('idle');
 
   function handleChange(e) {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
@@ -34,13 +34,12 @@ export default function ContactSection() {
         </div>
 
         <div className="mt-12 grid gap-8 lg:grid-cols-2">
-          {/* Info + map */}
           <div className="space-y-6">
             <div className="card space-y-4">
               {[
-                { icon: MapPin, value: SCHOOL_ADDRESS },
-                { icon: Phone, value: SCHOOL_PHONE },
-                { icon: Mail, value: SCHOOL_EMAIL },
+                { icon: MapPin, value: t('contact.address') },
+                { icon: Phone, value: t('contact.phone') },
+                { icon: Mail, value: t('contact.email') },
               ].map(({ icon: Icon, value }, i) => {
                 const accent = ACCENT_COLORS[i % ACCENT_COLORS.length];
                 return (
@@ -54,7 +53,6 @@ export default function ContactSection() {
               })}
             </div>
 
-            {/* Map placeholder */}
             <div className="overflow-hidden rounded-2xl bg-slate-200" style={{ height: '220px' }}>
               <iframe
                 title={t('contact.mapTitle')}
@@ -69,20 +67,19 @@ export default function ContactSection() {
             </div>
           </div>
 
-          {/* Form */}
           <div className="card">
             <h3 className="font-bold text-[var(--brand-strong)]">{t('contact.form.title')}</h3>
 
             {status === 'success' && (
               <div className="mt-4 flex items-start gap-3 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">
-                <CheckCircle className="h-4 w-4 shrink-0 mt-0.5 text-emerald-600" />
+                <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                 {t('contact.form.success')}
               </div>
             )}
 
             {status === 'error' && (
               <div className="mt-4 flex items-start gap-3 rounded-xl bg-red-50 p-4 text-sm text-red-800">
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600" />
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
                 {t('contact.form.error')}
               </div>
             )}
@@ -130,7 +127,7 @@ export default function ContactSection() {
                 className="btn-cta w-full justify-center disabled:opacity-60"
               >
                 <Send className="h-4 w-4" />
-                {status === 'loading' ? '...' : t('contact.form.submit')}
+                {status === 'loading' ? t('contact.form.submitting') : t('contact.form.submit')}
               </button>
             </form>
           </div>

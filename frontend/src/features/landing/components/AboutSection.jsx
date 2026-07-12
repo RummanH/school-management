@@ -1,56 +1,6 @@
-import { Award, BookOpenCheck, Building2, Eye, GraduationCap, Landmark, Target, UserRound } from 'lucide-react';
+﻿import { Award, BookOpenCheck, Building2, Eye, GraduationCap, Landmark, Target, UserRound } from 'lucide-react';
 import { useLanguage } from '../../../app/App.jsx';
 import { ACCENT_COLORS } from '../constants.js';
-
-const FACULTY = [
-  {
-    userId: 'public-teacher-1',
-    name: 'Dr. Mahbub Islam',
-    designation: 'Head Teacher',
-    department: 'Science',
-    qualification: 'M.Sc, B.Ed',
-    photoUrl: '/images/faculty/1-head-teacher.jpg',
-  },
-  {
-    userId: 'public-teacher-2',
-    name: 'Nusrat Jahan',
-    designation: 'Senior Teacher',
-    department: 'Mathematics',
-    qualification: 'M.Sc, M.Ed',
-    photoUrl: '/images/faculty/2-senior-teacher.jpg',
-  },
-  {
-    userId: 'public-teacher-3',
-    name: 'Rashed Karim',
-    designation: 'Assistant Teacher',
-    department: 'Languages',
-    qualification: 'M.A, B.Ed',
-    photoUrl: '/images/faculty/3-assistant-teacher.jpg',
-  },
-  {
-    userId: 'public-teacher-4',
-    name: 'Sabina Akter',
-    designation: 'ICT Teacher',
-    department: 'ICT',
-    qualification: 'B.Sc in CSE',
-    photoUrl: '/images/faculty/4-ict-teacher.jpg',
-  },
-];
-
-const HISTORY = [
-  { year: '1998', title: 'Foundation', text: 'Greenfield Academy began with a small group of learners and a commitment to disciplined, caring education.' },
-  { year: '2008', title: 'Academic Expansion', text: 'The institution expanded its secondary programs, laboratories, library, and co-curricular activities.' },
-  { year: '2018', title: 'Digital Campus', text: 'Classrooms, administration, attendance, results, and guardian communication moved into a modern digital workflow.' },
-  { year: 'Today', title: 'Future-ready Learning', text: 'The school continues to combine strong academics with values, leadership, and practical skills.' },
-];
-
-const LEADERSHIP = [
-  { role: 'Governing Body', name: 'Strategic direction and institutional policy' },
-  { role: 'Chairman', name: 'Mr. Abdullah Al Mamun' },
-  { role: 'Principal', name: 'Mrs. Fatema Begum' },
-  { role: 'Academic Coordinators', name: 'Section planning, routines, exams, and teacher support' },
-  { role: 'Class Teachers', name: 'Student care, attendance, guardians, and daily classroom guidance' },
-];
 
 const PHOTO_FALLBACKS = [
   '/images/faculty/1-head-teacher.jpg',
@@ -59,7 +9,7 @@ const PHOTO_FALLBACKS = [
   '/images/faculty/4-ict-teacher.jpg',
 ];
 
-function FacultyCard({ teacher, index }) {
+function FacultyCard({ teacher, index, t }) {
   const photo = teacher.photoUrl || PHOTO_FALLBACKS[index % PHOTO_FALLBACKS.length];
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-soft">
@@ -68,10 +18,10 @@ function FacultyCard({ teacher, index }) {
       </div>
       <div className="p-5">
         <p className="text-base font-black text-[var(--brand-strong)]">{teacher.name}</p>
-        <p className="mt-1 text-sm font-bold text-[var(--brand)]">{teacher.designation || 'Faculty Member'}</p>
+        <p className="mt-1 text-sm font-bold text-[var(--brand)]">{teacher.designation || t('about.facultyFallbackDesignation')}</p>
         <div className="mt-4 space-y-2 text-sm text-[var(--text-soft)]">
-          <p><span className="font-bold text-slate-500">Department:</span> {teacher.department || 'General'}</p>
-          <p><span className="font-bold text-slate-500">Qualification:</span> {teacher.qualification || 'Experienced educator'}</p>
+          <p><span className="font-bold text-slate-500">{t('about.departmentLabel')}</span> {teacher.department || t('about.facultyFallbackDepartment')}</p>
+          <p><span className="font-bold text-slate-500">{t('about.qualificationLabel')}</span> {teacher.qualification || t('about.facultyFallbackQualification')}</p>
         </div>
       </div>
     </article>
@@ -95,6 +45,10 @@ function InfoCard({ icon: Icon, title, children, colorIndex = 0 }) {
 
 export default function AboutSection() {
   const { t } = useLanguage();
+  const historyItems = t('about.historyItems');
+  const faculty = t('about.faculty');
+  const leadership = t('about.leadership');
+  const orgHighlights = t('about.orgHighlights');
 
   return (
     <section id="about" className="dot-pattern bg-white py-20">
@@ -116,13 +70,13 @@ export default function AboutSection() {
                 <Landmark className="h-5 w-5" />
               </span>
               <div>
-                <p className="text-xs font-black uppercase tracking-widest text-[var(--brand)]">Institution History</p>
-                <h3 className="text-xl font-black text-[var(--brand-strong)]">Built on service, discipline, and academic care</h3>
+                <p className="text-xs font-black uppercase tracking-widest text-[var(--brand)]">{t('about.historyEyebrow')}</p>
+                <h3 className="text-xl font-black text-[var(--brand-strong)]">{t('about.historyTitle')}</h3>
               </div>
             </div>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              {HISTORY.map((item) => (
-                <div key={item.year} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              {historyItems.map((item) => (
+                <div key={`${item.year}-${item.title}`} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
                   <p className="text-xs font-black uppercase tracking-widest text-[var(--brand)]">{item.year}</p>
                   <p className="mt-2 font-bold text-slate-800">{item.title}</p>
                   <p className="mt-1 text-sm leading-relaxed text-slate-500">{item.text}</p>
@@ -137,29 +91,29 @@ export default function AboutSection() {
                 <UserRound className="h-5 w-5" />
               </span>
               <div>
-                <p className="text-xs font-black uppercase tracking-widest text-[var(--brand)]">Founder Profile</p>
-                <h3 className="text-xl font-black text-[var(--brand-strong)]">Late M. A. Rahman</h3>
+                <p className="text-xs font-black uppercase tracking-widest text-[var(--brand)]">{t('about.founderEyebrow')}</p>
+                <h3 className="text-xl font-black text-[var(--brand-strong)]">{t('about.founderName')}</h3>
               </div>
             </div>
             <p className="mt-5 text-sm leading-relaxed text-[var(--text-soft)]">
-              The founder envisioned a school where children from every background could receive dependable teaching, moral guidance, and access to modern learning resources. His founding principles continue to guide classroom culture, student care, and community service.
+              {t('about.founderText')}
             </p>
             <div className="mt-5 rounded-2xl bg-[var(--brand-soft)] p-4 text-sm font-semibold text-[var(--brand-strong)]">
-              Founder motto: knowledge with character, service with humility.
+              {t('about.founderMotto')}
             </div>
           </div>
         </div>
 
         <div className="mt-10 grid gap-6 lg:grid-cols-2">
           {[
-            { titleKey: 'chairmanTitle', nameKey: 'chairmanName', msgKey: 'chairmanMessage', initial: 'C' },
-            { titleKey: 'principalTitle', nameKey: 'principalName', msgKey: 'principalMessage', initial: 'P' },
-          ].map(({ titleKey, nameKey, msgKey, initial }) => (
+            { titleKey: 'chairmanTitle', nameKey: 'chairmanName', msgKey: 'chairmanMessage', initialKey: 'chairmanInitial' },
+            { titleKey: 'principalTitle', nameKey: 'principalName', msgKey: 'principalMessage', initialKey: 'principalInitial' },
+          ].map(({ titleKey, nameKey, msgKey, initialKey }) => (
             <div key={titleKey} className="card">
               <p className="text-xs font-black uppercase tracking-widest text-[var(--brand)]">{t(`about.${titleKey}`)}</p>
               <div className="mt-4 flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-black text-white">
-                  {initial}
+                  {t(`about.${initialKey}`)}
                 </span>
                 <p className="text-sm font-bold text-[var(--brand-strong)]">{t(`about.${nameKey}`)}</p>
               </div>
@@ -173,15 +127,15 @@ export default function AboutSection() {
         <div className="mt-16">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="brand-chip"><GraduationCap className="h-3.5 w-3.5" /> Faculty & Staff</p>
-              <h3 className="mt-3 text-2xl font-black text-[var(--brand-strong)]">Meet Our Faculty</h3>
+              <p className="brand-chip"><GraduationCap className="h-3.5 w-3.5" /> {t('about.facultyEyebrow')}</p>
+              <h3 className="mt-3 text-2xl font-black text-[var(--brand-strong)]">{t('about.facultyTitle')}</h3>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--text-soft)]">
-                Qualified teachers lead academic programs, classroom mentoring, discipline, and student support across every section.
+                {t('about.facultySubtitle')}
               </p>
             </div>
           </div>
           <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {FACULTY.map((teacher, index) => <FacultyCard key={teacher.userId || teacher.name} teacher={teacher} index={index} />)}
+            {faculty.map((teacher, index) => <FacultyCard key={teacher.userId || teacher.name} teacher={teacher} index={index} t={t} />)}
           </div>
         </div>
 
@@ -192,23 +146,17 @@ export default function AboutSection() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
                   <Building2 className="h-6 w-6" />
                 </div>
-                <p className="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[var(--brand)]">Organizational Structure</p>
-                <h3 className="mt-3 text-[1.9rem] font-black leading-tight tracking-[-0.03em] text-[var(--brand-strong)] sm:text-[2.15rem]">Leadership with clarity, accountability, and daily direction</h3>
-                <p className="mt-4 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">Each layer of leadership has a defined role, creating a reliable chain from governance and academic planning to student care, discipline, and classroom guidance.</p>
+                <p className="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[var(--brand)]">{t('about.orgEyebrow')}</p>
+                <h3 className="mt-3 text-[1.9rem] font-black leading-tight tracking-[-0.03em] text-[var(--brand-strong)] sm:text-[2.15rem]">{t('about.orgTitle')}</h3>
+                <p className="mt-4 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">{t('about.orgText')}</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-3 lg:w-[25rem]">
-                <div className="rounded-2xl border border-white/80 bg-white/80 px-4 py-4">
-                  <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Governance</p>
-                  <p className="mt-2 text-sm font-black text-slate-900">Strategic oversight</p>
-                </div>
-                <div className="rounded-2xl border border-white/80 bg-white/80 px-4 py-4">
-                  <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Academics</p>
-                  <p className="mt-2 text-sm font-black text-slate-900">Teaching direction</p>
-                </div>
-                <div className="rounded-2xl border border-white/80 bg-white/80 px-4 py-4">
-                  <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Students</p>
-                  <p className="mt-2 text-sm font-black text-slate-900">Daily support</p>
-                </div>
+                {orgHighlights.map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-white/80 bg-white/80 px-4 py-4">
+                    <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">{item.label}</p>
+                    <p className="mt-2 text-sm font-black text-slate-900">{item.value}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -216,18 +164,18 @@ export default function AboutSection() {
           <div className="rounded-[1.75rem] border border-slate-100 bg-white p-5 shadow-soft sm:p-6">
             <div className="mb-5 flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--brand)]">Leadership Chain</p>
-                <h3 className="mt-2 text-xl font-black text-[var(--brand-strong)]">Who guides the institution day to day</h3>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--brand)]">{t('about.leadershipEyebrow')}</p>
+                <h3 className="mt-2 text-xl font-black text-[var(--brand-strong)]">{t('about.leadershipTitle')}</h3>
               </div>
               <div className="hidden rounded-full bg-[var(--brand-soft)] px-3 py-1.5 text-[11px] font-bold text-[var(--brand-strong)] sm:block">
-                Accountable and role-based
+                {t('about.leadershipBadge')}
               </div>
             </div>
 
             <div className="space-y-4">
-              {LEADERSHIP.map((item, index) => (
+              {leadership.map((item, index) => (
                 <div key={item.role} className="relative rounded-[1.4rem] border border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 sm:p-5">
-                  {index < LEADERSHIP.length - 1 && (
+                  {index < leadership.length - 1 && (
                     <div className="absolute left-8 top-full h-4 w-px bg-slate-200" />
                   )}
                   <div className="flex gap-4">
@@ -238,7 +186,7 @@ export default function AboutSection() {
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <p className="text-base font-black text-slate-900">{item.role}</p>
                         <span className="inline-flex w-fit rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                          Level {index + 1}
+                          {t('about.levelLabel', { number: index + 1 })}
                         </span>
                       </div>
                       <p className="mt-2 text-sm leading-relaxed text-slate-500">{item.name}</p>

@@ -1,6 +1,6 @@
-import { Facebook, GraduationCap, Mail, MapPin, Phone, Youtube } from 'lucide-react';
+﻿import { Facebook, GraduationCap, Mail, MapPin, Phone, Youtube } from 'lucide-react';
 import { useLanguage } from '../../../app/App.jsx';
-import { SCHOOL_ADDRESS, SCHOOL_EMAIL, SCHOOL_PHONE, SCHOOL_FB, SCHOOL_YT } from '../constants.js';
+import { SCHOOL_FB, SCHOOL_YT } from '../constants.js';
 
 const QUICK_LINKS = ['home', 'about', 'admission', 'contact'];
 const HREFS = {
@@ -14,11 +14,11 @@ const HREFS = {
   contact: '#contact',
 };
 
-const PROGRAM_LINKS = [
-  { label: 'Student Portal', href: '#features' },
-  { label: 'Admission Process', href: '#admission' },
-  { label: 'Academic Structure', href: '#academics' },
-  { label: 'Campus Gallery', href: '#gallery' },
+const SCHOOL_ACCESS_LINKS = [
+  { key: 'studentPortal', href: '#features' },
+  { key: 'admissionProcess', href: '#admission' },
+  { key: 'academicStructure', href: '#academics' },
+  { key: 'campusGallery', href: '#gallery' },
 ];
 
 export default function LandingFooter() {
@@ -52,7 +52,7 @@ export default function LandingFooter() {
               <a href={SCHOOL_YT} target="_blank" rel="noreferrer" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/6 text-white/70 transition hover:bg-white/12 hover:text-white">
                 <Youtube className="h-4 w-4" />
               </a>
-              <a href={`mailto:${SCHOOL_EMAIL}`} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/6 text-white/70 transition hover:bg-white/12 hover:text-white">
+              <a href={`mailto:${t('contact.email')}`} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/6 text-white/70 transition hover:bg-white/12 hover:text-white">
                 <Mail className="h-4 w-4" />
               </a>
             </div>
@@ -72,12 +72,12 @@ export default function LandingFooter() {
           </div>
 
           <div>
-            <h4 className="text-[11px] font-black uppercase tracking-[0.18em] text-white/42">School Access</h4>
+            <h4 className="text-[11px] font-black uppercase tracking-[0.18em] text-white/42">{t('footer.schoolAccess')}</h4>
             <ul className="mt-4 space-y-3">
-              {PROGRAM_LINKS.map((item) => (
-                <li key={item.label}>
+              {SCHOOL_ACCESS_LINKS.map((item) => (
+                <li key={item.key}>
                   <a href={item.href} className="text-sm text-white/70 transition hover:text-white">
-                    {item.label}
+                    {t(`footer.schoolAccessLinks.${item.key}`)}
                   </a>
                 </li>
               ))}
@@ -88,9 +88,9 @@ export default function LandingFooter() {
             <h4 className="text-[11px] font-black uppercase tracking-[0.18em] text-white/42">{t('footer.contact')}</h4>
             <ul className="mt-4 space-y-4">
               {[
-                { icon: MapPin, value: SCHOOL_ADDRESS },
-                { icon: Phone, value: SCHOOL_PHONE },
-                { icon: Mail, value: SCHOOL_EMAIL },
+                { icon: MapPin, value: t('contact.address') },
+                { icon: Phone, value: t('contact.phone') },
+                { icon: Mail, value: t('contact.email') },
               ].map(({ icon: Icon, value }) => (
                 <li key={value} className="flex items-start gap-3 text-sm leading-relaxed text-white/68">
                   <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/8 text-white/55">
@@ -107,7 +107,7 @@ export default function LandingFooter() {
       <div className="relative z-10 border-t border-white/10">
         <div className="landing-container flex flex-col gap-3 py-4 text-xs text-white/42 sm:flex-row sm:items-center sm:justify-between">
           <p>{t('footer.copyright', { year: new Date().getFullYear() })}</p>
-          <p>Designed for modern school communication, operations, and family trust.</p>
+          <p>{t('footer.bottomNote')}</p>
         </div>
       </div>
     </footer>

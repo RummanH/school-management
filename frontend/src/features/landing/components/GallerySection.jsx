@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useLanguage } from '../../../app/App.jsx';
 import { listPublicGallery } from '../../../services/api/galleryApi.js';
@@ -45,7 +45,7 @@ export default function GallerySection() {
             <Loader2 className="h-6 w-6 animate-spin text-[var(--brand)]" />
           </div>
         ) : items.length === 0 ? (
-          <p className="mt-12 text-center text-sm text-slate-400">Gallery photos coming soon.</p>
+          <p className="mt-12 text-center text-sm text-slate-400">{t('gallery.empty')}</p>
         ) : (
           <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3">
             {items.map((item) => (
@@ -53,7 +53,7 @@ export default function GallerySection() {
                 {item.type === 'video' ? (
                   <iframe
                     src={toEmbedUrl(item.url)}
-                    title={item.caption || 'Gallery video'}
+                    title={item.caption || t('gallery.videoTitle')}
                     className="h-full w-full"
                     loading="lazy"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

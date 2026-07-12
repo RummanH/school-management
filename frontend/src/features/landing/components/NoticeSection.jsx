@@ -1,14 +1,18 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Bell, Newspaper, Loader2 } from 'lucide-react';
 import { useLanguage } from '../../../app/App.jsx';
 import { listPublicNotices } from '../../../services/api/noticeApi.js';
 
-function formatDate(value) {
-  return new Date(value).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+function formatDate(value, language) {
+  return new Date(value).toLocaleDateString(language === 'bn' ? 'bn-BD' : 'en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
 export default function NoticeSection() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [notices, setNotices] = useState([]);
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,14 +41,13 @@ export default function NoticeSection() {
           </div>
         ) : (
           <div className="mt-12 grid gap-8 lg:grid-cols-2">
-            {/* Notices */}
             <div className="card">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
                 <Bell className="h-5 w-5 text-[var(--brand)]" />
                 <h3 className="font-bold text-[var(--brand-strong)]">{t('notice.title')}</h3>
               </div>
               {notices.length === 0 ? (
-                <p className="mt-4 text-sm text-slate-400">No notices yet.</p>
+                <p className="mt-4 text-sm text-slate-400">{t('notice.emptyNotices')}</p>
               ) : (
                 <ul className="mt-4 space-y-3">
                   {notices.map((n, i) => (
@@ -62,14 +65,13 @@ export default function NoticeSection() {
               )}
             </div>
 
-            {/* News */}
             <div className="card">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
                 <Newspaper className="h-5 w-5 text-[var(--brand)]" />
                 <h3 className="font-bold text-[var(--brand-strong)]">{t('notice.newsTitle')}</h3>
               </div>
               {news.length === 0 ? (
-                <p className="mt-4 text-sm text-slate-400">No news yet.</p>
+                <p className="mt-4 text-sm text-slate-400">{t('notice.emptyNews')}</p>
               ) : (
                 <ul className="mt-4 space-y-4">
                   {news.map((n) => (
@@ -78,7 +80,7 @@ export default function NoticeSection() {
                       <div className="min-w-0">
                         <p className="text-sm font-semibold leading-snug text-slate-700">{n.title}</p>
                         {n.body && <p className="mt-0.5 text-xs leading-snug text-slate-500 line-clamp-2">{n.body}</p>}
-                        <p className="mt-1 text-[11px] text-slate-400">{formatDate(n.publishedAt)}</p>
+                        {n.publishedAt && <p className="mt-1 text-[11px] text-slate-400">{formatDate(n.publishedAt, language)}</p>}
                       </div>
                     </li>
                   ))}

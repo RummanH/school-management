@@ -1,8 +1,8 @@
-import {
+﻿import {
   CalendarCheck2, Wallet, MessagesSquare, BarChart3, GraduationCap, UserPlus,
   BriefcaseBusiness, Building2, ShieldCheck, Languages, CheckCircle2, ArrowRight,
 } from 'lucide-react';
-import { useLanguage, navigate } from '../../../app/App.jsx';
+import { useLanguage } from '../../../app/App.jsx';
 
 const FEATURE_IMAGES = {
   attendance: '/images/features/attendance.jpg',
@@ -51,20 +51,21 @@ function PlaceholderVisual({ icon: Icon, label }) {
 
 function Spotlight({ tkey, icon, image, reverse, t }) {
   const bullets = [1, 2, 3].map((n) => t(`features.${tkey}Bullet${n}`));
+  const title = t(`features.${tkey}Title`);
   return (
     <div className={`grid items-center gap-10 lg:grid-cols-2 ${reverse ? '' : ''}`}>
       <div className={reverse ? 'lg:order-2' : ''}>
         {image ? (
-          <img src={image} alt={t(`features.${tkey}Title`)} className="aspect-[7/4] w-full rounded-2xl object-cover shadow-2xl" loading="lazy" />
+          <img src={image} alt={title} className="aspect-[7/4] w-full rounded-2xl object-cover shadow-2xl" loading="lazy" />
         ) : (
-          <PlaceholderVisual icon={icon} label={`Screenshot placeholder — ${t(`features.${tkey}Title`)}`} />
+          <PlaceholderVisual icon={icon} label={t('features.placeholderLabel', { title })} />
         )}
       </div>
       <div className={reverse ? 'lg:order-1' : ''}>
         <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--brand-soft)] text-[var(--brand)]">
           {(() => { const Icon = icon; return <Icon className="h-5 w-5" />; })()}
         </span>
-        <h3 className="mt-4 text-2xl font-black text-[var(--brand-strong)]">{t(`features.${tkey}Title`)}</h3>
+        <h3 className="mt-4 text-2xl font-black text-[var(--brand-strong)]">{title}</h3>
         <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)]">{t(`features.${tkey}Desc`)}</p>
         <ul className="mt-5 space-y-2.5">
           {bullets.map((b) => (

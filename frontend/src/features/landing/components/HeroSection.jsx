@@ -1,6 +1,6 @@
-import { ArrowRight, ArrowUpRight, MapPin, Phone, Sparkles } from 'lucide-react';
+﻿import { ArrowRight, ArrowUpRight, MapPin, Phone, Sparkles } from 'lucide-react';
 import { useLanguage } from '../../../app/App.jsx';
-import { HERO_IMAGE, SCHOOL_ADDRESS, SCHOOL_PHONE, STATS } from '../constants.js';
+import { HERO_IMAGE, STATS } from '../constants.js';
 
 const HERO_STAT_KEYS = ['students', 'teachers', 'departments'];
 
@@ -61,11 +61,11 @@ export default function HeroSection() {
             <div className="mt-6 flex flex-col gap-3 text-sm text-white/68 sm:flex-row sm:flex-wrap sm:items-center sm:gap-5">
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-white/50" />
-                <span>{SCHOOL_PHONE}</span>
+                <span>{t('contact.phone')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-white/50" />
-                <span className="truncate">{SCHOOL_ADDRESS}</span>
+                <span className="truncate">{t('contact.address')}</span>
               </div>
             </div>
           </div>
