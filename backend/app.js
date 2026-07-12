@@ -10,7 +10,7 @@ export function createApp({
   env, contactService, authService, tenantService,
   userService, studentService, teacherService, academicService,
   guardianService, noticeService, galleryService, admissionService, feeService, financeService,
-  communicationService, hrService, documentService, databaseManager,
+  communicationService, hrService, documentService, profileService, databaseManager,
 }) {
   const app = express();
 
@@ -29,7 +29,7 @@ export function createApp({
     env, contactService, authService, tenantService,
     userService, studentService, teacherService, academicService,
     guardianService, noticeService, galleryService, admissionService, feeService, financeService,
-    communicationService, hrService, documentService, databaseManager,
+    communicationService, hrService, documentService, profileService, databaseManager,
   }));
 
   const staticRoot = fs.existsSync(backendDistPath) ? backendDistPath : frontendDistPath;
@@ -45,3 +45,4 @@ export function createApp({
 
   return app;
 }
+

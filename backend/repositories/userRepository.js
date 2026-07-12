@@ -7,6 +7,9 @@ export function mapUser(row) {
     email: row.email,
     role: row.role,
     status: row.status,
+    phone: row.phone || null,
+    address: row.address || null,
+    photoUrl: row.photo_url || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -16,7 +19,7 @@ export async function listUsers(client, tenantId = null) {
   let result;
   if (tenantId) {
     result = await client.query(
-      `SELECT u.id, u.tenant_id, u.name, u.email, u.role, u.status, u.created_at, u.updated_at
+      `SELECT u.id, u.tenant_id, u.name, u.email, u.role, u.status, u.phone, u.address, u.photo_url, u.created_at, u.updated_at
        FROM users u
        WHERE u.tenant_id = $1 AND u.role != 'system_developer'
        ORDER BY u.created_at DESC, u.name ASC`,
@@ -24,7 +27,7 @@ export async function listUsers(client, tenantId = null) {
     );
   } else {
     result = await client.query(
-      `SELECT u.id, u.tenant_id, u.name, u.email, u.role, u.status, u.created_at, u.updated_at,
+      `SELECT u.id, u.tenant_id, u.name, u.email, u.role, u.status, u.phone, u.address, u.photo_url, u.created_at, u.updated_at,
               t.name AS tenant_name
        FROM users u
        LEFT JOIN tenants t ON t.id = u.tenant_id
@@ -67,7 +70,7 @@ export async function findUserById(client, id) {
 
 export function findActiveUserBySessionTokenHash(client, tokenHash) {
   return client.query(
-    `SELECT u.id, u.tenant_id, u.name, u.email, u.role, u.status,
+    `SELECT u.id, u.tenant_id, u.name, u.email, u.role, u.status, u.phone, u.address, u.photo_url,
             t.name  AS tenant_name,
             t.slug  AS tenant_slug,
             t.status AS tenant_status,
@@ -86,11 +89,11 @@ export function findActiveUserBySessionTokenHash(client, tokenHash) {
   );
 }
 
-export async function insertUser(client, { id, tenantId, name, email, passwordHash, role, status }) {
+export async function insertUser(client, { id, tenantId, name, email, passwordHash, role, status, phone, address, photoUrl }) {
   await client.query(
-    `INSERT INTO users (id, tenant_id, name, email, password_hash, role, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [id, tenantId || null, name, email.toLowerCase(), passwordHash, role, status || 'active'],
+    `INSERT INTO users (id, tenant_id, name, email, password_hash, role, status, phone, address, photo_url)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+    [id, tenantId || null, name, email.toLowerCase(), passwordHash, role, status || 'active', phone || null, address || null, photoUrl || null],
   );
 }
 
@@ -106,6 +109,20 @@ export async function updateUser(client, { id, name, email, role, status, passwo
       [id, name, email, role, status],
     );
   }
+}
+
+export async function updateOwnUserProfile(client, { id, name, email, phone, address, photoUrl }) {
+  await client.query(
+    `UPDATE users
+     SET name=$2,
+         email=LOWER($3),
+         phone=$4,
+         address=$5,
+         photo_url=$6,
+         updated_at=NOW()
+     WHERE id=$1`,
+    [id, name, email, phone || null, address || null, photoUrl || null],
+  );
 }
 
 export async function updatePasswordHash(client, id, passwordHash) {

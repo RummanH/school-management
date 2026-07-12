@@ -1,4 +1,4 @@
-import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, BookOpen, BriefcaseBusiness, Globe, LogOut, X, BookMarked, Bell, Images, User, UserPlus, BadgeDollarSign, BarChart3, ShieldCheck, Mail, FileText } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, BookOpen, BriefcaseBusiness, Globe, LogOut, X, BookMarked, Bell, Images, User, UserPlus, BadgeDollarSign, BarChart3, ShieldCheck, Mail, FileText, Settings } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 
 // Nav is grouped into sections so the sidebar reads as related clusters
@@ -96,7 +96,7 @@ export default function DashboardSidebar({ activePath, onClose }) {
   else if (role === 'admin') groups = ADMIN_NAV_GROUPS;
   else if (role === 'accountant') groups = ACCOUNTANT_NAV_GROUPS;
   else if (role === 'teacher') groups = TEACHER_NAV_GROUPS;
-  else groups = [{ label: null, items: [{ label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' }] }];
+  else groups = [{ label: null, items: [{ label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' }, { label: 'Account Settings', icon: Settings, path: '/account' }] }];
 
   return (
     <aside className="flex h-full min-h-0 w-64 flex-col overflow-hidden bg-[var(--brand-strong)] text-white">
@@ -149,6 +149,13 @@ export default function DashboardSidebar({ activePath, onClose }) {
       {/* Bottom */}
       <div className="border-t border-white/10 p-3 space-y-0.5">
         <button
+          onClick={() => { navigate('/account'); onClose?.(); }}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/60 transition hover:bg-white/10 hover:text-white"
+        >
+          <Settings className="h-4 w-4 shrink-0" />
+          Account Settings
+        </button>
+        <button
           onClick={() => { navigate('/'); onClose?.(); }}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/60 transition hover:bg-white/10 hover:text-white"
         >
@@ -166,4 +173,6 @@ export default function DashboardSidebar({ activePath, onClose }) {
     </aside>
   );
 }
+
+
 

@@ -148,6 +148,31 @@ function otherParticipant(thread, currentUser) {
   return null;
 }
 
+// Only meaningful for 1:1 threads — a group has no single "other person" to
+// show a live dot for, so presence there is summarized as a count instead.
+function otherParticipantId(thread, currentUser) {
+  if (thread.isGroup) return null;
+  if (thread.participantOneUserId && thread.participantOneUserId !== currentUser?.id) return thread.participantOneUserId;
+  if (thread.participantTwoUserId && thread.participantTwoUserId !== currentUser?.id) return thread.participantTwoUserId;
+  return null;
+}
+
+function relativeTimeFromNow(iso) {
+  if (!iso) return '';
+  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function OnlineDot({ show }) {
+  if (!show) return null;
+  return <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white" />;
+}
+
 function participantLabel(thread, currentUser) {
   return otherParticipant(thread, currentUser)?.name || 'Conversation';
 }
@@ -190,7 +215,7 @@ function EmptyState({ title, body, compact = false }) {
   );
 }
 
-function ComposeModal({ currentUser, onClose, onCreated }) {
+function ComposeModal({ currentUser, onlineUserIds, onClose, onCreated }) {
   const [recipients, setRecipients] = useState([]);
   const [students, setStudents] = useState([]);
   const [form, setForm] = useState({ recipientUserIds: [], studentUserId: '', topic: '', body: '' });
@@ -313,6 +338,9 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
                               onChange={() => toggleRecipient(r.id)}
                               className="h-4 w-4 shrink-0 rounded border-slate-300 text-[var(--brand)] focus:ring-[var(--brand)]"
                             />
+                            <span className="relative flex h-2 w-2 shrink-0">
+                              {onlineUserIds?.has(r.id) && <span className="h-2 w-2 rounded-full bg-emerald-500" />}
+                            </span>
                             <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-700">{r.name}</span>
                             <span className="shrink-0 text-xs text-slate-400">{r.email}</span>
                           </label>
@@ -396,7 +424,7 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
   );
 }
 
-function ThreadListItem({ thread, active, currentUser, onSelect }) {
+function ThreadListItem({ thread, active, currentUser, online, onSelect }) {
   const name = threadDisplayName(thread, currentUser);
 
   return (
@@ -409,8 +437,9 @@ function ThreadListItem({ thread, active, currentUser, onSelect }) {
       }`}
     >
       <div className="flex items-start gap-3">
-        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-black ${active ? 'bg-[var(--brand)] text-white' : 'bg-slate-900 text-white'}`}>
+        <div className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-black ${active ? 'bg-[var(--brand)] text-white' : 'bg-slate-900 text-white'}`}>
           {thread.isGroup ? <Users className="h-5 w-5" /> : initials(name)}
+          <OnlineDot show={online} />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
@@ -425,7 +454,7 @@ function ThreadListItem({ thread, active, currentUser, onSelect }) {
 }
 
 export default function MessagesPage() {
-  const { currentUser, socket } = useAuth();
+  const { currentUser, socket, onlineUserIds, lastSeenByUserId } = useAuth();
   const [threads, setThreads] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [active, setActive] = useState(null);
@@ -530,9 +559,23 @@ export default function MessagesPage() {
   const unreadTotal = useMemo(() => threads.reduce((sum, t) => sum + Number(t.unreadCount || 0), 0), [threads]);
   const isGroupActive = Boolean(active?.isGroup);
   const activeParticipant = active ? threadDisplayName(active, currentUser) : 'Conversation';
-  const activeSubtitle = isGroupActive
-    ? (threadMemberSummary(active, currentUser) || `${(active?.participants || []).length} members`)
-    : (active?.topic || 'Direct message');
+  const activeOtherId = active ? otherParticipantId(active, currentUser) : null;
+  const activeIsOnline = Boolean(activeOtherId && onlineUserIds?.has(activeOtherId));
+  const activeGroupOnlineCount = isGroupActive
+    ? (active?.participants || []).filter((p) => p.userId !== currentUser?.id && onlineUserIds?.has(p.userId)).length
+    : 0;
+
+  let activeSubtitle;
+  if (isGroupActive) {
+    const memberSummary = threadMemberSummary(active, currentUser) || `${(active?.participants || []).length} members`;
+    activeSubtitle = activeGroupOnlineCount > 0 ? `${memberSummary} · ${activeGroupOnlineCount} online` : memberSummary;
+  } else if (activeIsOnline) {
+    activeSubtitle = 'Active now';
+  } else if (activeOtherId && lastSeenByUserId?.[activeOtherId]) {
+    activeSubtitle = `Active ${relativeTimeFromNow(lastSeenByUserId[activeOtherId])}`;
+  } else {
+    activeSubtitle = active?.topic || 'Direct message';
+  }
 
   async function handleReplyFileChange(e) {
     const file = e.target.files?.[0];
@@ -631,6 +674,7 @@ export default function MessagesPage() {
                       thread={thread}
                       active={activeId === thread.id}
                       currentUser={currentUser}
+                      online={Boolean(onlineUserIds?.has(otherParticipantId(thread, currentUser)))}
                       onSelect={() => setActiveId(thread.id)}
                     />
                   ))}
@@ -668,8 +712,9 @@ export default function MessagesPage() {
                     <button onClick={() => setActiveId(null)} className="icon-btn lg:hidden">
                       <ArrowLeft className="h-4 w-4" />
                     </button>
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand)] text-sm font-black text-white">
+                    <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand)] text-sm font-black text-white">
                       {isGroupActive ? <Users className="h-5 w-5" /> : initials(activeParticipant)}
+                      <OnlineDot show={activeIsOnline} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -678,7 +723,7 @@ export default function MessagesPage() {
                           {isGroupActive ? 'Group' : 'Active thread'}
                         </span>
                       </div>
-                      <p className="mt-1 truncate text-sm text-slate-500">
+                      <p className={`mt-1 truncate text-sm ${activeIsOnline ? 'font-semibold text-emerald-600' : 'text-slate-500'}`}>
                         {activeSubtitle}
                         {active?.studentName ? ` / Student: ${active.studentName}` : ''}
                       </p>
@@ -778,6 +823,7 @@ export default function MessagesPage() {
       {showCompose && (
         <ComposeModal
           currentUser={currentUser}
+          onlineUserIds={onlineUserIds}
           onClose={() => setShowCompose(false)}
           onCreated={(id) => {
             setShowCompose(false);

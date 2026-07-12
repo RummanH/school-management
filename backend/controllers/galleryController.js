@@ -5,7 +5,7 @@ export class GalleryController {
 
   listPublic = async (req, res, next) => {
     try {
-      res.json({ items: await this.galleryService.listPublic() });
+      res.json({ items: await this.galleryService.listPublic(req.query.school) });
     } catch (err) { next(err); }
   };
 

@@ -652,6 +652,11 @@ export async function createSchema(pool) {
 
   // Stage 2 â€” add columns that may be missing on existing databases
   await pool.query(`
+    -- Own-profile page (phone/address/photo) reads and writes these columns
+    -- via userRepository.js, but they were never added to the users table.
+    ALTER TABLE users            ADD COLUMN IF NOT EXISTS phone            TEXT;
+    ALTER TABLE users            ADD COLUMN IF NOT EXISTS address          TEXT;
+    ALTER TABLE users            ADD COLUMN IF NOT EXISTS photo_url        TEXT;
     ALTER TABLE tenants          ADD COLUMN IF NOT EXISTS institution_type TEXT NOT NULL DEFAULT 'SCHOOL';
     ALTER TABLE tenants          ADD COLUMN IF NOT EXISTS phone            TEXT;
     ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS class_id         TEXT REFERENCES classes(id) ON DELETE SET NULL;
@@ -678,11 +683,17 @@ export async function createSchema(pool) {
       WHERE tenant_id IS NULL;
     ALTER TABLE gallery_items ALTER COLUMN tenant_id SET NOT NULL;
 
-    -- admission_applications stays nullable: the public apply form has no
-    -- tenant-selection mechanism yet (single shared public site), so it cannot
-    -- attribute new applications to a tenant. See conversation notes / gap
-    -- analysis item 18 (multi-tenant public website strategy) for the follow-up.
+    -- admission_applications: every /admission page visit now resolves a
+    -- schoolSlug (either the ?school= query param the landing page's "Apply
+    -- Now" link always includes, or the current site's own slug as a
+    -- fallback — see AdmissionPage.jsx), and admissionService.apply() now
+    -- requires that slug to resolve to a real, active tenant. So, same as
+    -- notices/gallery_items above, tenant_id can finally be tightened to
+    -- NOT NULL instead of silently accepting untraceable applications.
     ALTER TABLE admission_applications ADD COLUMN IF NOT EXISTS tenant_id TEXT REFERENCES tenants(id) ON DELETE CASCADE;
+    UPDATE admission_applications SET tenant_id = (SELECT id FROM tenants ORDER BY created_at ASC LIMIT 1)
+      WHERE tenant_id IS NULL;
+    ALTER TABLE admission_applications ALTER COLUMN tenant_id SET NOT NULL;
 
     -- Academic restructure: exams become first-class records (name/term/session
     -- live on "exams"; per-class-per-subject rows on exam_schedules link to
@@ -780,10 +791,30 @@ export async function createSchema(pool) {
         FROM expenses e
       ON CONFLICT (source_type, source_id) DO NOTHING;
 
+    -- Uses the payroll record's own method column (cash/bank/bkash/...)
+    -- instead of hardcoding 'bank' for every salary payment regardless of
+    -- how it was actually paid.
     INSERT INTO finance_transactions (id, tenant_id, direction, source_type, source_id, amount, method, category, transaction_date, recorded_by, notes, created_at)
-      SELECT 'fintx-' || pr.id, pr.tenant_id, 'out', 'payroll', pr.id, pr.net_salary, 'bank', 'Staff Payroll', COALESCE(pr.paid_at, pr.period || '-01'), NULL, pr.notes, pr.created_at
+      SELECT 'fintx-' || pr.id, pr.tenant_id, 'out', 'payroll', pr.id, pr.net_salary, pr.method, 'Staff Payroll', COALESCE(pr.paid_at, pr.period || '-01'), NULL, pr.notes, pr.created_at
         FROM staff_payroll_records pr
        WHERE pr.status = 'paid'
+      ON CONFLICT (source_type, source_id) DO NOTHING;
+
+    -- Ledger rows created before this fix always say 'bank' regardless of
+    -- the payroll record's real method; correct any that now disagree.
+    UPDATE finance_transactions ft
+       SET method = pr.method
+      FROM staff_payroll_records pr
+     WHERE ft.source_type = 'payroll' AND ft.source_id = pr.id AND ft.method IS DISTINCT FROM pr.method;
+
+    -- Donations were missing from the ledger backfill entirely (only
+    -- fee_payments/expenses/payroll were covered), even though the live
+    -- "record a donation" flow already posts to finance_transactions itself.
+    INSERT INTO finance_transactions (id, tenant_id, direction, source_type, source_id, amount, method, category, transaction_date, recorded_by, notes, created_at)
+      SELECT 'fintx-' || d.id, d.tenant_id, 'in', 'donation', d.id, d.amount, d.method,
+             CASE WHEN d.donor_name != '' THEN 'Donation — ' || d.donor_name ELSE 'Donation' END,
+             d.donation_date, d.received_by, d.notes, d.created_at
+        FROM donations d
       ON CONFLICT (source_type, source_id) DO NOTHING;
   `);
 
@@ -872,5 +903,7 @@ export async function createSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_comm_message_reads_user    ON communication_message_reads(user_id);
   `);
 }
+
+
 
 

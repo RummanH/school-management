@@ -7,9 +7,21 @@ import { readCookie } from "./lib/cookies.js";
 function roomForUser(userId) {
   return `user:${userId}`;
 }
+function roomForTenant(tenantId) {
+  return `tenant:${tenantId}`;
+}
 
 export function createRealtimeGateway() {
   let io = null;
+  // tenantId -> Map<userId, Set<socketId>> — a user counts as online while
+  // their socket set is non-empty, so multiple tabs/devices don't flicker
+  // the status offline when just one of them closes.
+  const tenantPresence = new Map();
+
+  function presenceMapFor(tenantId) {
+    if (!tenantPresence.has(tenantId)) tenantPresence.set(tenantId, new Map());
+    return tenantPresence.get(tenantId);
+  }
 
   return {
     // Attaches Socket.IO to the same HTTP server Express listens on (no
@@ -32,7 +44,38 @@ export function createRealtimeGateway() {
       });
 
       io.on("connection", (socket) => {
-        socket.join(roomForUser(socket.data.user.id));
+        const { id: userId, tenantId } = socket.data.user;
+        socket.join(roomForUser(userId));
+
+        // system_developer accounts have no tenant, so there's no school's
+        // worth of contacts to show presence for — skip presence entirely.
+        if (!tenantId) return;
+        socket.join(roomForTenant(tenantId));
+
+        const presence = presenceMapFor(tenantId);
+        const wasOffline = !presence.has(userId) || presence.get(userId).size === 0;
+        if (!presence.has(userId)) presence.set(userId, new Set());
+        presence.get(userId).add(socket.id);
+
+        // Only the connecting client needs the full current snapshot;
+        // everyone else just needs the one "this person came online" event.
+        const onlineUserIds = [...presence.entries()]
+          .filter(([uid, sockets]) => uid !== userId && sockets.size > 0)
+          .map(([uid]) => uid);
+        socket.emit("presence:snapshot", { onlineUserIds });
+
+        if (wasOffline) {
+          socket.to(roomForTenant(tenantId)).emit("presence:online", { userId });
+        }
+
+        socket.on("disconnect", () => {
+          const sockets = presence.get(userId);
+          if (!sockets) return;
+          sockets.delete(socket.id);
+          if (sockets.size === 0) {
+            io.to(roomForTenant(tenantId)).emit("presence:offline", { userId, lastSeenAt: new Date().toISOString() });
+          }
+        });
       });
 
       return io;

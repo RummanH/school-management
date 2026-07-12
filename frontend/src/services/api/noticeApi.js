@@ -1,7 +1,7 @@
 import { apiRequest, buildQueryString } from './client.js';
 
 // Public — landing page
-export const listPublicNotices = (type) => apiRequest(`/notices/public${buildQueryString({ type })}`);
+export const listPublicNotices = (type, schoolSlug) => apiRequest(`/notices/public${buildQueryString({ type, school: schoolSlug })}`);
 
 // Portal feed — any authenticated user
 export const getNoticeFeed = () => apiRequest('/notices/feed');

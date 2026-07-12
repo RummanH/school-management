@@ -1,4 +1,4 @@
-import { GraduationCap, LayoutDashboard, Award, Users, Calendar, Bell, User, FileText, MessageSquare, BadgeDollarSign, Globe, LogOut, X } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, Award, Users, Calendar, Bell, User, FileText, MessageSquare, BadgeDollarSign, Globe, LogOut, X, Settings } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 
 const NAV = [
@@ -11,6 +11,7 @@ const NAV = [
   { label: 'Fees',       icon: BadgeDollarSign,path: '/portal/fees' },
   { label: 'Documents',  icon: FileText,       path: '/portal/documents' },
   { label: 'My Profile', icon: User,            path: '/portal/profile' },
+  { label: 'Account Settings', icon: Settings, path: '/account' },
 ];
 
 export default function StudentSidebar({ activePath, onClose }) {
@@ -78,5 +79,6 @@ export default function StudentSidebar({ activePath, onClose }) {
     </aside>
   );
 }
+
 
 

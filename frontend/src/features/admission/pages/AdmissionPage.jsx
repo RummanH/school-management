@@ -364,10 +364,14 @@ function StatusCheck({ t }) {
 }
 
 export default function AdmissionPage() {
-  const { t } = useLanguage();
+  const { t, siteSlug } = useLanguage();
   const query = new URLSearchParams(window.location.search);
   const initialTab = query.get('tab') === 'status' ? 'status' : 'apply';
-  const schoolSlug = query.get('school') || '';
+  // /admission is a "reserved route" (see App.jsx), so it always renders the
+  // default site's branding even without a ?school= param — schoolSlug must
+  // fall back to that same site so a submitted application always attributes
+  // to the school the page visually claims to be, instead of going nowhere.
+  const schoolSlug = query.get('school') || siteSlug || '';
   const [tab, setTab] = useState(initialTab);
   const [referenceCode, setReferenceCode] = useState('');
 

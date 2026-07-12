@@ -1,13 +1,21 @@
+// system_developer is a platform-level role with no tenant_id, so it's
+// deliberately left out of every tenant-scoped permission below
+// (academicWrite/financeManage/payrollManage/hrView/studentDocuments) even
+// though it can do everything within adminManage/platformManage/securityAudit.
+// The dashboard nav already never links a system_developer to Fees/HR/Academic
+// (see DashboardSidebar.jsx's PLATFORM_NAV_GROUPS); this makes the backend
+// agree, instead of those routes silently 200'ing with an empty result set
+// for a user who queries with tenantId = null.
 export const PERMISSIONS = {
   platformManage: ['system_developer'],
   adminManage: ['system_developer', 'admin'],
   staffManage: ['system_developer', 'admin'],
-  academicWrite: ['system_developer', 'admin', 'teacher'],
-  financeManage: ['system_developer', 'admin', 'accountant'],
-  payrollManage: ['system_developer', 'admin', 'accountant'],
-  hrView: ['system_developer', 'admin', 'accountant'],
+  academicWrite: ['admin', 'teacher'],
+  financeManage: ['admin', 'accountant'],
+  payrollManage: ['admin', 'accountant'],
+  hrView: ['admin', 'accountant'],
   communicationUse: ['system_developer', 'admin', 'teacher', 'guardian', 'student', 'accountant'],
-  studentDocuments: ['system_developer', 'admin', 'teacher', 'accountant'],
+  studentDocuments: ['admin', 'teacher', 'accountant'],
   guardianUse: ['guardian'],
   dataExport: ['system_developer', 'admin'],
   securityAudit: ['system_developer', 'admin'],

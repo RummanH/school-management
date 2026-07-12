@@ -21,16 +21,16 @@ function toEmbedUrl(url) {
 }
 
 export default function GallerySection() {
-  const { t } = useLanguage();
+  const { t, siteSlug } = useLanguage();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    listPublicGallery()
+    listPublicGallery(siteSlug)
       .then((d) => setItems(d.items || []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [siteSlug]);
 
   return (
     <section id="gallery" className="bg-white py-20">

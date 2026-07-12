@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   GraduationCap, BookOpen, Users, LogOut, Globe, Loader2,
   User, Mail, Phone, MapPin, Calendar, Droplets, Baby,
-  BookMarked, ClipboardList, Building2, Award, LayoutDashboard, Printer, FileText, BadgeCheck, IdCard, CreditCard, Send,
+  BookMarked, ClipboardList, Building2, Award, LayoutDashboard, Printer, FileText, BadgeCheck, IdCard, CreditCard, Send, Settings,
 } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 import { getMyProfile } from '../../../services/api/authApi.js';
@@ -222,6 +222,12 @@ export default function PortalPage() {
               </button>
             )}
             <button
+              onClick={() => navigate('/account')}
+              className="hidden items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 sm:flex"
+            >
+              <Settings className="h-3.5 w-3.5" /> Account
+            </button>
+            <button
               onClick={() => navigate('/')}
               className="hidden items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 sm:flex"
             >
@@ -275,4 +281,5 @@ export default function PortalPage() {
     </div>
   );
 }
+
 

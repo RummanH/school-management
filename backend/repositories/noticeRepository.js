@@ -15,13 +15,13 @@ export function mapNotice(row) {
   };
 }
 
-export async function listPublicNotices(client, type, limit) {
+export async function listPublicNotices(client, tenantId, type, limit) {
   const result = await client.query(
     `SELECT * FROM notices
-      WHERE type = $1 AND audience = 'public' AND is_published = true
+      WHERE tenant_id = $1 AND type = $2 AND audience = 'public' AND is_published = true
       ORDER BY published_at DESC
-      LIMIT $2`,
-    [type, limit],
+      LIMIT $3`,
+    [tenantId, type, limit],
   );
   return result.rows.map(mapNotice);
 }

@@ -116,13 +116,12 @@ export class AdmissionService {
     assert(!photoData || photoData.length <= MAX_PHOTO_BASE64_LENGTH, "Photo is too large - please use a smaller image.", 400);
 
     const schoolSlug = (input.schoolSlug || "").trim();
+    assert(schoolSlug, "Missing school reference — please apply from the school's website.", 400);
 
     return this.databaseManager.withTransaction(async (client) => {
-      let tenantId = null;
-      if (schoolSlug) {
-        const tenant = await findTenantBySlug(client, schoolSlug);
-        if (tenant && tenant.status === "active") tenantId = tenant.id;
-      }
+      const tenant = await findTenantBySlug(client, schoolSlug);
+      assert(tenant && tenant.status === "active", "This school is not currently accepting applications.", 400);
+      const tenantId = tenant.id;
 
       let referenceCode = null;
       for (let attempt = 0; attempt < 5 && !referenceCode; attempt++) {

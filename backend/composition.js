@@ -17,6 +17,7 @@ import { FinanceService } from "./services/financeService.js";
 import { CommunicationService } from "./services/communicationService.js";
 import { HrService } from "./services/hrService.js";
 import { DocumentService } from "./services/documentService.js";
+import { ProfileService } from "./services/profileService.js";
 import { createApp } from "./app.js";
 import { createRealtimeGateway } from "./realtime.js";
 
@@ -42,14 +43,16 @@ export async function createBackendApp() {
   const communicationService = new CommunicationService(databaseManager, realtime);
   const hrService = new HrService(databaseManager);
   const documentService = new DocumentService(databaseManager);
+  const profileService = new ProfileService(databaseManager);
 
   const app = createApp({
     env, contactService, authService, tenantService,
     userService, studentService, teacherService, academicService,
     guardianService, noticeService, galleryService, admissionService, feeService, financeService,
-    communicationService, hrService, documentService, databaseManager,
+    communicationService, hrService, documentService, profileService, databaseManager,
   });
   return { app, databaseManager, env, feeService, authService, realtime };
 }
+
 
 

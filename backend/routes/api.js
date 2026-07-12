@@ -18,6 +18,7 @@ import { CommunicationController } from "../controllers/communicationController.
 import { HrController } from "../controllers/hrController.js";
 import { DocumentController } from "../controllers/documentController.js";
 import { SecurityController } from "../controllers/securityController.js";
+import { ProfileController } from "../controllers/profileController.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requirePermission } from "../middleware/permissions.js";
 import { rateLimit } from "../middleware/rateLimit.js";
@@ -28,7 +29,7 @@ import { findTeacherByUserId } from "../repositories/teacherRepository.js";
 export function createApiRouter({
   env, contactService, authService, tenantService,
   userService, studentService, teacherService, academicService,
-  guardianService, noticeService, galleryService, admissionService, feeService, financeService, communicationService, hrService, documentService, databaseManager,
+  guardianService, noticeService, galleryService, admissionService, feeService, financeService, communicationService, hrService, documentService, profileService, databaseManager,
 }) {
   const router = Router();
 
@@ -51,6 +52,7 @@ export function createApiRouter({
   const hrController = new HrController(hrService);
   const documentController = new DocumentController(documentService);
   const securityController = new SecurityController(databaseManager);
+  const profileController = new ProfileController(profileService);
 
   const auth          = requireAuth(authService, env);
   const platformOnly  = [auth, requirePermission("platformManage")];
@@ -116,6 +118,10 @@ export function createApiRouter({
   router.delete("/teachers/:userId", ...adminOnly, teacherController.remove);
 
   // Logged-in user's own profile (student / teacher)
+  router.get("/account/profile", auth, profileController.getProfile);
+  router.put("/account/profile", auth, profileController.updateProfile);
+  router.post("/account/change-password", auth, profileController.changePassword);
+
   router.get("/me/profile", auth, async (req, res, next) => {
     try {
       const { role, id: userId } = req.currentUser;
@@ -298,5 +304,6 @@ export function createApiRouter({
 
   return router;
 }
+
 
 

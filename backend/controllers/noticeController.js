@@ -5,7 +5,7 @@ export class NoticeController {
 
   listPublic = async (req, res, next) => {
     try {
-      res.json({ notices: await this.noticeService.listPublic(req.query.type) });
+      res.json({ notices: await this.noticeService.listPublic(req.query.type, req.query.school) });
     } catch (err) { next(err); }
   };
 

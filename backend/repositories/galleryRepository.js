@@ -11,9 +11,10 @@ export function mapGalleryItem(row) {
   };
 }
 
-export async function listPublicGalleryItems(client) {
+export async function listPublicGalleryItems(client, tenantId) {
   const result = await client.query(
-    `SELECT * FROM gallery_items ORDER BY sort_order ASC, created_at ASC`,
+    `SELECT * FROM gallery_items WHERE tenant_id = $1 ORDER BY sort_order ASC, created_at ASC`,
+    [tenantId],
   );
   return result.rows.map(mapGalleryItem);
 }

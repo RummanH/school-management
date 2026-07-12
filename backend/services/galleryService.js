@@ -11,6 +11,7 @@ import {
   updateGalleryItem,
   deleteGalleryItem,
 } from "../repositories/galleryRepository.js";
+import { findTenantBySlug } from "../repositories/tenantRepository.js";
 
 export const GALLERY_TYPES = ["photo", "video"];
 const DATA_URL_PATTERN = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/;
@@ -57,8 +58,16 @@ export class GalleryService {
     this.databaseManager = databaseManager;
   }
 
-  async listPublic() {
-    return this.databaseManager.withClient((client) => listPublicGalleryItems(client));
+  // Same reasoning as noticeService.listPublic: no resolvable tenant means
+  // an empty gallery, not another school's photos.
+  async listPublic(schoolSlug) {
+    const slug = (schoolSlug || "").trim();
+    if (!slug) return [];
+    return this.databaseManager.withClient(async (client) => {
+      const tenant = await findTenantBySlug(client, slug);
+      if (!tenant || tenant.status !== "active") return [];
+      return listPublicGalleryItems(client, tenant.id);
+    });
   }
 
   async list(actor) {

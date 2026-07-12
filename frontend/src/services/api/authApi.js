@@ -19,6 +19,18 @@ export async function getMyProfile() {
   return apiRequest('/me/profile');
 }
 
+export async function getAccountProfile() {
+  return apiRequest('/account/profile');
+}
+
+export async function updateAccountProfile(data) {
+  return apiRequest('/account/profile', { method: 'PUT', body: data });
+}
+
+export async function changeMyPassword(data) {
+  return apiRequest('/account/change-password', { method: 'POST', body: data });
+}
+
 export async function requestPasswordReset(data) {
   return apiRequest('/auth/password-reset/request', { method: 'POST', body: data });
 }

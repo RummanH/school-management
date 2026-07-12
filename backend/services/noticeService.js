@@ -9,6 +9,7 @@ import {
   updateNotice,
   deleteNotice,
 } from "../repositories/noticeRepository.js";
+import { findTenantBySlug } from "../repositories/tenantRepository.js";
 
 export const NOTICE_TYPES = ["notice", "news"];
 export const NOTICE_AUDIENCES = ["public", "student", "teacher", "guardian", "all_portal"];
@@ -18,9 +19,19 @@ export class NoticeService {
     this.databaseManager = databaseManager;
   }
 
-  async listPublic(type) {
+  // schoolSlug identifies which tenant's public site is asking — without it
+  // (or if it doesn't resolve to an active tenant) this returns an empty
+  // list rather than falling back to any tenant's content, since guessing
+  // wrong here means one school's notices leaking onto another's site.
+  async listPublic(type, schoolSlug) {
     const cleanType = NOTICE_TYPES.includes(type) ? type : "notice";
-    return this.databaseManager.withClient((client) => listPublicNotices(client, cleanType, 10));
+    const slug = (schoolSlug || "").trim();
+    if (!slug) return [];
+    return this.databaseManager.withClient(async (client) => {
+      const tenant = await findTenantBySlug(client, slug);
+      if (!tenant || tenant.status !== "active") return [];
+      return listPublicNotices(client, tenant.id, cleanType, 10);
+    });
   }
 
   async listFeedForUser(actor) {

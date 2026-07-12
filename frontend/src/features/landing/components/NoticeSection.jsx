@@ -12,20 +12,20 @@ function formatDate(value, language) {
 }
 
 export default function NoticeSection() {
-  const { t, language } = useLanguage();
+  const { t, language, siteSlug } = useLanguage();
   const [notices, setNotices] = useState([]);
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([listPublicNotices('notice'), listPublicNotices('news')])
+    Promise.all([listPublicNotices('notice', siteSlug), listPublicNotices('news', siteSlug)])
       .then(([n, w]) => {
         setNotices(n.notices || []);
         setNews(w.notices || []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [siteSlug]);
 
   return (
     <section id="notice" className="bg-slate-50 py-20">
