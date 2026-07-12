@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap");
+﻿@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -404,11 +404,16 @@ body.landing-page-active {
   overflow-y: auto !important;
   background: #f8fbff;
   scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
 }
 
+body.landing-page-active section[id] {
+  scroll-margin-top: 5.5rem;
+}
 body.landing-page-active #root {
   height: auto !important;
   min-height: 100vh !important;
   overflow: visible !important;
 }
+
 

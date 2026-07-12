@@ -35,7 +35,7 @@ export default function LandingHeader() {
             <a
               key={key}
               href={NAV_HREFS[key]}
-              className="rounded-full px-3 py-1.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+              className="whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
             >
               {t(`nav.${key}`)}
             </a>
@@ -82,7 +82,7 @@ export default function LandingHeader() {
               key={key}
               href={NAV_HREFS[key]}
               onClick={() => setMenuOpen(false)}
-              className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+              className="block whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
             >
               {t(`nav.${key}`)}
             </a>
