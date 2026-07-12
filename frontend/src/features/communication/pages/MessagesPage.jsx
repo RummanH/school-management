@@ -20,6 +20,7 @@ import { useAuth } from '../../../app/App.jsx';
 import { createThread, getThread, listRecipients, listThreads, replyToThread } from '../../../services/api/communicationApi.js';
 import { getMyWards } from '../../../services/api/guardianApi.js';
 import { listStudents } from '../../../services/api/studentApi.js';
+import Avatar from '../../../components/Avatar.jsx';
 
 // Kept in sync with backend/services/communicationService.js's ATTACHMENT_MIME_EXTENSIONS.
 const ALLOWED_ATTACHMENT_TYPES = new Set([
@@ -128,30 +129,18 @@ function shortTimeText(value) {
   });
 }
 
-function initials(name) {
-  if (!name) return 'C';
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() || '')
-    .join('') || 'C';
-}
-
+// Sourced from the full participants list (not the legacy participant_one/
+// two columns) so it carries photoUrl too, and works the same regardless of
+// whether the thread predates the group-chat/participants-table migration.
 function otherParticipant(thread, currentUser) {
-  if (thread.participantOneUserId && thread.participantOneUserId !== currentUser?.id) {
-    return { name: thread.participantOneName, role: thread.participantOneRole };
-  }
-  if (thread.participantTwoUserId && thread.participantTwoUserId !== currentUser?.id) {
-    return { name: thread.participantTwoName, role: thread.participantTwoRole };
-  }
-  return null;
+  if (!thread || thread.isGroup) return null;
+  return (thread.participants || []).find((p) => p.userId !== currentUser?.id) || null;
 }
 
 // Only meaningful for 1:1 threads — a group has no single "other person" to
 // show a live dot for, so presence there is summarized as a count instead.
 function otherParticipantId(thread, currentUser) {
-  if (thread.isGroup) return null;
+  if (!thread || thread.isGroup) return null;
   if (thread.participantOneUserId && thread.participantOneUserId !== currentUser?.id) return thread.participantOneUserId;
   if (thread.participantTwoUserId && thread.participantTwoUserId !== currentUser?.id) return thread.participantTwoUserId;
   return null;
@@ -338,9 +327,9 @@ function ComposeModal({ currentUser, onlineUserIds, onClose, onCreated }) {
                               onChange={() => toggleRecipient(r.id)}
                               className="h-4 w-4 shrink-0 rounded border-slate-300 text-[var(--brand)] focus:ring-[var(--brand)]"
                             />
-                            <span className="relative flex h-2 w-2 shrink-0">
-                              {onlineUserIds?.has(r.id) && <span className="h-2 w-2 rounded-full bg-emerald-500" />}
-                            </span>
+                            <Avatar name={r.name} photoUrl={r.photoUrl} size="h-7 w-7" textSize="text-[10px]" tone="bg-slate-200 text-slate-600">
+                              <OnlineDot show={onlineUserIds?.has(r.id)} />
+                            </Avatar>
                             <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-700">{r.name}</span>
                             <span className="shrink-0 text-xs text-slate-400">{r.email}</span>
                           </label>
@@ -426,6 +415,7 @@ function ComposeModal({ currentUser, onlineUserIds, onClose, onCreated }) {
 
 function ThreadListItem({ thread, active, currentUser, online, onSelect }) {
   const name = threadDisplayName(thread, currentUser);
+  const hasUnread = Number(thread.unreadCount || 0) > 0;
 
   return (
     <button
@@ -437,16 +427,30 @@ function ThreadListItem({ thread, active, currentUser, online, onSelect }) {
       }`}
     >
       <div className="flex items-start gap-3">
-        <div className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-black ${active ? 'bg-[var(--brand)] text-white' : 'bg-slate-900 text-white'}`}>
-          {thread.isGroup ? <Users className="h-5 w-5" /> : initials(name)}
+        <Avatar
+          name={name}
+          photoUrl={otherParticipant(thread, currentUser)?.photoUrl}
+          icon={thread.isGroup ? Users : undefined}
+          size="h-12 w-12"
+          textSize="text-sm"
+          rounded="rounded-2xl"
+          tone={active ? 'bg-[var(--brand)] text-white' : 'bg-slate-900 text-white'}
+        >
           <OnlineDot show={online} />
-        </div>
+        </Avatar>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <p className="min-w-0 truncate text-sm font-black tracking-tight text-slate-950">{name}</p>
-            <p className="shrink-0 text-[11px] font-semibold text-slate-400">{timeText(thread.lastMessageAt || thread.updatedAt)}</p>
+            <p className={`shrink-0 text-[11px] ${hasUnread ? 'font-black text-slate-700' : 'font-semibold text-slate-400'}`}>{timeText(thread.lastMessageAt || thread.updatedAt)}</p>
           </div>
-          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-600">{lastMessagePreview(thread)}</p>
+          <div className="mt-2 flex items-center gap-2">
+            <p className={`min-w-0 flex-1 line-clamp-2 text-sm leading-relaxed ${hasUnread ? 'font-bold text-slate-900' : 'text-slate-600'}`}>{lastMessagePreview(thread)}</p>
+            {hasUnread && (
+              <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] px-1.5 text-[10px] font-black text-white">
+                {thread.unreadCount}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </button>
@@ -712,10 +716,17 @@ export default function MessagesPage() {
                     <button onClick={() => setActiveId(null)} className="icon-btn lg:hidden">
                       <ArrowLeft className="h-4 w-4" />
                     </button>
-                    <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand)] text-sm font-black text-white">
-                      {isGroupActive ? <Users className="h-5 w-5" /> : initials(activeParticipant)}
+                    <Avatar
+                      name={activeParticipant}
+                      photoUrl={!isGroupActive ? otherParticipant(active, currentUser)?.photoUrl : null}
+                      icon={isGroupActive ? Users : undefined}
+                      size="h-12 w-12"
+                      textSize="text-sm"
+                      rounded="rounded-2xl"
+                      tone="bg-[var(--brand)] text-white"
+                    >
                       <OnlineDot show={activeIsOnline} />
-                    </div>
+                    </Avatar>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="truncate text-base font-black text-slate-900">{activeParticipant}</p>
@@ -744,9 +755,11 @@ export default function MessagesPage() {
                     return (
                       <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                         <div className={`flex max-w-[88%] items-end gap-3 sm:max-w-[74%] ${mine ? 'flex-row-reverse' : 'flex-row'}`}>
-                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xs font-black ${mine ? 'bg-[var(--brand)] text-white' : 'bg-slate-900 text-white'}`}>
-                            {mine ? 'You' : initials(senderName)}
-                          </div>
+                          {mine ? (
+                            <Avatar name={currentUser?.name} photoUrl={currentUser?.photoUrl} size="h-10 w-10" textSize="text-xs" rounded="rounded-2xl" tone="bg-[var(--brand)] text-white" />
+                          ) : (
+                            <Avatar name={senderName} photoUrl={m.senderPhotoUrl} size="h-10 w-10" textSize="text-xs" rounded="rounded-2xl" tone="bg-slate-900 text-white" />
+                          )}
                           <div>
                             {showMeta && (
                               <p className={`mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.16em] ${mine ? 'text-right text-[var(--brand-strong)]/55' : 'text-left text-slate-400'}`}>

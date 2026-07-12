@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 import { getMyProfile } from '../../../services/api/authApi.js';
+import Avatar from '../../../components/Avatar.jsx';
 import { getMyWards, getWardResults, getWardAttendance } from '../../../services/api/guardianApi.js';
 import { Card, InfoRow } from '../components/Card.jsx';
 import ResultsTable from '../components/ResultsTable.jsx';
@@ -246,9 +247,7 @@ export default function PortalPage() {
       <main className="mx-auto max-w-4xl px-4 py-8">
         {/* Profile hero */}
         <div className={`mb-6 flex items-center gap-5 rounded-2xl p-6 text-white ${config.color}`}>
-          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/20 text-2xl font-black">
-            {currentUser?.name?.charAt(0).toUpperCase()}
-          </span>
+          <Avatar name={currentUser?.name} photoUrl={currentUser?.photoUrl} size="h-16 w-16" textSize="text-2xl" rounded="rounded-2xl" tone="bg-white/20 text-white" />
           <div className="min-w-0">
             <p className="text-xl font-black">{currentUser?.name}</p>
             <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-white/80">

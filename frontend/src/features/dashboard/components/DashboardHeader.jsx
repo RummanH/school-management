@@ -1,12 +1,9 @@
 import { Menu } from 'lucide-react';
 import { useAuth } from '../../../app/App.jsx';
+import Avatar from '../../../components/Avatar.jsx';
 
 export default function DashboardHeader({ title, onMenuClick }) {
   const { currentUser, currentTenant } = useAuth();
-
-  const initials = currentUser?.name
-    ? currentUser.name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-    : 'A';
 
   const roleLabel = currentUser?.role?.replace(/_/g, ' ') ?? '';
 
@@ -28,9 +25,7 @@ export default function DashboardHeader({ title, onMenuClick }) {
       </div>
 
       <div className="flex items-center gap-2.5">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand)] text-xs font-black text-white">
-          {initials}
-        </span>
+        <Avatar name={currentUser?.name} photoUrl={currentUser?.photoUrl} size="h-8 w-8" textSize="text-xs" tone="bg-[var(--brand)] text-white" />
         <div className="hidden sm:block">
           <p className="text-xs font-bold text-slate-700 leading-none">{currentUser?.name}</p>
           <p className="mt-0.5 text-[10px] text-slate-400 capitalize">{roleLabel}</p>

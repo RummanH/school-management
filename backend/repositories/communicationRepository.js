@@ -32,6 +32,7 @@ export function mapMessage(row) {
     senderUserId: row.sender_user_id,
     senderName: row.sender_name || '',
     senderRole: row.sender_role || '',
+    senderPhotoUrl: row.sender_photo_url || null,
     recipientUserId: row.recipient_user_id || null,
     recipientName: row.recipient_name || '',
     recipientRole: row.recipient_role || '',
@@ -50,7 +51,7 @@ export function mapMessage(row) {
 // aggregated once per thread rather than N+1 queried per row.
 const PARTICIPANTS_LATERAL = `
   LEFT JOIN LATERAL (
-    SELECT jsonb_agg(jsonb_build_object('userId', ctp.user_id, 'name', u.name, 'role', u.role) ORDER BY u.name) AS participants
+    SELECT jsonb_agg(jsonb_build_object('userId', ctp.user_id, 'name', u.name, 'role', u.role, 'photoUrl', u.photo_url) ORDER BY u.name) AS participants
       FROM communication_thread_participants ctp
       JOIN users u ON u.id = ctp.user_id
      WHERE ctp.thread_id = ct.id
@@ -167,6 +168,7 @@ export async function listCommunicationMessages(client, threadId) {
     `SELECT cm.*,
             su.name AS sender_name,
             su.role AS sender_role,
+            su.photo_url AS sender_photo_url,
             ru.name AS recipient_name,
             ru.role AS recipient_role
        FROM communication_messages cm
@@ -209,7 +211,7 @@ export async function markThreadMessagesRead(client, threadId, userId) {
 
 export async function listMessageRecipients(client, tenantId, actorId, role = null) {
   const result = await client.query(
-    `SELECT id, name, email, role
+    `SELECT id, name, email, role, photo_url
        FROM users
       WHERE tenant_id = $1
         AND status = 'active'
@@ -218,5 +220,5 @@ export async function listMessageRecipients(client, tenantId, actorId, role = nu
       ORDER BY role ASC, name ASC`,
     [tenantId, actorId, role],
   );
-  return result.rows.map((r) => ({ id: r.id, name: r.name, email: r.email, role: r.role }));
+  return result.rows.map((r) => ({ id: r.id, name: r.name, email: r.email, role: r.role, photoUrl: r.photo_url || null }));
 }

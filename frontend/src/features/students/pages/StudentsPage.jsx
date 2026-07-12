@@ -5,6 +5,7 @@ import { listClasses } from '../../../services/api/academicApi.js';
 import { listUsers } from '../../../services/api/userApi.js';
 import { listGuardiansForStudent, linkWard, unlinkWard } from '../../../services/api/guardianApi.js';
 import { listAdmissions } from '../../../services/api/admissionApi.js';
+import Avatar from '../../../components/Avatar.jsx';
 
 const GENDERS      = ['Male', 'Female', 'Other'];
 const BLOOD_GROUPS = ['A+', 'A−', 'B+', 'B−', 'O+', 'O−', 'AB+', 'AB−'];
@@ -428,9 +429,7 @@ export default function StudentsPage() {
                 <tr key={s.userId} className="transition hover:bg-slate-50/60">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-purple-100 text-xs font-black text-purple-700">
-                        {(s.name?.charAt(0) || '?').toUpperCase()}
-                      </span>
+                      <Avatar name={s.name} photoUrl={s.photoUrl} size="h-9 w-9" textSize="text-xs" tone="bg-purple-100 text-purple-700" />
                       <div>
                         <p className="font-bold text-slate-800">{s.name}</p>
                         <p className="text-xs text-slate-400">{s.email}</p>

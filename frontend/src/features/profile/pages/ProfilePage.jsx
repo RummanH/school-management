@@ -15,6 +15,9 @@ import {
 } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 import { changeMyPassword, getAccountProfile, updateAccountProfile } from '../../../services/api/authApi.js';
+import DashboardSidebar from '../../dashboard/components/DashboardSidebar.jsx';
+import DashboardHeader from '../../dashboard/components/DashboardHeader.jsx';
+import StudentSidebar from '../../portal/components/StudentSidebar.jsx';
 
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -34,8 +37,11 @@ const ROLE_LABELS = {
   guardian: 'Guardian',
 };
 
+const DASHBOARD_ROLES = ['system_developer', 'admin', 'accountant', 'teacher'];
+
 export default function ProfilePage() {
-  const { currentUser, currentTenant, refreshAuth } = useAuth();
+  const { currentUser, currentTenant, refreshAuth, logout } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
@@ -158,7 +164,14 @@ export default function ProfilePage() {
       const data = await updateAccountProfile(payload);
       const profile = data.profile || {};
       setProfileType(data.type || 'user');
-      setForm((prev) => ({ ...prev, photoUrl: profile.photoUrl || '', name: profile.name || prev.name, email: profile.email || prev.email, phone: profile.phone || '', address: profile.address || '' }));
+      setForm((prev) => ({
+        ...prev,
+        photoUrl: profile.photoUrl || '',
+        name: profile.name || prev.name,
+        email: profile.email || prev.email,
+        phone: profile.phone || '',
+        address: profile.address || '',
+      }));
       setPhotoData('');
       setRemovePhoto(false);
       await refreshAuth().catch(() => {});
@@ -194,90 +207,110 @@ export default function ProfilePage() {
   }
 
   const roleLabel = ROLE_LABELS[currentUser?.role] || 'Account';
-  const backPath = ['student', 'guardian'].includes(currentUser?.role) ? '/portal' : '/dashboard';
-  const photoPreview = removePhoto ? '' : (photoData || form.photoUrl || '');
+  const photoPreview = removePhoto ? '' : photoData || form.photoUrl || '';
+  const backPath = currentUser?.role === 'guardian' ? '/portal' : DASHBOARD_ROLES.includes(currentUser?.role) ? '/dashboard' : '/portal';
+  const useDashboardShell = DASHBOARD_ROLES.includes(currentUser?.role);
+  const useStudentShell = currentUser?.role === 'student';
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--brand)]" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <button onClick={() => navigate(backPath)} className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-700">
-              <ArrowLeft className="h-4 w-4" /> Back
-            </button>
-            <h1 className="text-2xl font-black text-slate-900">My Account</h1>
-            <p className="mt-1 text-sm text-slate-500">Update your profile, upload a photo, and change your password.</p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-right shadow-sm">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Role</p>
-            <p className="mt-1 text-sm font-bold text-slate-800">{roleLabel}</p>
-            {currentTenant?.name && <p className="mt-1 text-xs text-slate-400">{currentTenant.name}</p>}
-          </div>
+  const page = loading ? (
+    <div className="flex h-64 items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-[var(--brand)]" />
+    </div>
+  ) : (
+    <div className="mx-auto max-w-6xl space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <button
+            onClick={() => navigate(backPath)}
+            className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-700"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back
+          </button>
+          <h1 className="text-2xl font-black text-slate-900">Account Settings</h1>
+          <p className="mt-1 text-sm text-slate-500">Update your profile, photo, and password.</p>
         </div>
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-right shadow-sm">
+          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Role</p>
+          <p className="mt-1 text-sm font-bold text-slate-800">{roleLabel}</p>
+          {currentTenant?.name && <p className="mt-1 text-xs text-slate-400">{currentTenant.name}</p>}
+        </div>
+      </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <form onSubmit={saveProfile} className="panel p-6">
-            <div className="mb-6 flex flex-wrap items-center gap-5">
-              <div className="relative">
-                {photoPreview ? (
-                  <img src={photoPreview} alt="Profile" className="h-24 w-24 rounded-3xl object-cover shadow-sm" />
-                ) : (
-                  <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-[var(--brand-soft)] text-[var(--brand)] shadow-sm">
-                    <User className="h-9 w-9" />
-                  </div>
-                )}
-                <label className="absolute -bottom-2 -right-2 flex cursor-pointer items-center justify-center rounded-full bg-[var(--brand)] p-2 text-white shadow-lg hover:opacity-90">
-                  <Camera className="h-4 w-4" />
-                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
-                </label>
-              </div>
-              <div className="flex-1">
-                <p className="text-lg font-black text-slate-900">{form.name || currentUser?.name}</p>
-                <p className="mt-1 text-sm text-slate-500">{form.email || currentUser?.email}</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <label className="btn-secondary cursor-pointer">
-                    <Upload className="h-4 w-4" /> Upload photo
-                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
-                  </label>
-                  {(form.photoUrl || photoData) && (
-                    <button type="button" onClick={() => { setPhotoData(''); setRemovePhoto(true); }} className="btn-ghost">
-                      <Trash2 className="h-4 w-4" /> Remove photo
-                    </button>
-                  )}
+      <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
+        <form onSubmit={saveProfile} className="panel p-6">
+          <div className="mb-6 flex flex-wrap items-center gap-5 border-b border-slate-100 pb-6">
+            <div className="relative">
+              {photoPreview ? (
+                <img src={photoPreview} alt="Profile" className="h-24 w-24 rounded-3xl object-cover shadow-sm" />
+              ) : (
+                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-[var(--brand-soft)] text-[var(--brand)] shadow-sm">
+                  <User className="h-9 w-9" />
                 </div>
-              </div>
+              )}
+              <label className="absolute -bottom-2 -right-2 flex cursor-pointer items-center justify-center rounded-full bg-[var(--brand)] p-2 text-white shadow-lg hover:opacity-90">
+                <Camera className="h-4 w-4" />
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+              </label>
             </div>
 
-            {error && <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
-            {success && <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{success}</div>}
+            <div className="flex-1">
+              <p className="text-lg font-black text-slate-900">{form.name || currentUser?.name}</p>
+              <p className="mt-1 text-sm text-slate-500">{form.email || currentUser?.email}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <label className="btn-secondary cursor-pointer">
+                  <Upload className="h-4 w-4" /> Upload photo
+                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                </label>
+                {(form.photoUrl || photoData) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPhotoData('');
+                      setRemovePhoto(true);
+                      setError('');
+                      setSuccess('');
+                    }}
+                    className="btn-ghost"
+                  >
+                    <Trash2 className="h-4 w-4" /> Remove photo
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Full Name" icon={User} value={form.name} onChange={(v) => setField('name', v)} required />
-              <Field label="Email" icon={Mail} type="email" value={form.email} onChange={(v) => setField('email', v)} required />
-              <Field label="Phone" icon={Phone} value={form.phone} onChange={(v) => setField('phone', v)} />
-              <Field label="Address" icon={MapPin} value={form.address} onChange={(v) => setField('address', v)} />
+          {error && <Feedback tone="error">{error}</Feedback>}
+          {success && <Feedback tone="success">{success}</Feedback>}
 
-              {profileType === 'student' && (
-                <>
+          <div className="mt-6 space-y-6">
+            <section>
+              <h2 className="text-base font-black text-slate-900">Basic Information</h2>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <Field label="Full Name" icon={User} value={form.name} onChange={(v) => setField('name', v)} required />
+                <Field label="Email" icon={Mail} type="email" value={form.email} onChange={(v) => setField('email', v)} required />
+                <Field label="Phone" icon={Phone} value={form.phone} onChange={(v) => setField('phone', v)} />
+                <Field label="Address" icon={MapPin} value={form.address} onChange={(v) => setField('address', v)} />
+              </div>
+            </section>
+
+            {profileType === 'student' && (
+              <section>
+                <h2 className="text-base font-black text-slate-900">Student Information</h2>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <Field label="Date of Birth" type="date" value={form.dateOfBirth} onChange={(v) => setField('dateOfBirth', v)} />
                   <Field label="Gender" value={form.gender} onChange={(v) => setField('gender', v)} />
                   <Field label="Blood Group" value={form.bloodGroup} onChange={(v) => setField('bloodGroup', v)} />
                   <Field label="Guardian Name" value={form.guardianName} onChange={(v) => setField('guardianName', v)} />
                   <Field label="Guardian Phone" value={form.guardianPhone} onChange={(v) => setField('guardianPhone', v)} />
                   <Field label="Guardian Relation" value={form.guardianRelation} onChange={(v) => setField('guardianRelation', v)} />
-                </>
-              )}
+                </div>
+              </section>
+            )}
 
-              {profileType === 'teacher' && (
-                <>
+            {profileType === 'teacher' && (
+              <section>
+                <h2 className="text-base font-black text-slate-900">Teacher Information</h2>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <Field label="Date of Birth" type="date" value={form.dateOfBirth} onChange={(v) => setField('dateOfBirth', v)} />
                   <Field label="Gender" value={form.gender} onChange={(v) => setField('gender', v)} />
                   <Field label="Blood Group" value={form.bloodGroup} onChange={(v) => setField('bloodGroup', v)} />
@@ -285,71 +318,150 @@ export default function ProfilePage() {
                   <Field label="Department" value={form.department} onChange={(v) => setField('department', v)} />
                   <Field label="Subjects" value={form.subjects} onChange={(v) => setField('subjects', v)} />
                   <Field label="Qualification" value={form.qualification} onChange={(v) => setField('qualification', v)} />
-                </>
-              )}
-            </div>
+                </div>
+              </section>
+            )}
+          </div>
 
-            {(profileType === 'student' || profileType === 'teacher') && (
-              <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+          <div className="mt-6 flex justify-end">
+            <button type="submit" disabled={saving} className="btn-primary disabled:opacity-60">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+
+        <div className="space-y-6">
+          {(profileType === 'student' || profileType === 'teacher') && (
+            <div className="panel p-6">
+              <h2 className="text-base font-black text-slate-900">Reference Information</h2>
+              <div className="mt-4 space-y-3 text-sm text-slate-600">
                 {profileType === 'student' ? (
-                  <p>Academic info: Student ID {form.studentId || '-'} | Class {form.className || '-'} | Section {form.section || '-'} | Roll {form.rollNumber || '-'}</p>
+                  <>
+                    <SummaryRow label="Student ID" value={form.studentId || '-'} />
+                    <SummaryRow label="Class" value={form.className || '-'} />
+                    <SummaryRow label="Section" value={form.section || '-'} />
+                    <SummaryRow label="Roll Number" value={form.rollNumber || '-'} />
+                  </>
                 ) : (
-                  <p>Staff info: Employee ID {form.employeeId || '-'} | Role-specific core records remain controlled by school administration.</p>
+                  <>
+                    <SummaryRow label="Employee ID" value={form.employeeId || '-'} />
+                    <SummaryRow label="Department" value={form.department || '-'} />
+                    <SummaryRow label="Designation" value={form.designation || '-'} />
+                    <SummaryRow label="Subjects" value={form.subjects || '-'} />
+                  </>
                 )}
               </div>
-            )}
+            </div>
+          )}
+
+          <form onSubmit={changePassword} className="panel p-6">
+            <div className="mb-4 flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                <KeyRound className="h-5 w-5" />
+              </span>
+              <div>
+                <h2 className="text-lg font-black text-slate-900">Change Password</h2>
+                <p className="text-sm text-slate-500">Update your login password.</p>
+              </div>
+            </div>
+
+            {passwordError && <Feedback tone="error">{passwordError}</Feedback>}
+            {passwordSuccess && <Feedback tone="success">{passwordSuccess}</Feedback>}
+
+            <div className="mt-4 space-y-4">
+              <Field label="Current Password" type="password" value={passwordForm.currentPassword} onChange={(v) => setPasswordForm((prev) => ({ ...prev, currentPassword: v }))} required />
+              <Field label="New Password" type="password" value={passwordForm.newPassword} onChange={(v) => setPasswordForm((prev) => ({ ...prev, newPassword: v }))} required />
+              <Field label="Confirm New Password" type="password" value={passwordForm.confirmPassword} onChange={(v) => setPasswordForm((prev) => ({ ...prev, confirmPassword: v }))} required />
+            </div>
+
+            <p className="mt-4 text-xs text-slate-500">Password must be at least 8 characters and include one uppercase letter and one number.</p>
 
             <div className="mt-6 flex justify-end">
-              <button type="submit" disabled={saving} className="btn-primary disabled:opacity-60">
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                {saving ? 'Saving...' : 'Save Changes'}
+              <button type="submit" disabled={passwordSaving} className="btn-primary disabled:opacity-60">
+                {passwordSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                {passwordSaving ? 'Updating...' : 'Update Password'}
               </button>
             </div>
           </form>
 
-          <div className="space-y-6">
-            <form onSubmit={changePassword} className="panel p-6">
-              <div className="mb-4 flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
-                  <KeyRound className="h-5 w-5" />
-                </span>
-                <div>
-                  <h2 className="text-lg font-black text-slate-900">Change Password</h2>
-                  <p className="text-sm text-slate-500">Use your current password to set a new one.</p>
-                </div>
-              </div>
-
-              {passwordError && <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{passwordError}</div>}
-              {passwordSuccess && <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{passwordSuccess}</div>}
-
-              <div className="space-y-4">
-                <Field label="Current Password" type="password" value={passwordForm.currentPassword} onChange={(v) => setPasswordForm((prev) => ({ ...prev, currentPassword: v }))} required />
-                <Field label="New Password" type="password" value={passwordForm.newPassword} onChange={(v) => setPasswordForm((prev) => ({ ...prev, newPassword: v }))} required />
-                <Field label="Confirm New Password" type="password" value={passwordForm.confirmPassword} onChange={(v) => setPasswordForm((prev) => ({ ...prev, confirmPassword: v }))} required />
-              </div>
-
-              <p className="mt-4 text-xs text-slate-500">Password must be at least 8 characters and include one uppercase letter and one number.</p>
-
-              <div className="mt-6 flex justify-end">
-                <button type="submit" disabled={passwordSaving} className="btn-primary disabled:opacity-60">
-                  {passwordSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                  {passwordSaving ? 'Updating...' : 'Update Password'}
-                </button>
-              </div>
-            </form>
-
-            <div className="panel p-6">
-              <h2 className="text-lg font-black text-slate-900">Account Summary</h2>
-              <div className="mt-4 space-y-3 text-sm text-slate-600">
-                <SummaryRow label="Role" value={roleLabel} />
-                <SummaryRow label="Organization" value={currentTenant?.name || 'Platform'} />
-                <SummaryRow label="Login Email" value={form.email || currentUser?.email || '-'} />
-                <SummaryRow label="Contact Phone" value={form.phone || '-'} />
-              </div>
+          <div className="panel p-6">
+            <h2 className="text-base font-black text-slate-900">Account Summary</h2>
+            <div className="mt-4 space-y-3 text-sm text-slate-600">
+              <SummaryRow label="Role" value={roleLabel} />
+              <SummaryRow label="Organization" value={currentTenant?.name || 'Platform'} />
+              <SummaryRow label="Login Email" value={form.email || currentUser?.email || '-'} />
+              <SummaryRow label="Contact Phone" value={form.phone || '-'} />
             </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+
+  if (useDashboardShell) {
+    return (
+      <div className="flex h-screen overflow-hidden bg-slate-50">
+        <div className="hidden lg:flex lg:shrink-0">
+          <DashboardSidebar activePath="/account" />
+        </div>
+
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-50 flex lg:hidden">
+            <div className="fixed inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
+            <div className="relative flex h-full">
+              <DashboardSidebar activePath="/account" onClose={() => setSidebarOpen(false)} />
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <DashboardHeader title="Account Settings" onMenuClick={() => setSidebarOpen(true)} />
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6">{page}</main>
+        </div>
+      </div>
+    );
+  }
+
+  if (useStudentShell) {
+    return (
+      <div className="flex h-screen overflow-hidden bg-slate-50">
+        <div className="hidden lg:flex lg:shrink-0">
+          <StudentSidebar activePath="/account" />
+        </div>
+
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-50 flex lg:hidden">
+            <div className="fixed inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
+            <div className="relative flex h-full">
+              <StudentSidebar activePath="/account" onClose={() => setSidebarOpen(false)} />
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <DashboardHeader title="Account Settings" onMenuClick={() => setSidebarOpen(true)} />
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6">{page}</main>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+          <div>
+            <p className="text-sm font-black text-slate-800">Account Settings</p>
+            <p className="text-[11px] text-slate-400">{currentUser?.name}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => navigate('/portal')} className="btn-ghost">Back to Portal</button>
+            <button onClick={logout} className="btn-ghost">Sign Out</button>
+          </div>
+        </div>
+      </header>
+      <main className="mx-auto max-w-6xl px-4 py-6">{page}</main>
     </div>
   );
 }
@@ -380,3 +492,13 @@ function SummaryRow({ label, value }) {
     </div>
   );
 }
+
+function Feedback({ tone, children }) {
+  const classes = tone === 'success'
+    ? 'border-emerald-100 bg-emerald-50 text-emerald-700'
+    : 'border-red-100 bg-red-50 text-red-700';
+
+  return <div className={`rounded-xl border px-4 py-3 text-sm ${classes}`}>{children}</div>;
+}
+
+

@@ -8,6 +8,7 @@ import { listUsers, createUser, updateUser, deleteUser, resetUserPassword } from
 import { listTenants } from '../../../services/api/tenantApi.js';
 import { listStudents } from '../../../services/api/studentApi.js';
 import { listWardLinks, linkWard, unlinkWard } from '../../../services/api/guardianApi.js';
+import Avatar from '../../../components/Avatar.jsx';
 
 const ROLE_LABELS = {
   admin:      'Admin',
@@ -431,9 +432,7 @@ export default function UsersPage() {
                 <tr key={user.id} className="transition hover:bg-slate-50/60">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand)]/10 text-xs font-black text-[var(--brand)]">
-                        {(user.name?.charAt(0) || '?').toUpperCase()}
-                      </span>
+                      <Avatar name={user.name} photoUrl={user.photoUrl} size="h-8 w-8" textSize="text-xs" tone="bg-[var(--brand)]/10 text-[var(--brand)]" />
                       <span className="font-bold text-slate-800">{user.name}</span>
                       {user.id === actor?.id && (
                         <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">You</span>
