@@ -2,6 +2,7 @@ import LandingHeader from '../components/LandingHeader.jsx';
 import HeroSection from '../components/HeroSection.jsx';
 import DashboardPreviewSection from '../components/DashboardPreviewSection.jsx';
 import PlatformFeaturesSection from '../components/PlatformFeaturesSection.jsx';
+import FacultySection from '../components/FacultySection.jsx';
 import WhyChooseUsSection from '../components/WhyChooseUsSection.jsx';
 import AboutSection from '../components/AboutSection.jsx';
 import CampusGallerySection from '../components/CampusGallerySection.jsx';
@@ -21,6 +22,7 @@ export default function LandingPage() {
       <LandingHeader />
       <HeroSection />
       <PlatformFeaturesSection />
+      <FacultySection />
       <DashboardPreviewSection />
       <WhyChooseUsSection />
       <AboutSection />

@@ -1,18 +1,26 @@
-IMAGE GENERATION PROMPTS — copy one block at a time into ChatGPT (DALL-E 3)
+IMAGE GENERATION PROMPTS (Madina Madrasha) — copy one block at a time into ChatGPT (DALL-E 3)
 =============================================================================
+
+Same structure as IMAGE_GENERATION_PROMPTS.txt, adapted for a madrasah: all
+female staff/students are depicted wearing hijab, and clothing throughout is
+modest and appropriate to an Islamic institution (boys/men in panjabi or a
+simple kurta, some with a topi; girls/women in hijab with a modest tunic or
+abaya-style outfit). Composition, lighting, and framing language is kept
+identical to the original set so the two image sets read as one consistent
+product, not two different platforms.
 
 NOTE: Items 2-13 depict people. ChatGPT's content policy is sometimes
 inconsistent about photorealistic images that include children — if one
 gets declined, come back and I'll rewrite that single prompt in an
 illustrated style instead.
 
-DALL-E 3 only outputs three fixed sizes — pick the closest one to the
-"Dimensions" line under each prompt:
-  Square    = 1024 x 1024 px
-  Landscape = 1792 x 1024 px
-  Portrait  = 1024 x 1792 px
 
-Brand colors (for reference / for the dashboard mockups, 14-17):
+Brand colors (for reference / for the dashboard mockups, 14-17) — unchanged
+placeholder colors, since these are generic SaaS UI screenshots with no
+people in them. Swap these for Madina Madrasha's real brand colors whenever
+you have them (green/gold is a common choice for Islamic institutions, but
+tell me if you want a specific palette and I'll update this file and the
+site's CSS variables together):
   Brand indigo   #4F46E5
   Deep indigo    #312E81
   Accent violet  #6366F1
@@ -32,56 +40,56 @@ Dimensions: 1024 x 1024 px (Square) — the hero <img> actually renders at
   Deep indigo    #312E81
   Accent violet  #6366F1
 -----------------------------------------------------------------------------
-Professional editorial photography style, a modern school building exterior with large windows and a green courtyard, students walking in the foreground so the composition still reads well cropped tightly to a near-square frame, natural warm afternoon light, diverse South Asian students, clean and welcoming architecture, a subtle indigo or violet accent visible somewhere in the scene (e.g. a school sign, banner, or door trim), high resolution, no text or logos in the image.
+Professional editorial photography style, a modern madrasah building exterior with large windows and a green courtyard, students walking in the foreground so the composition still reads well cropped tightly to a near-square frame — girls wearing hijab and modest tunics, boys in simple panjabi or collared shirts — natural warm afternoon light, diverse South Asian students, clean and welcoming architecture, a subtle indigo or violet accent visible somewhere in the scene (e.g. a school sign, banner, or door trim), high resolution, no text or logos in the image.
 
 
 -----------------------------------------------------------------------------
 2. FACULTY PORTRAIT (male, 40s)
 Dimensions: 1024 x 1024 px (Square)
 -----------------------------------------------------------------------------
-Professional editorial headshot photography style, a friendly South Asian male teacher in his 40s wearing a simple collared shirt, standing in front of a whiteboard, warm natural lighting, confident and approachable expression, high resolution, no text or logos.
+Professional editorial headshot photography style, a friendly South Asian male teacher in his 40s wearing a simple panjabi with a topi, standing in front of a whiteboard, warm natural lighting, confident and approachable expression, high resolution, no text or logos.
 
 
 -----------------------------------------------------------------------------
 3. FACULTY PORTRAIT (female, 30s)
 Dimensions: 1024 x 1024 px (Square)
 -----------------------------------------------------------------------------
-Professional editorial headshot photography style, a friendly South Asian female teacher in her 30s wearing a simple kurta, standing in a classroom, warm natural lighting, confident and approachable expression, high resolution, no text or logos.
+Professional editorial headshot photography style, a friendly South Asian female teacher in her 30s wearing a hijab and a modest tunic, standing in a classroom, warm natural lighting, confident and approachable expression, high resolution, no text or logos.
 
 
 -----------------------------------------------------------------------------
 4. FACULTY PORTRAIT (male, 20s-30s)
 Dimensions: 1024 x 1024 px (Square)
 -----------------------------------------------------------------------------
-Professional editorial headshot photography style, a friendly South Asian male teacher in his 20s-30s wearing a casual shirt, standing near bookshelves, warm natural lighting, approachable expression, high resolution, no text or logos.
+Professional editorial headshot photography style, a friendly South Asian male teacher in his 20s-30s wearing a simple collared shirt, standing near bookshelves, warm natural lighting, approachable expression, high resolution, no text or logos.
 
 
 -----------------------------------------------------------------------------
 5. FACULTY PORTRAIT (female, 20s)
 Dimensions: 1024 x 1024 px (Square)
 -----------------------------------------------------------------------------
-Professional editorial headshot photography style, a friendly South Asian female teacher in her 20s wearing a simple professional outfit, standing in a computer lab, warm natural lighting, approachable expression, high resolution, no text or logos.
+Professional editorial headshot photography style, a friendly South Asian female teacher in her 20s wearing a hijab and a simple modest professional outfit, standing in a computer lab, warm natural lighting, approachable expression, high resolution, no text or logos.
 
 
 -----------------------------------------------------------------------------
 6. CAMPUS — Teacher Teaching Class
 Dimensions: 1792 x 1024 px (Landscape)
 -----------------------------------------------------------------------------
-Professional editorial photography style, a South Asian teacher standing at the front of a classroom explaining a lesson, diverse students (boys and girls) seated at desks listening attentively, natural window light, warm and engaging atmosphere, high resolution, no text or logos.
+Professional editorial photography style, a South Asian teacher standing at the front of a classroom explaining a lesson, diverse students seated at desks listening attentively — girls wearing hijab, boys in simple panjabi or collared shirts — natural window light, warm and engaging atmosphere, high resolution, no text or logos.
 
 
 -----------------------------------------------------------------------------
 7. CAMPUS — Active Learning (hand raised)
 Dimensions: 1024 x 1024 px (Square)
 -----------------------------------------------------------------------------
-Professional editorial photography style, a classroom scene with one student raising their hand to answer a question, teacher gesturing toward them at the whiteboard, other diverse students visible around, natural lighting, engaged expressions, high resolution, no text or logos.
+Professional editorial photography style, a classroom scene with one hijab-wearing student raising their hand to answer a question, teacher gesturing toward them at the whiteboard, other diverse students visible around (girls in hijab, boys in simple shirts), natural lighting, engaged expressions, high resolution, no text or logos.
 
 
 -----------------------------------------------------------------------------
 8. CAMPUS — Focused Study Time
 Dimensions: 1024 x 1024 px (Square)
 -----------------------------------------------------------------------------
-Professional editorial photography style, students seated at classroom desks writing in notebooks, focused expressions, natural window light, tidy modern classroom, high resolution, no text or logos.
+Professional editorial photography style, students seated at classroom desks writing in notebooks, girls wearing hijab and boys in simple modest clothing, focused expressions, natural window light, tidy modern classroom, high resolution, no text or logos.
 
 
 -----------------------------------------------------------------------------
@@ -102,21 +110,21 @@ Professional editorial close-up photography style, science laboratory glassware 
 11. CAMPUS — Hands-on Experiment
 Dimensions: 1024 x 1024 px (Square)
 -----------------------------------------------------------------------------
-Professional editorial close-up photography style, a student's hand using a pipette to drop liquid into a multi-well lab tray, shallow depth of field, clean lab setting, high resolution, no text or logos.
+Professional editorial close-up photography style, the hand of a student wearing a hijab using a pipette to drop liquid into a multi-well lab tray, shallow depth of field, clean lab setting, high resolution, no text or logos.
 
 
 -----------------------------------------------------------------------------
 12. CAMPUS — Library
 Dimensions: 1024 x 1024 px (Square)
 -----------------------------------------------------------------------------
-Professional editorial photography style, a school library aisle with tall bookshelves full of books, a student walking through with a backpack, soft ambient lighting, warm and quiet atmosphere, high resolution, no text or logos.
+Professional editorial photography style, a madrasah library aisle with tall bookshelves full of books, a hijab-wearing student walking through with a backpack, soft ambient lighting, warm and quiet atmosphere, high resolution, no text or logos.
 
 
 -----------------------------------------------------------------------------
 13. CAMPUS — Digital Learning
 Dimensions: 1024 x 1024 px (Square)
 -----------------------------------------------------------------------------
-Professional editorial photography style, a student wearing headphones looking closely at a laptop screen doing schoolwork, warm natural lighting, focused expression, high resolution, no text or logos.
+Professional editorial photography style, a student wearing a hijab and headphones looking closely at a laptop screen doing schoolwork, warm natural lighting, focused expression, high resolution, no text or logos.
 
 
 -----------------------------------------------------------------------------
@@ -150,21 +158,26 @@ A clean, modern SaaS web dashboard screenshot mockup showing an analytics dashbo
 =============================================================================
 WHERE EACH ONE GOES (send images back and I'll wire these in for you)
 =============================================================================
- 1            frontend/src/features/landing/constants.js                        HERO_IMAGE
- 2-5          frontend/src/features/landing/components/AboutSection.jsx         FALLBACK_FACULTY[].photoUrl / PHOTO_FALLBACKS[]
- 6-13         frontend/src/features/landing/components/CampusGallerySection.jsx CAMPUS_PHOTOS[].url
- 14-17        frontend/src/features/landing/components/PlatformFeaturesSection.jsx  FEATURE_IMAGES.attendance/.fees/.communication/.reports
+ 1            frontend/public/images/sites/madina-madrasha/hero.jpg
+ 2-5          frontend/public/images/sites/madina-madrasha/faculty/{1-head-teacher, 2-senior-teacher, 3-assistant-teacher, 4-ict-teacher}.jpg
+ 6-13         frontend/public/images/sites/madina-madrasha/campus/{teacher-class, active-learning, study-time, modern-classroom, science-lab, experiments, library, digital-learning}.jpg
+ 14-17        frontend/public/images/sites/madina-madrasha/features/{attendance, fees, communication, reports}.jpg
+
+Same filenames as every other school's folder (see
+frontend/src/features/landing/sites/index.js) — just drop the finished
+images straight into madina-madrasha/'s existing placeholder files, same
+names, no code change needed.
 
 
-A NOTE ON "BEAUTIFUL GIRLS"
+A NOTE ON DEPICTING STUDENTS
 =============================================================================
-Skipped intentionally, same as before. This platform holds real children's
-data (attendance, grades, guardian contacts) for real schools, and these
-images are meant to represent that student body. I've kept every people-
-prompt to standard, appropriate education-photography language — "diverse
-students," "engaged," "focused" — rather than anything framed around
-appearance. Prompts 6-8 already specify "diverse students (boys and
-girls)" so girls are represented normally, alongside boys, the way any
-real classroom photo would show them. If there's a different goal behind
-the request (e.g. showing a more visibly gender-balanced or diverse
-student body), tell me and I'll adjust the wording toward that instead.
+Same principle as the original file: this platform holds real children's
+data for real schools, and these images represent that student body. Every
+people-prompt sticks to standard, appropriate education-photography
+language — "diverse students," "engaged," "focused" — rather than anything
+framed around appearance. Hijab is included as an accurate reflection of a
+madrasah's normal dress code, not a stylistic add-on, the same way "boys and
+girls" was included plainly in the original set. If you want a different
+mix (e.g. some scenes without hijab for younger children, or specific
+madrasah attire like a particular abaya color or uniform), tell me and I'll
+adjust the wording.
