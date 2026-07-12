@@ -1,6 +1,6 @@
 import { GraduationCap } from 'lucide-react';
 import { useLanguage } from '../../../app/App.jsx';
-import { siteImage } from '../constants.js';
+import { resolveLandingAsset, siteImage } from '../constants.js';
 
 const PHOTO_FALLBACK_FILES = [
   'faculty/1-head-teacher.jpg',
@@ -10,7 +10,9 @@ const PHOTO_FALLBACK_FILES = [
 ];
 
 function FacultyCard({ teacher, index, t, siteSlug }) {
-  const photo = teacher.photoUrl || siteImage(siteSlug, PHOTO_FALLBACK_FILES[index % PHOTO_FALLBACK_FILES.length]);
+  const photo = teacher.photoUrl
+    ? resolveLandingAsset(teacher.photoUrl)
+    : siteImage(siteSlug, PHOTO_FALLBACK_FILES[index % PHOTO_FALLBACK_FILES.length]);
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-soft">
       <div className="aspect-square bg-slate-100">

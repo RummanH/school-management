@@ -31,11 +31,38 @@ export const ACCENT_COLORS = [
   { bg: 'bg-purple-50',  text: 'text-purple-600' },
 ];
 
-// Every site folder (frontend/public/images/sites/<slug>/...) uses the same
-// relative filenames as greenfield-academy — swapping schools is just
-// swapping which folder these paths point into, not renaming anything.
+const LANDING_ASSETS = Object.fromEntries(
+  Object.entries(
+    import.meta.glob('../../assets/landing/sites/**/*.{jpg,jpeg,png,webp,avif,svg}', {
+      eager: true,
+      import: 'default',
+    }),
+  ).map(([key, value]) => [
+    key
+      .replace('../../assets/landing/', '')
+      .replace(/\\/g, '/'),
+    value,
+  ]),
+);
+
+function normalizeLandingAssetPath(path) {
+  return String(path || '')
+    .replace(/^\/+/, '')
+    .replace(/^images\//, '')
+    .replace(/^landing\//, '')
+    .replace(/\\/g, '/');
+}
+
+// Every site folder (frontend/src/assets/landing/sites/<slug>/...) uses the
+// same relative filenames as greenfield-academy. Components only ask for the
+// site slug + relative asset path and this resolver returns Vite-managed URLs.
 export function siteImage(siteSlug, relativePath) {
-  return `/images/sites/${siteSlug}/${relativePath}`;
+  return LANDING_ASSETS[`sites/${siteSlug}/${relativePath}`] || '';
+}
+
+export function resolveLandingAsset(path) {
+  const normalizedPath = normalizeLandingAssetPath(path);
+  return LANDING_ASSETS[normalizedPath] || path;
 }
 
 export const WHY_CHOOSE_US = [
