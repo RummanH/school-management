@@ -4,8 +4,8 @@ import { ADMISSION_DOCS } from '../constants.js';
 
 const DATE_KEYS = ['date1', 'date2', 'date3', 'date4'];
 
-export default function AdmissionSection({ siteSlug }) {
-  const { t } = useLanguage();
+export default function AdmissionSection() {
+  const { t, siteSlug } = useLanguage();
 
   return (
     <section id="admission" className="bg-emerald-50 py-20">

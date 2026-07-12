@@ -125,7 +125,7 @@ export default function App() {
   }
 
   return (
-    <LanguageContext.Provider value={{ language, switchLanguage, t }}>
+    <LanguageContext.Provider value={{ language, switchLanguage, t, siteSlug }}>
       <AuthContext.Provider value={{ currentUser, currentTenant, login, logout }}>
         {isDashboard ? <DashboardPage />
           : isDocument  ? <DocumentPage />
@@ -134,7 +134,7 @@ export default function App() {
           : isAdmission ? <AdmissionPage />
           : isLogin     ? <LoginPage />
           : !site       ? <SiteNotFound slug={siteSlug} />
-          : <LandingPage siteSlug={siteSlug} />}
+          : <LandingPage />}
       </AuthContext.Provider>
     </LanguageContext.Provider>
   );

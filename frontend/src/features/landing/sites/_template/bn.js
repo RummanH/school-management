@@ -91,7 +91,7 @@
         designation: "প্রধান শিক্ষক",
         department: "বিজ্ঞান",
         qualification: "এম.এসসি, বি.এড",
-        photoUrl: "/images/faculty/1-head-teacher.jpg",
+        photoUrl: "/images/sites/_template/faculty/1-head-teacher.jpg",
       },
       {
         userId: "public-teacher-2",
@@ -99,7 +99,7 @@
         designation: "সিনিয়র শিক্ষক",
         department: "গণিত",
         qualification: "এম.এসসি, এম.এড",
-        photoUrl: "/images/faculty/2-senior-teacher.jpg",
+        photoUrl: "/images/sites/_template/faculty/2-senior-teacher.jpg",
       },
       {
         userId: "public-teacher-3",
@@ -107,7 +107,7 @@
         designation: "সহকারী শিক্ষক",
         department: "ভাষা",
         qualification: "এম.এ, বি.এড",
-        photoUrl: "/images/faculty/3-assistant-teacher.jpg",
+        photoUrl: "/images/sites/_template/faculty/3-assistant-teacher.jpg",
       },
       {
         userId: "public-teacher-4",
@@ -115,7 +115,7 @@
         designation: "আইসিটি শিক্ষক",
         department: "আইসিটি",
         qualification: "বিএসসি ইন সিএসই",
-        photoUrl: "/images/faculty/4-ict-teacher.jpg",
+        photoUrl: "/images/sites/_template/faculty/4-ict-teacher.jpg",
       },
     ],
     orgEyebrow: "সাংগঠনিক কাঠামো",

@@ -1,17 +1,20 @@
 import { useLanguage } from '../../../app/App.jsx';
+import { siteImage } from '../constants.js';
 
 // The banner photo is landscape (native ~7:4); every grid photo below is
 // square (native 1:1) — each tile's aspect ratio matches its source image's
 // real dimensions exactly so object-cover never has to crop into the shot.
-const BANNER_PHOTO = { key: 'teacherClass', url: '/images/campus/teacher-class.jpg' };
+// Filenames are the same across every site folder — only the site's own
+// photos behind them differ.
+const BANNER_PHOTO = { key: 'teacherClass', file: 'campus/teacher-class.jpg' };
 const CAMPUS_PHOTOS = [
-  { key: 'activeLearning', url: '/images/campus/active-learning.jpg' },
-  { key: 'studyTime', url: '/images/campus/study-time.jpg' },
-  { key: 'modernClassroom', url: '/images/campus/modern-classroom.jpg' },
-  { key: 'scienceLab', url: '/images/campus/science-lab.jpg' },
-  { key: 'experiments', url: '/images/campus/experiments.jpg' },
-  { key: 'library', url: '/images/campus/library.jpg' },
-  { key: 'digitalLearning', url: '/images/campus/digital-learning.jpg' },
+  { key: 'activeLearning', file: 'campus/active-learning.jpg' },
+  { key: 'studyTime', file: 'campus/study-time.jpg' },
+  { key: 'modernClassroom', file: 'campus/modern-classroom.jpg' },
+  { key: 'scienceLab', file: 'campus/science-lab.jpg' },
+  { key: 'experiments', file: 'campus/experiments.jpg' },
+  { key: 'library', file: 'campus/library.jpg' },
+  { key: 'digitalLearning', file: 'campus/digital-learning.jpg' },
 ];
 
 function PhotoTile({ photoKey, url, aspect, textSize, t }) {
@@ -31,7 +34,7 @@ function PhotoTile({ photoKey, url, aspect, textSize, t }) {
 }
 
 export default function CampusGallerySection() {
-  const { t } = useLanguage();
+  const { t, siteSlug } = useLanguage();
 
   return (
     <section id="campus" className="bg-slate-50 py-20">
@@ -43,10 +46,10 @@ export default function CampusGallerySection() {
         </div>
 
         <div className="mt-12">
-          <PhotoTile photoKey={BANNER_PHOTO.key} url={BANNER_PHOTO.url} aspect="aspect-[7/4]" textSize="text-base sm:text-lg" t={t} />
+          <PhotoTile photoKey={BANNER_PHOTO.key} url={siteImage(siteSlug, BANNER_PHOTO.file)} aspect="aspect-[7/4]" textSize="text-base sm:text-lg" t={t} />
           <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {CAMPUS_PHOTOS.map(({ key, url }) => (
-              <PhotoTile key={key} photoKey={key} url={url} aspect="aspect-square" textSize="text-xs sm:text-sm" t={t} />
+            {CAMPUS_PHOTOS.map(({ key, file }) => (
+              <PhotoTile key={key} photoKey={key} url={siteImage(siteSlug, file)} aspect="aspect-square" textSize="text-xs sm:text-sm" t={t} />
             ))}
           </div>
         </div>

@@ -3,12 +3,13 @@
   BriefcaseBusiness, Building2, ShieldCheck, Languages, CheckCircle2, ArrowRight,
 } from 'lucide-react';
 import { useLanguage } from '../../../app/App.jsx';
+import { siteImage } from '../constants.js';
 
-const FEATURE_IMAGES = {
-  attendance: '/images/features/attendance.jpg',
-  fees: '/images/features/fees.jpg',
-  communication: '/images/features/communication.jpg',
-  reports: '/images/features/reports.jpg',
+const FEATURE_IMAGE_FILES = {
+  attendance: 'features/attendance.jpg',
+  fees: 'features/fees.jpg',
+  communication: 'features/communication.jpg',
+  reports: 'features/reports.jpg',
 };
 
 const SPOTLIGHTS = [
@@ -81,7 +82,7 @@ function Spotlight({ tkey, icon, image, reverse, t }) {
 }
 
 export default function PlatformFeaturesSection() {
-  const { t } = useLanguage();
+  const { t, siteSlug } = useLanguage();
 
   return (
     <section id="features" className="bg-white py-24">
@@ -94,7 +95,7 @@ export default function PlatformFeaturesSection() {
 
         <div className="mt-20 space-y-20">
           {SPOTLIGHTS.map(({ key, icon, imageKey, reverse }) => (
-            <Spotlight key={key} tkey={key} icon={icon} image={FEATURE_IMAGES[imageKey]} reverse={reverse} t={t} />
+            <Spotlight key={key} tkey={key} icon={icon} image={siteImage(siteSlug, FEATURE_IMAGE_FILES[imageKey])} reverse={reverse} t={t} />
           ))}
         </div>
 

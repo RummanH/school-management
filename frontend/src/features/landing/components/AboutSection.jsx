@@ -1,16 +1,16 @@
 ﻿import { Award, BookOpenCheck, Building2, Eye, GraduationCap, Landmark, Target, UserRound } from 'lucide-react';
 import { useLanguage } from '../../../app/App.jsx';
-import { ACCENT_COLORS } from '../constants.js';
+import { ACCENT_COLORS, siteImage } from '../constants.js';
 
-const PHOTO_FALLBACKS = [
-  '/images/faculty/1-head-teacher.jpg',
-  '/images/faculty/2-senior-teacher.jpg',
-  '/images/faculty/3-assistant-teacher.jpg',
-  '/images/faculty/4-ict-teacher.jpg',
+const PHOTO_FALLBACK_FILES = [
+  'faculty/1-head-teacher.jpg',
+  'faculty/2-senior-teacher.jpg',
+  'faculty/3-assistant-teacher.jpg',
+  'faculty/4-ict-teacher.jpg',
 ];
 
-function FacultyCard({ teacher, index, t }) {
-  const photo = teacher.photoUrl || PHOTO_FALLBACKS[index % PHOTO_FALLBACKS.length];
+function FacultyCard({ teacher, index, t, siteSlug }) {
+  const photo = teacher.photoUrl || siteImage(siteSlug, PHOTO_FALLBACK_FILES[index % PHOTO_FALLBACK_FILES.length]);
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-soft">
       <div className="aspect-square bg-slate-100">
@@ -44,7 +44,7 @@ function InfoCard({ icon: Icon, title, children, colorIndex = 0 }) {
 }
 
 export default function AboutSection() {
-  const { t } = useLanguage();
+  const { t, siteSlug } = useLanguage();
   const historyItems = t('about.historyItems');
   const faculty = t('about.faculty');
   const leadership = t('about.leadership');
@@ -135,7 +135,7 @@ export default function AboutSection() {
             </div>
           </div>
           <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {faculty.map((teacher, index) => <FacultyCard key={teacher.userId || teacher.name} teacher={teacher} index={index} t={t} />)}
+            {faculty.map((teacher, index) => <FacultyCard key={teacher.userId || teacher.name} teacher={teacher} index={index} t={t} siteSlug={siteSlug} />)}
           </div>
         </div>
 

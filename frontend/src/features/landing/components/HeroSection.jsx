@@ -1,11 +1,12 @@
 ﻿import { ArrowRight, ArrowUpRight, MapPin, Phone, Sparkles } from 'lucide-react';
 import { useLanguage } from '../../../app/App.jsx';
-import { HERO_IMAGE, STATS } from '../constants.js';
+import { siteImage, STATS } from '../constants.js';
 
 const HERO_STAT_KEYS = ['students', 'teachers', 'departments'];
 
 export default function HeroSection() {
-  const { t } = useLanguage();
+  const { t, siteSlug } = useLanguage();
+  const heroImage = siteImage(siteSlug, 'hero.jpg');
 
   return (
     <section id="hero" className="relative overflow-hidden bg-[linear-gradient(180deg,#161233_0%,#201b46_55%,#0f172a_100%)] pt-16 text-white">
@@ -79,7 +80,7 @@ export default function HeroSection() {
               <div className="relative overflow-hidden rounded-[2.2rem] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.06))] p-3 shadow-[0_32px_90px_rgba(5,10,30,0.38)] backdrop-blur-md">
                 <div className="overflow-hidden rounded-[1.75rem] border border-white/10">
                   <img
-                    src={HERO_IMAGE}
+                    src={heroImage}
                     alt={t('school.name')}
                     className="aspect-[4/4.4] w-full object-cover sm:aspect-[4/4.1] lg:aspect-[4/4.45]"
                     loading="lazy"

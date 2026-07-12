@@ -15,7 +15,7 @@ import FaqDemoSection from '../components/FaqDemoSection.jsx';
 import ContactSection from '../components/ContactSection.jsx';
 import LandingFooter from '../components/LandingFooter.jsx';
 
-export default function LandingPage({ siteSlug }) {
+export default function LandingPage() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-white">
       <LandingHeader />
@@ -28,7 +28,7 @@ export default function LandingPage({ siteSlug }) {
       <StatsSection />
       <NoticeSection />
       <AcademicsSection />
-      <AdmissionSection siteSlug={siteSlug} />
+      <AdmissionSection />
       <GallerySection />
       <TestimonialsSection />
       <FaqDemoSection />

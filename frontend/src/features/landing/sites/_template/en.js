@@ -91,7 +91,7 @@
         designation: "Head Teacher",
         department: "Science",
         qualification: "M.Sc, B.Ed",
-        photoUrl: "/images/faculty/1-head-teacher.jpg",
+        photoUrl: "/images/sites/_template/faculty/1-head-teacher.jpg",
       },
       {
         userId: "public-teacher-2",
@@ -99,7 +99,7 @@
         designation: "Senior Teacher",
         department: "Mathematics",
         qualification: "M.Sc, M.Ed",
-        photoUrl: "/images/faculty/2-senior-teacher.jpg",
+        photoUrl: "/images/sites/_template/faculty/2-senior-teacher.jpg",
       },
       {
         userId: "public-teacher-3",
@@ -107,7 +107,7 @@
         designation: "Assistant Teacher",
         department: "Languages",
         qualification: "M.A, B.Ed",
-        photoUrl: "/images/faculty/3-assistant-teacher.jpg",
+        photoUrl: "/images/sites/_template/faculty/3-assistant-teacher.jpg",
       },
       {
         userId: "public-teacher-4",
@@ -115,7 +115,7 @@
         designation: "ICT Teacher",
         department: "ICT",
         qualification: "B.Sc in CSE",
-        photoUrl: "/images/faculty/4-ict-teacher.jpg",
+        photoUrl: "/images/sites/_template/faculty/4-ict-teacher.jpg",
       },
     ],
     orgEyebrow: "Organizational Structure",

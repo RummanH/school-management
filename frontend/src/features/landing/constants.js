@@ -31,7 +31,12 @@ export const ACCENT_COLORS = [
   { bg: 'bg-purple-50',  text: 'text-purple-600' },
 ];
 
-export const HERO_IMAGE = '/images/hero.jpg';
+// Every site folder (frontend/public/images/sites/<slug>/...) uses the same
+// relative filenames as greenfield-academy — swapping schools is just
+// swapping which folder these paths point into, not renaming anything.
+export function siteImage(siteSlug, relativePath) {
+  return `/images/sites/${siteSlug}/${relativePath}`;
+}
 
 export const WHY_CHOOSE_US = [
   { key: 'facultyTitle', descKey: 'facultyDesc', icon: '👩‍🏫' },

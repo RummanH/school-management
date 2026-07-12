@@ -1,4 +1,5 @@
 import * as greenfieldAcademy from './greenfield-academy/index.js';
+import * as madinaMadrasha from './madina-madrasha/index.js';
 
 // Each school/madrasah gets its own folder here (content only — same shared
 // components render every site). The folder name must exactly match that
@@ -12,4 +13,5 @@ export const DEFAULT_SITE_SLUG = 'greenfield-academy';
 
 export const SITES = {
   'greenfield-academy': greenfieldAcademy,
+  'madina-madrasha': madinaMadrasha,
 };

@@ -1,9 +1,9 @@
 ﻿export default {
   school: {
-    name: "গ্রিনফিল্ড একাডেমি",
-    tagline: "মেধার পরিচর্যা, ভবিষ্যতের গঠন",
-    established: "প্রতিষ্ঠিত ১৯৯৮",
-    eiin: "ইআইআইএন: ১২৩৪৫৬",
+    name: "[বাংলায় নাম লিখুন — Madinatunnor Madrasha]", // needs correct Bengali spelling from you
+    tagline: "[স্কুলের ট্যাগলাইন]",
+    established: "প্রতিষ্ঠিত [সাল]",
+    eiin: "ইআইআইএন: [নম্বর]",
   },
   nav: {
     home: "হোম",
@@ -91,7 +91,7 @@
         designation: "প্রধান শিক্ষক",
         department: "বিজ্ঞান",
         qualification: "এম.এসসি, বি.এড",
-        photoUrl: "/images/sites/greenfield-academy/faculty/1-head-teacher.jpg",
+        photoUrl: "/images/sites/madina-madrasha/faculty/1-head-teacher.jpg",
       },
       {
         userId: "public-teacher-2",
@@ -99,7 +99,7 @@
         designation: "সিনিয়র শিক্ষক",
         department: "গণিত",
         qualification: "এম.এসসি, এম.এড",
-        photoUrl: "/images/sites/greenfield-academy/faculty/2-senior-teacher.jpg",
+        photoUrl: "/images/sites/madina-madrasha/faculty/2-senior-teacher.jpg",
       },
       {
         userId: "public-teacher-3",
@@ -107,7 +107,7 @@
         designation: "সহকারী শিক্ষক",
         department: "ভাষা",
         qualification: "এম.এ, বি.এড",
-        photoUrl: "/images/sites/greenfield-academy/faculty/3-assistant-teacher.jpg",
+        photoUrl: "/images/sites/madina-madrasha/faculty/3-assistant-teacher.jpg",
       },
       {
         userId: "public-teacher-4",
@@ -115,7 +115,7 @@
         designation: "আইসিটি শিক্ষক",
         department: "আইসিটি",
         qualification: "বিএসসি ইন সিএসই",
-        photoUrl: "/images/sites/greenfield-academy/faculty/4-ict-teacher.jpg",
+        photoUrl: "/images/sites/madina-madrasha/faculty/4-ict-teacher.jpg",
       },
     ],
     orgEyebrow: "সাংগঠনিক কাঠামো",

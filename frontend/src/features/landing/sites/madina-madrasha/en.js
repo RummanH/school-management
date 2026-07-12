@@ -1,9 +1,9 @@
 ﻿export default {
   school: {
-    name: "Greenfield Academy",
-    tagline: "Nurturing Minds, Shaping Futures",
-    established: "Established 1998",
-    eiin: "EIIN: 123456",
+    name: "Madinatunnor Madrasha",
+    tagline: "[SCHOOL TAGLINE]",
+    established: "Established [YEAR]",
+    eiin: "EIIN: [NUMBER]",
   },
   nav: {
     home: "Home",
@@ -91,7 +91,7 @@
         designation: "Head Teacher",
         department: "Science",
         qualification: "M.Sc, B.Ed",
-        photoUrl: "/images/sites/greenfield-academy/faculty/1-head-teacher.jpg",
+        photoUrl: "/images/sites/madina-madrasha/faculty/1-head-teacher.jpg",
       },
       {
         userId: "public-teacher-2",
@@ -99,7 +99,7 @@
         designation: "Senior Teacher",
         department: "Mathematics",
         qualification: "M.Sc, M.Ed",
-        photoUrl: "/images/sites/greenfield-academy/faculty/2-senior-teacher.jpg",
+        photoUrl: "/images/sites/madina-madrasha/faculty/2-senior-teacher.jpg",
       },
       {
         userId: "public-teacher-3",
@@ -107,7 +107,7 @@
         designation: "Assistant Teacher",
         department: "Languages",
         qualification: "M.A, B.Ed",
-        photoUrl: "/images/sites/greenfield-academy/faculty/3-assistant-teacher.jpg",
+        photoUrl: "/images/sites/madina-madrasha/faculty/3-assistant-teacher.jpg",
       },
       {
         userId: "public-teacher-4",
@@ -115,7 +115,7 @@
         designation: "ICT Teacher",
         department: "ICT",
         qualification: "B.Sc in CSE",
-        photoUrl: "/images/sites/greenfield-academy/faculty/4-ict-teacher.jpg",
+        photoUrl: "/images/sites/madina-madrasha/faculty/4-ict-teacher.jpg",
       },
     ],
     orgEyebrow: "Organizational Structure",
@@ -573,9 +573,9 @@
   contact: {
     title: "Get in Touch",
     subtitle: "We would love to hear from you.",
-    address: "123 Academy Road, Dhaka 1200, Bangladesh",
-    phone: "+880 1700-000000",
-    email: "info@greenfieldacademy.edu.bd",
+    address: "Dhaka, Bangladesh", // on file for this tenant — confirm/replace with the full street address
+    phone: "01678560660",
+    email: "[PUBLIC CONTACT EMAIL — admin@madina.com on file is the login/admin email, may not be the public one]",
     mapTitle: "Our Location",
     form: {
       title: "Send Us a Message",
