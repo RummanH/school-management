@@ -16,6 +16,7 @@ import { FeeService } from "./services/feeService.js";
 import { FinanceService } from "./services/financeService.js";
 import { CommunicationService } from "./services/communicationService.js";
 import { HrService } from "./services/hrService.js";
+import { DocumentService } from "./services/documentService.js";
 import { createApp } from "./app.js";
 
 export async function createBackendApp() {
@@ -37,12 +38,13 @@ export async function createBackendApp() {
   const financeService   = new FinanceService(databaseManager);
   const communicationService = new CommunicationService(databaseManager);
   const hrService = new HrService(databaseManager);
+  const documentService = new DocumentService(databaseManager);
 
   const app = createApp({
     env, contactService, authService, tenantService,
     userService, studentService, teacherService, academicService,
     guardianService, noticeService, galleryService, admissionService, feeService, financeService,
-    communicationService, hrService, databaseManager,
+    communicationService, hrService, documentService, databaseManager,
   });
   return { app, databaseManager, env, feeService };
 }

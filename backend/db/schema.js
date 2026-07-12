@@ -698,6 +698,9 @@ export async function createSchema(pool) {
     ALTER TABLE staff_payroll_records ALTER COLUMN staff_id DROP NOT NULL;
     ALTER TABLE staff_payroll_records ADD COLUMN IF NOT EXISTS teacher_id TEXT REFERENCES teacher_profiles(id) ON DELETE CASCADE;
 
+    -- Lets ID cards / admit cards show a real photo instead of a placeholder box.
+    ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS photo_url TEXT;
+
     -- Messaging used one fixed column per role (guardian/teacher/admin_user_id),
     -- so a thread could only ever hold one participant of each of those three
     -- roles — no same-role pairs, no student/accountant participants at all.

@@ -72,6 +72,7 @@ export class StudentService {
         guardianName: input.guardianName,
         guardianPhone: input.guardianPhone,
         guardianRelation: input.guardianRelation,
+        photoUrl: input.photoUrl,
       });
 
       return { students: await listStudents(client, actor.tenantId), userId };
@@ -120,6 +121,7 @@ export class StudentService {
         guardianName: input.guardianName,
         guardianPhone: input.guardianPhone,
         guardianRelation: input.guardianRelation,
+        photoUrl: input.photoUrl,
       });
 
       return listStudents(client, actor.tenantId);

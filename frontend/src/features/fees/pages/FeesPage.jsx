@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { navigate } from '../../../app/App.jsx';
 import {
   BadgeDollarSign, Plus, Save, Trash2, Pencil, Loader2, ReceiptText, CreditCard, WalletCards,
   AlertTriangle, BookOpen, Tags, UserCog, CalendarDays, Banknote, X, Search, Sparkles, ArrowRight,
-  CheckCircle2, Copy, Gift,
+  CheckCircle2, Copy, Gift, Printer,
 } from 'lucide-react';
 import { listStudents } from '../../../services/api/studentApi.js';
 import { listClasses } from '../../../services/api/academicApi.js';
@@ -355,7 +356,10 @@ function PaymentForm({ invoiceId, onPaid, onCancel }) {
       <div className="mt-3 flex items-center justify-between gap-3"><span className="font-mono text-sm font-black text-slate-800">{receipt.receiptNumber}</span><button type="button" onClick={() => navigator.clipboard?.writeText(receipt.receiptNumber)} className="rounded-lg p-2 text-slate-400 hover:bg-white hover:text-slate-700" title="Copy receipt number"><Copy className="h-4 w-4" /></button></div>
       <div className="mt-4 grid grid-cols-2 gap-3 border-t border-emerald-100 pt-4 text-sm"><div><p className="text-xs text-slate-400">Amount</p><p className="font-black text-emerald-700">{money(receipt.amount)}</p></div><div><p className="text-xs text-slate-400">Method</p><p className="font-bold capitalize text-slate-700">{receipt.method}</p></div><div><p className="text-xs text-slate-400">Date</p><p className="font-bold text-slate-700">{receipt.paymentDate}</p></div><div><p className="text-xs text-slate-400">Reference</p><p className="font-bold text-slate-700">{receipt.referenceNo || '—'}</p></div></div>
     </div>
-    <button type="button" onClick={onCancel} className="btn-primary w-full justify-center">Done</button>
+    <div className="flex gap-2">
+      <button type="button" onClick={() => navigate(`/dashboard/documents?student=${invoice.studentUserId}&type=fee-receipt&payment=${receipt.id}`)} className="btn-secondary w-full justify-center"><Printer className="h-4 w-4" /> Print Receipt</button>
+      <button type="button" onClick={onCancel} className="btn-primary w-full justify-center">Done</button>
+    </div>
   </div>;
   if (invoice.dueAmount <= 0) return <div className="space-y-5"><InvoiceBreakdown invoice={invoice} /><div className="rounded-xl bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-700">This invoice is fully paid.</div><button type="button" onClick={onCancel} className="btn-secondary w-full justify-center">Close</button></div>;
   return <form onSubmit={submit} className="space-y-4">

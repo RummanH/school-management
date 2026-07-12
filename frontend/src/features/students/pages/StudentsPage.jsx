@@ -15,7 +15,7 @@ const EMPTY = {
   classId: '',
   studentId: '', className: '', section: '', rollNumber: '',
   admissionDate: '', dateOfBirth: '', gender: '', bloodGroup: '',
-  phone: '', address: '',
+  phone: '', address: '', photoUrl: '',
   guardianName: '', guardianPhone: '', guardianRelation: '',
 };
 
@@ -88,7 +88,7 @@ function StudentModal({ initial, onClose, onSaved }) {
     section: initial.section || '', rollNumber: initial.rollNumber || '',
     admissionDate: initial.admissionDate || '', dateOfBirth: initial.dateOfBirth || '',
     gender: initial.gender || '', bloodGroup: initial.bloodGroup || '',
-    phone: initial.phone || '', address: initial.address || '',
+    phone: initial.phone || '', address: initial.address || '', photoUrl: initial.photoUrl || '',
     guardianName: initial.guardianName || '', guardianPhone: initial.guardianPhone || '',
     guardianRelation: initial.guardianRelation || '',
   } : { ...EMPTY });
@@ -303,6 +303,10 @@ function StudentModal({ initial, onClose, onSaved }) {
               <div className="sm:col-span-2">
                 <FieldLabel>Address</FieldLabel>
                 <Input value={form.address} onChange={e => set('address', e.target.value)} placeholder="Village, Upazila, District" />
+              </div>
+              <div className="sm:col-span-3">
+                <FieldLabel>Photo URL</FieldLabel>
+                <Input value={form.photoUrl} onChange={e => set('photoUrl', e.target.value)} placeholder="https://example.com/student-photo.jpg" />
               </div>
             </div>
 

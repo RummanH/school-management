@@ -23,6 +23,7 @@ export function mapStudent(row) {
     guardianName: row.guardian_name || null,
     guardianPhone: row.guardian_phone || null,
     guardianRelation: row.guardian_relation || null,
+    photoUrl: row.photo_url || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -54,19 +55,19 @@ export async function findStudentByUserId(client, userId) {
 export async function insertStudentProfile(client, {
   id, tenantId, userId, classId, studentId, className, section, rollNumber,
   admissionDate, dateOfBirth, gender, bloodGroup, phone, address,
-  guardianName, guardianPhone, guardianRelation,
+  guardianName, guardianPhone, guardianRelation, photoUrl,
 }) {
   const result = await client.query(
     `INSERT INTO student_profiles
        (id, tenant_id, user_id, class_id, student_id, class_name, section, roll_number,
         admission_date, date_of_birth, gender, blood_group, phone, address,
-        guardian_name, guardian_phone, guardian_relation)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+        guardian_name, guardian_phone, guardian_relation, photo_url)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
      RETURNING *`,
     [id, tenantId, userId, classId || null, studentId || null, className || '', section || '',
      rollNumber || '', admissionDate || null, dateOfBirth || null,
      gender || null, bloodGroup || null, phone || null, address || null,
-     guardianName || null, guardianPhone || null, guardianRelation || null],
+     guardianName || null, guardianPhone || null, guardianRelation || null, photoUrl || null],
   );
   return result.rows[0];
 }
@@ -74,18 +75,18 @@ export async function insertStudentProfile(client, {
 export async function updateStudentProfile(client, {
   userId, classId, studentId, className, section, rollNumber,
   admissionDate, dateOfBirth, gender, bloodGroup, phone, address,
-  guardianName, guardianPhone, guardianRelation,
+  guardianName, guardianPhone, guardianRelation, photoUrl,
 }) {
   await client.query(
     `UPDATE student_profiles
      SET class_id=$2, student_id=$3, class_name=$4, section=$5, roll_number=$6,
          admission_date=$7, date_of_birth=$8, gender=$9, blood_group=$10,
          phone=$11, address=$12, guardian_name=$13, guardian_phone=$14,
-         guardian_relation=$15, updated_at=NOW()
+         guardian_relation=$15, photo_url=$16, updated_at=NOW()
      WHERE user_id=$1`,
     [userId, classId || null, studentId || null, className || '', section || '',
      rollNumber || '', admissionDate || null, dateOfBirth || null,
      gender || null, bloodGroup || null, phone || null, address || null,
-     guardianName || null, guardianPhone || null, guardianRelation || null],
+     guardianName || null, guardianPhone || null, guardianRelation || null, photoUrl || null],
   );
 }

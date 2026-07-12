@@ -1,4 +1,4 @@
-import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, BookOpen, BriefcaseBusiness, Globe, LogOut, X, BookMarked, Bell, Images, User, UserPlus, BadgeDollarSign, BarChart3, ShieldCheck, Mail } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, MessageSquare, Building2, Users, BookOpen, BriefcaseBusiness, Globe, LogOut, X, BookMarked, Bell, Images, User, UserPlus, BadgeDollarSign, BarChart3, ShieldCheck, Mail, FileText } from 'lucide-react';
 import { useAuth, navigate } from '../../../app/App.jsx';
 
 // Nav is grouped into sections so the sidebar reads as related clusters
@@ -14,6 +14,7 @@ const ADMIN_NAV_GROUPS = [
     { label: 'Students',   icon: GraduationCap, path: '/dashboard/students' },
     { label: 'Teachers',   icon: BookOpen,      path: '/dashboard/teachers' },
     { label: 'Admissions', icon: UserPlus,      path: '/dashboard/admissions' },
+    { label: 'Documents',  icon: FileText,      path: '/dashboard/documents' },
   ]},
   { label: 'Finance & HR', items: [
     { label: 'Fees',      icon: BadgeDollarSign,   path: '/dashboard/fees' },
@@ -54,6 +55,7 @@ const ACCOUNTANT_NAV_GROUPS = [
   { label: 'Finance & HR', items: [
     { label: 'Fees',      icon: BadgeDollarSign,   path: '/dashboard/fees' },
     { label: 'HR & Staff', icon: BriefcaseBusiness, path: '/dashboard/hr' },
+    { label: 'Documents', icon: FileText,          path: '/dashboard/documents' },
   ]},
 ];
 
@@ -65,8 +67,9 @@ const TEACHER_NAV_GROUPS = [
     { label: 'Contact Messages', icon: Mail, path: '/dashboard/contacts' },
   ]},
   { label: 'Academic', items: [
-    { label: 'Academic', icon: BookMarked,   path: '/dashboard/academic' },
-    { label: 'Messages', icon: MessageSquare, path: '/dashboard/messages' },
+    { label: 'Academic',  icon: BookMarked,    path: '/dashboard/academic' },
+    { label: 'Messages',  icon: MessageSquare, path: '/dashboard/messages' },
+    { label: 'Documents', icon: FileText,      path: '/dashboard/documents' },
   ]},
   { label: null, items: [
     { label: 'My Profile', icon: User, path: '/portal' },

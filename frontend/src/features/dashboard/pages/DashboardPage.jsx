@@ -15,6 +15,7 @@ import MessagesPage from '../../communication/pages/MessagesPage.jsx';
 import HrPage from '../../hr/pages/HrPage.jsx';
 import ReportsPage from '../../reports/pages/ReportsPage.jsx';
 import SecurityPage from '../../security/pages/SecurityPage.jsx';
+import AdminDocumentsPage from '../../documents/pages/AdminDocumentsPage.jsx';
 import { getStats, getContacts, markContactRead } from '../../../services/api/adminApi.js';
 import { createNotice } from '../../../services/api/noticeApi.js';
 import { useAuth, navigate } from '../../../app/App.jsx';
@@ -307,17 +308,18 @@ const PAGE_TITLES = {
   '/dashboard/fees':      'Fees & Accounting',
   '/dashboard/reports':   'Reports',
   '/dashboard/security':  'Security & Audit',
+  '/dashboard/documents': 'Documents',
 };
 
 // Teachers only get the shared dashboard home/contacts plus Academic - every
 // other sub-route (Students, Teachers, Users, Tenants, Notices, Gallery) is
 // admin/system_developer only on the backend, so the UI must not even try to
 // render them for a teacher (URL bar access, not just hidden nav links).
-const TEACHER_ALLOWED_PATHS = ['/dashboard', '/dashboard/contacts', '/dashboard/messages', '/dashboard/academic'];
+const TEACHER_ALLOWED_PATHS = ['/dashboard', '/dashboard/contacts', '/dashboard/messages', '/dashboard/academic', '/dashboard/documents'];
 
 // Accountants only get the finance side of the dashboard (fees/accounting +
 // payroll marking, the latter server-gated to payroll-only within HR & Staff).
-const ACCOUNTANT_ALLOWED_PATHS = ['/dashboard', '/dashboard/fees', '/dashboard/hr', '/dashboard/messages'];
+const ACCOUNTANT_ALLOWED_PATHS = ['/dashboard', '/dashboard/fees', '/dashboard/hr', '/dashboard/messages', '/dashboard/documents'];
 
 /* Root layout */
 
@@ -362,6 +364,7 @@ export default function DashboardPage() {
     if (pathname === '/dashboard/fees')              return <FeesPage />;
     if (pathname === '/dashboard/reports')           return <ReportsPage />;
     if (pathname === '/dashboard/security')          return <SecurityPage />;
+    if (pathname === '/dashboard/documents')         return <AdminDocumentsPage />;
     return <DashboardHome />;
   }
 

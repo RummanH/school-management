@@ -16,6 +16,7 @@ import { FinanceController } from "../controllers/financeController.js";
 import { CronController } from "../controllers/cronController.js";
 import { CommunicationController } from "../controllers/communicationController.js";
 import { HrController } from "../controllers/hrController.js";
+import { DocumentController } from "../controllers/documentController.js";
 import { SecurityController } from "../controllers/securityController.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requirePermission } from "../middleware/permissions.js";
@@ -27,7 +28,7 @@ import { findTeacherByUserId } from "../repositories/teacherRepository.js";
 export function createApiRouter({
   env, contactService, authService, tenantService,
   userService, studentService, teacherService, academicService,
-  guardianService, noticeService, galleryService, admissionService, feeService, financeService, communicationService, hrService, databaseManager,
+  guardianService, noticeService, galleryService, admissionService, feeService, financeService, communicationService, hrService, documentService, databaseManager,
 }) {
   const router = Router();
 
@@ -48,6 +49,7 @@ export function createApiRouter({
   const cronController      = new CronController(feeService, env);
   const communicationController = new CommunicationController(communicationService);
   const hrController = new HrController(hrService);
+  const documentController = new DocumentController(documentService);
   const securityController = new SecurityController(databaseManager);
 
   const auth          = requireAuth(authService, env);
@@ -59,6 +61,7 @@ export function createApiRouter({
   const payrollAdmin  = [auth, requirePermission("payrollManage")];
   const hrView        = [auth, requirePermission("hrView")];
   const communicationUsers = [auth, requirePermission("communicationUse")];
+  const documentAdmin = [auth, requirePermission("studentDocuments")];
   const securityAudit = [auth, requirePermission("securityAudit")];
   const dataExport = [auth, requirePermission("dataExport")];
 
@@ -104,6 +107,7 @@ export function createApiRouter({
   router.put("/students/:userId", ...adminOnly, studentController.update);
   router.delete("/students/:userId", ...adminOnly, studentController.remove);
   router.get("/students/:studentUserId/guardians", ...adminOnly, guardianController.listGuardiansForStudent);
+  router.get("/students/:studentUserId/document-data", ...documentAdmin, documentController.getStudentDocumentData);
 
   // Teachers - admin only (tenant-scoped)
   router.get("/teachers",         ...adminOnly, teacherController.list);

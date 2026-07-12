@@ -7,6 +7,7 @@ export const PERMISSIONS = {
   payrollManage: ['system_developer', 'admin', 'accountant'],
   hrView: ['system_developer', 'admin', 'accountant'],
   communicationUse: ['system_developer', 'admin', 'teacher', 'guardian', 'student', 'accountant'],
+  studentDocuments: ['system_developer', 'admin', 'teacher', 'accountant'],
   guardianUse: ['guardian'],
   dataExport: ['system_developer', 'admin'],
   securityAudit: ['system_developer', 'admin'],
