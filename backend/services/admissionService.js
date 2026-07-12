@@ -15,6 +15,7 @@ import {
   insertApplicationDocument,
   updateApplicationDocumentVerification,
 } from "../repositories/admissionRepository.js";
+import { findTenantBySlug } from "../repositories/tenantRepository.js";
 
 export const APPLICATION_STATUSES = ["submitted", "under_review", "test_scheduled", "accepted", "rejected"];
 
@@ -114,7 +115,15 @@ export class AdmissionService {
     assert(applyingForClass, "Class applying for is required.", 400);
     assert(!photoData || photoData.length <= MAX_PHOTO_BASE64_LENGTH, "Photo is too large - please use a smaller image.", 400);
 
+    const schoolSlug = (input.schoolSlug || "").trim();
+
     return this.databaseManager.withTransaction(async (client) => {
+      let tenantId = null;
+      if (schoolSlug) {
+        const tenant = await findTenantBySlug(client, schoolSlug);
+        if (tenant && tenant.status === "active") tenantId = tenant.id;
+      }
+
       let referenceCode = null;
       for (let attempt = 0; attempt < 5 && !referenceCode; attempt++) {
         const candidate = generateCode();
@@ -124,6 +133,7 @@ export class AdmissionService {
 
       const application = await insertApplication(client, {
         id: createId("adm"),
+        tenantId,
         referenceCode,
         applicantName, dateOfBirth, gender, applyingForClass,
         guardianName, guardianPhone, guardianEmail, previousSchool, photoData,

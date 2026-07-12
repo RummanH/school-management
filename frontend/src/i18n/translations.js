@@ -1,18 +1,13 @@
-import en from './locales/en.js';
-import bn from './locales/bn.js';
-
-const translations = { en, bn };
-
 function resolvePath(source, key) {
   return key.split('.').reduce((current, part) => (current && typeof current === 'object' ? current[part] : undefined), source);
 }
 
-export function createTranslator(language) {
-  const locale = translations[language] ? language : 'en';
-  const bundle = translations[locale];
+export function createTranslator(language, content) {
+  const locale = content?.[language] ? language : 'en';
+  const bundle = content?.[locale];
 
   return function t(key, values = {}) {
-    const fallback = resolvePath(translations.en, key);
+    const fallback = resolvePath(content?.en, key);
     const template = resolvePath(bundle, key) ?? fallback ?? key;
 
     if (typeof template !== 'string') return template;

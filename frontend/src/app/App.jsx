@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { createTranslator, supportedLanguages } from '../i18n/translations.js';
+import { SITES, DEFAULT_SITE_SLUG } from '../features/landing/sites/index.js';
 import { getMe, logout as apiLogout } from '../services/api/authApi.js';
 import LandingPage from '../features/landing/pages/LandingPage.jsx';
 import LoginPage from '../features/auth/pages/LoginPage.jsx';
@@ -30,6 +31,15 @@ const DASHBOARD_ONLY_ROLES = ['system_developer', 'admin', 'accountant'];
 
 function homePathForRole(role) {
   return DASHBOARD_ROLES.includes(role) ? '/dashboard' : '/portal';
+}
+
+function SiteNotFound({ slug }) {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-white px-4 text-center">
+      <p className="text-lg font-bold text-slate-800">School site not found</p>
+      <p className="text-sm text-slate-500">There is no school registered at "/{slug}".</p>
+    </div>
+  );
 }
 
 export default function App() {
@@ -72,8 +82,6 @@ export default function App() {
     }
   }
 
-  const t = createTranslator(language);
-
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
@@ -88,6 +96,17 @@ export default function App() {
   const isDocument  = pathname.startsWith('/portal/document');
   const isAdmission = pathname.startsWith('/admission');
   const isLogin     = pathname === '/login';
+  const isReservedRoute = isDashboard || isPortal || isAdmission || isLogin;
+
+  // Public landing site resolution: "/" (or any reserved app route) shows the
+  // default demo site; any other single path segment is looked up as a
+  // school/madrasah slug (see features/landing/sites/index.js) so multiple
+  // schools' landing pages can live side by side in this one deployment.
+  const pathSegments = pathname.split('/').filter(Boolean);
+  const siteSlug = isReservedRoute || pathSegments.length === 0 ? DEFAULT_SITE_SLUG : pathSegments[0];
+  const site = SITES[siteSlug];
+
+  const t = createTranslator(language, site || SITES[DEFAULT_SITE_SLUG]);
 
   // Unauthenticated guards
   if ((isDashboard || isPortal) && !currentUser) { navigate('/login'); return null; }
@@ -114,7 +133,8 @@ export default function App() {
           : isPortal    ? <PortalPage />
           : isAdmission ? <AdmissionPage />
           : isLogin     ? <LoginPage />
-          : <LandingPage />}
+          : !site       ? <SiteNotFound slug={siteSlug} />
+          : <LandingPage siteSlug={siteSlug} />}
       </AuthContext.Provider>
     </LanguageContext.Provider>
   );

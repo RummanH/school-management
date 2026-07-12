@@ -64,16 +64,16 @@ export async function referenceCodeExists(client, referenceCode) {
 }
 
 export async function insertApplication(client, {
-  id, referenceCode, applicantName, dateOfBirth, gender, applyingForClass,
+  id, tenantId, referenceCode, applicantName, dateOfBirth, gender, applyingForClass,
   guardianName, guardianPhone, guardianEmail, previousSchool, photoData,
 }) {
   const result = await client.query(
     `INSERT INTO admission_applications
-       (id, reference_code, applicant_name, date_of_birth, gender, applying_for_class,
+       (id, tenant_id, reference_code, applicant_name, date_of_birth, gender, applying_for_class,
         guardian_name, guardian_phone, guardian_email, previous_school, photo_data)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-     RETURNING id, reference_code, applicant_name, applying_for_class, status, created_at`,
-    [id, referenceCode, applicantName, dateOfBirth || null, gender || null, applyingForClass || '',
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+     RETURNING id, tenant_id, reference_code, applicant_name, applying_for_class, status, created_at`,
+    [id, tenantId || null, referenceCode, applicantName, dateOfBirth || null, gender || null, applyingForClass || '',
      guardianName, guardianPhone, guardianEmail || null, previousSchool || null, photoData || null],
   );
   return mapApplication(result.rows[0]);

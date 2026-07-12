@@ -4,7 +4,7 @@ import { ADMISSION_DOCS } from '../constants.js';
 
 const DATE_KEYS = ['date1', 'date2', 'date3', 'date4'];
 
-export default function AdmissionSection() {
+export default function AdmissionSection({ siteSlug }) {
   const { t } = useLanguage();
 
   return (
@@ -17,13 +17,13 @@ export default function AdmissionSection() {
           <p className="mt-4 max-w-2xl text-white/75">{t('admission.announcement')}</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <button
-              onClick={() => navigate('/admission')}
+              onClick={() => navigate(`/admission?school=${siteSlug}`)}
               className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-[var(--brand-strong)] shadow-md transition hover:-translate-y-0.5"
             >
               {t('admission.applyNow')} <ArrowRight className="h-4 w-4" />
             </button>
             <button
-              onClick={() => navigate('/admission?tab=status')}
+              onClick={() => navigate(`/admission?school=${siteSlug}&tab=status`)}
               className="inline-flex items-center gap-2 rounded-full border border-white/30 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
             >
               <Search className="h-4 w-4" />

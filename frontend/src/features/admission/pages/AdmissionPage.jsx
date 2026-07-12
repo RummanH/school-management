@@ -71,7 +71,7 @@ function FieldGroupTitle({ icon: Icon, title, subtitle }) {
   );
 }
 
-function ApplyForm({ onSubmitted, t }) {
+function ApplyForm({ onSubmitted, t, schoolSlug }) {
   const genders = [
     { value: 'Male', label: t('admission.page.genderMale') },
     { value: 'Female', label: t('admission.page.genderFemale') },
@@ -124,6 +124,7 @@ function ApplyForm({ onSubmitted, t }) {
     try {
       const payload = { ...form };
       if (photoData) payload.photoData = photoData;
+      if (schoolSlug) payload.schoolSlug = schoolSlug;
       payload.documents = Object.values(documents);
       const result = await applyForAdmission(payload);
       onSubmitted(result.referenceCode);
@@ -364,7 +365,9 @@ function StatusCheck({ t }) {
 
 export default function AdmissionPage() {
   const { t } = useLanguage();
-  const initialTab = new URLSearchParams(window.location.search).get('tab') === 'status' ? 'status' : 'apply';
+  const query = new URLSearchParams(window.location.search);
+  const initialTab = query.get('tab') === 'status' ? 'status' : 'apply';
+  const schoolSlug = query.get('school') || '';
   const [tab, setTab] = useState(initialTab);
   const [referenceCode, setReferenceCode] = useState('');
 
@@ -383,7 +386,7 @@ export default function AdmissionPage() {
           }}
         />
         <div className="relative mx-auto max-w-2xl px-4">
-          <button onClick={() => navigate('/')}
+          <button onClick={() => navigate(schoolSlug ? `/${schoolSlug}` : '/')}
             className="mb-6 flex items-center gap-1.5 text-sm font-semibold text-white/70 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" /> {t('admission.page.back')}
           </button>
@@ -417,7 +420,7 @@ export default function AdmissionPage() {
 
         <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-soft sm:p-8">
           {tab === 'apply' ? (
-            referenceCode ? <SuccessScreen referenceCode={referenceCode} t={t} /> : <ApplyForm onSubmitted={setReferenceCode} t={t} />
+            referenceCode ? <SuccessScreen referenceCode={referenceCode} t={t} /> : <ApplyForm onSubmitted={setReferenceCode} t={t} schoolSlug={schoolSlug} />
           ) : (
             <StatusCheck t={t} />
           )}
