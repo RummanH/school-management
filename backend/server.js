@@ -1,10 +1,14 @@
+import http from 'node:http';
 import { createBackendApp } from './composition.js';
 import { startFeeCronScheduler } from './services/feeCronScheduler.js';
 
 async function start() {
-  const { app, databaseManager, env, feeService } = await createBackendApp();
+  const { app, databaseManager, env, feeService, authService, realtime } = await createBackendApp();
 
-  app.listen(env.PORT, () => {
+  const httpServer = http.createServer(app);
+  realtime.attach(httpServer, { authService, env });
+
+  httpServer.listen(env.PORT, () => {
     console.log(`Server running on http://localhost:${env.PORT}`);
     if (databaseManager.isUsingFallbackDatabase()) {
       console.log('DATABASE_URL database name was unavailable, using "postgres" instead.');

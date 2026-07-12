@@ -13,6 +13,7 @@ import {
   Send,
   Sparkles,
   UserRound,
+  Users,
   X,
 } from 'lucide-react';
 import { useAuth } from '../../../app/App.jsx';
@@ -156,6 +157,27 @@ function participantDescriptor(thread, currentUser) {
   return role ? `${ROLE_LABELS[role] || role} channel` : 'Direct conversation';
 }
 
+// Group threads use their topic as the group name (set at creation); 1:1
+// threads show the other person's name, same as before groups existed.
+function threadDisplayName(thread, currentUser) {
+  if (thread.isGroup) return thread.topic || 'Group conversation';
+  return participantLabel(thread, currentUser);
+}
+
+function lastMessagePreview(thread) {
+  if (thread.lastMessage) return thread.lastMessage;
+  if (thread.lastMessageAttachmentName) return `📎 ${thread.lastMessageAttachmentName}`;
+  return 'No messages yet.';
+}
+
+function threadMemberSummary(thread, currentUser) {
+  const others = (thread.participants || []).filter((p) => p.userId !== currentUser?.id);
+  if (!others.length) return '';
+  const names = others.map((p) => p.name);
+  if (names.length <= 2) return names.join(' & ');
+  return `${names.slice(0, 2).join(', ')} +${names.length - 2} more`;
+}
+
 function EmptyState({ title, body, compact = false }) {
   return (
     <div className={`flex flex-col items-center justify-center text-center ${compact ? 'px-6 py-12' : 'px-8 py-16'}`}>
@@ -171,12 +193,22 @@ function EmptyState({ title, body, compact = false }) {
 function ComposeModal({ currentUser, onClose, onCreated }) {
   const [recipients, setRecipients] = useState([]);
   const [students, setStudents] = useState([]);
-  const [form, setForm] = useState({ recipientUserId: '', studentUserId: '', topic: '', body: '' });
+  const [form, setForm] = useState({ recipientUserIds: [], studentUserId: '', topic: '', body: '' });
   const [loadingRecipients, setLoadingRecipients] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [attachment, setAttachment] = useState(null);
   const fileInputRef = useRef(null);
+  const isGroup = form.recipientUserIds.length > 1;
+
+  function toggleRecipient(id) {
+    setForm((f) => ({
+      ...f,
+      recipientUserIds: f.recipientUserIds.includes(id)
+        ? f.recipientUserIds.filter((x) => x !== id)
+        : [...f.recipientUserIds, id],
+    }));
+  }
 
   async function handleFileChange(e) {
     const file = e.target.files?.[0];
@@ -221,11 +253,14 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
     setError('');
     try {
       const data = await createThread({
-        ...form,
+        recipientUserIds: form.recipientUserIds,
+        studentUserId: form.studentUserId,
+        topic: form.topic,
+        body: form.body,
         attachment: attachment?.dataUrl,
         attachmentName: attachment?.name,
       });
-      setForm({ recipientUserId: '', studentUserId: '', topic: '', body: '' });
+      setForm({ recipientUserIds: [], studentUserId: '', topic: '', body: '' });
       setAttachment(null);
       onCreated(data.thread?.id);
     } catch (err) {
@@ -235,7 +270,7 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
     }
   }
 
-  const selectedRecipient = recipients.find((r) => r.id === form.recipientUserId);
+  const selectedRecipients = recipients.filter((r) => form.recipientUserIds.includes(r.id));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm">
@@ -245,7 +280,7 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--brand)]">New message</p>
             <h3 className="mt-1 text-xl font-black text-slate-900">Start a conversation</h3>
-            <p className="mt-1 text-sm text-slate-500">Send a direct message to anyone in your school.</p>
+            <p className="mt-1 text-sm text-slate-500">Message one person, or select multiple to start a group.</p>
           </div>
           <button type="button" onClick={onClose} className="icon-btn shrink-0">
             <X className="h-4 w-4" />
@@ -256,26 +291,36 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
           <div className="space-y-5">
             {error && <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>}
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block sm:col-span-2">
-                <span className="label-sm">Recipient</span>
-                <select
-                  className="input"
-                  value={form.recipientUserId}
-                  onChange={(e) => setForm((f) => ({ ...f, recipientUserId: e.target.value }))}
-                  required
-                  disabled={!loadingRecipients && recipients.length === 0}
-                >
-                  <option value="">{loadingRecipients ? 'Loading...' : 'Select…'}</option>
-                  {!loadingRecipients && recipients.length === 0 && (
-                    <option value="" disabled>No one else found yet</option>
-                  )}
-                  {recipientsByRole.map((g) => (
-                    <optgroup key={g.role} label={ROLE_LABELS[g.role] || g.role}>
-                      {g.people.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-                    </optgroup>
+            <div className="grid gap-4">
+              <label className="block">
+                <span className="label-sm">
+                  Recipients {isGroup ? `(${form.recipientUserIds.length} selected — group)` : ''}
+                </span>
+                <div className="max-h-56 space-y-3 overflow-y-auto rounded-2xl border border-slate-200 p-3">
+                  {loadingRecipients ? (
+                    <p className="px-2 py-1 text-sm text-slate-400">Loading...</p>
+                  ) : recipients.length === 0 ? (
+                    <p className="px-2 py-1 text-sm text-slate-400">No one else found yet</p>
+                  ) : recipientsByRole.map((g) => (
+                    <div key={g.role}>
+                      <p className="px-1 pb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">{ROLE_LABELS[g.role] || g.role}</p>
+                      <div className="space-y-0.5">
+                        {g.people.map((r) => (
+                          <label key={r.id} className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-slate-50">
+                            <input
+                              type="checkbox"
+                              checked={form.recipientUserIds.includes(r.id)}
+                              onChange={() => toggleRecipient(r.id)}
+                              className="h-4 w-4 shrink-0 rounded border-slate-300 text-[var(--brand)] focus:ring-[var(--brand)]"
+                            />
+                            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-700">{r.name}</span>
+                            <span className="shrink-0 text-xs text-slate-400">{r.email}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   ))}
-                </select>
+                </div>
               </label>
             </div>
 
@@ -290,16 +335,28 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
                 </label>
               )}
               <label className={`block ${canTagStudent ? '' : 'sm:col-span-2'}`}>
-                <span className="label-sm">Topic</span>
-                <input className="input" value={form.topic} onChange={(e) => setForm((f) => ({ ...f, topic: e.target.value }))} placeholder="Attendance follow-up" />
+                <span className="label-sm">{isGroup ? 'Group name' : 'Topic'}</span>
+                <input
+                  className="input"
+                  value={form.topic}
+                  onChange={(e) => setForm((f) => ({ ...f, topic: e.target.value }))}
+                  placeholder={isGroup ? 'e.g. Class Nine-A Parents Update' : 'Attendance follow-up'}
+                />
               </label>
             </div>
 
-            {selectedRecipient && (
+            {selectedRecipients.length > 0 && (
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Sending to</p>
-                <p className="mt-1 text-sm font-bold text-slate-800">{selectedRecipient.name}</p>
-                <p className="mt-0.5 text-sm text-slate-500">{selectedRecipient.email}</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                  {selectedRecipients.length > 1 ? `Sending to ${selectedRecipients.length} people` : 'Sending to'}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {selectedRecipients.map((r) => (
+                    <span key={r.id} className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-700 shadow-sm">
+                      {r.name}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -328,7 +385,7 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
           </div>
           <div className="flex items-center justify-end gap-3">
             <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-            <button disabled={saving || !form.recipientUserId || (!form.body.trim() && !attachment)} className="btn-primary min-w-[140px] disabled:opacity-60">
+            <button disabled={saving || !form.recipientUserIds.length || (!form.body.trim() && !attachment)} className="btn-primary min-w-[140px] disabled:opacity-60">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               {saving ? 'Sending...' : 'Send message'}
             </button>
@@ -340,7 +397,7 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
 }
 
 function ThreadListItem({ thread, active, currentUser, onSelect }) {
-  const name = participantLabel(thread, currentUser);
+  const name = threadDisplayName(thread, currentUser);
 
   return (
     <button
@@ -353,14 +410,14 @@ function ThreadListItem({ thread, active, currentUser, onSelect }) {
     >
       <div className="flex items-start gap-3">
         <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-black ${active ? 'bg-[var(--brand)] text-white' : 'bg-slate-900 text-white'}`}>
-          {initials(name)}
+          {thread.isGroup ? <Users className="h-5 w-5" /> : initials(name)}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <p className="min-w-0 truncate text-sm font-black tracking-tight text-slate-950">{name}</p>
             <p className="shrink-0 text-[11px] font-semibold text-slate-400">{timeText(thread.lastMessageAt || thread.updatedAt)}</p>
           </div>
-          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-600">{thread.lastMessage || 'No messages yet.'}</p>
+          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-600">{lastMessagePreview(thread)}</p>
         </div>
       </div>
     </button>
@@ -368,7 +425,7 @@ function ThreadListItem({ thread, active, currentUser, onSelect }) {
 }
 
 export default function MessagesPage() {
-  const { currentUser } = useAuth();
+  const { currentUser, socket } = useAuth();
   const [threads, setThreads] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [active, setActive] = useState(null);
@@ -426,15 +483,41 @@ export default function MessagesPage() {
     node.scrollTop = node.scrollHeight;
   }, [messages, detailLoading, activeId]);
 
+  // Real-time inbound events (see backend/realtime.js): a new message anywhere
+  // refreshes the sidebar (unread badges, ordering, preview); if it landed in
+  // the thread currently open, the full thread is refetched too (which also
+  // marks it read — same call the user opening the thread already makes).
+  useEffect(() => {
+    if (!socket) return;
+    function handleNewMessage({ message }) {
+      if (message.threadId === activeId) {
+        getThread(activeId).then((d) => { setActive(d.thread); setMessages(d.messages || []); }).catch(() => {});
+      }
+      loadThreads(activeId).catch(() => {});
+    }
+    function handleThreadRead({ threadId }) {
+      if (threadId === activeId) {
+        getThread(activeId).then((d) => { setActive(d.thread); setMessages(d.messages || []); }).catch(() => {});
+      }
+    }
+    socket.on('message:new', handleNewMessage);
+    socket.on('thread:read', handleThreadRead);
+    return () => {
+      socket.off('message:new', handleNewMessage);
+      socket.off('thread:read', handleThreadRead);
+    };
+  }, [socket, activeId]);
+
   const deferredQuery = useDeferredValue(query);
   const filteredThreads = useMemo(() => {
     const needle = deferredQuery.trim().toLowerCase();
     if (!needle) return threads;
     return threads.filter((thread) => {
       const haystack = [
-        participantLabel(thread, currentUser),
+        threadDisplayName(thread, currentUser),
         thread.topic,
         thread.lastMessage,
+        thread.lastMessageAttachmentName,
         thread.studentName,
       ]
         .filter(Boolean)
@@ -445,7 +528,11 @@ export default function MessagesPage() {
   }, [currentUser, deferredQuery, threads]);
 
   const unreadTotal = useMemo(() => threads.reduce((sum, t) => sum + Number(t.unreadCount || 0), 0), [threads]);
-  const activeParticipant = active ? participantLabel(active, currentUser) : 'Conversation';
+  const isGroupActive = Boolean(active?.isGroup);
+  const activeParticipant = active ? threadDisplayName(active, currentUser) : 'Conversation';
+  const activeSubtitle = isGroupActive
+    ? (threadMemberSummary(active, currentUser) || `${(active?.participants || []).length} members`)
+    : (active?.topic || 'Direct message');
 
   async function handleReplyFileChange(e) {
     const file = e.target.files?.[0];
@@ -582,17 +669,17 @@ export default function MessagesPage() {
                       <ArrowLeft className="h-4 w-4" />
                     </button>
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand)] text-sm font-black text-white">
-                      {initials(activeParticipant)}
+                      {isGroupActive ? <Users className="h-5 w-5" /> : initials(activeParticipant)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="truncate text-base font-black text-slate-900">{activeParticipant}</p>
                         <span className="inline-flex items-center rounded-full bg-[var(--brand-soft)] px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[var(--brand-strong)]">
-                          Active thread
+                          {isGroupActive ? 'Group' : 'Active thread'}
                         </span>
                       </div>
                       <p className="mt-1 truncate text-sm text-slate-500">
-                        {active?.topic || 'Direct message'}
+                        {activeSubtitle}
                         {active?.studentName ? ` / Student: ${active.studentName}` : ''}
                       </p>
                     </div>
@@ -608,16 +695,17 @@ export default function MessagesPage() {
                     const mine = m.senderUserId === currentUser?.id;
                     const prev = messages[index - 1];
                     const showMeta = !prev || prev.senderUserId !== m.senderUserId;
+                    const senderName = m.senderName || activeParticipant;
                     return (
                       <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                         <div className={`flex max-w-[88%] items-end gap-3 sm:max-w-[74%] ${mine ? 'flex-row-reverse' : 'flex-row'}`}>
                           <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xs font-black ${mine ? 'bg-[var(--brand)] text-white' : 'bg-slate-900 text-white'}`}>
-                            {mine ? 'You' : initials(activeParticipant)}
+                            {mine ? 'You' : initials(senderName)}
                           </div>
                           <div>
                             {showMeta && (
                               <p className={`mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.16em] ${mine ? 'text-right text-[var(--brand-strong)]/55' : 'text-left text-slate-400'}`}>
-                                {mine ? 'You' : activeParticipant}
+                                {mine ? 'You' : senderName}
                               </p>
                             )}
                             <div className={`rounded-[1.6rem] px-4 py-3.5 ${mine ? 'rounded-br-md border border-[color-mix(in_srgb,var(--brand)_14%,white)] bg-[color-mix(in_srgb,var(--brand)_8%,white)] text-[var(--brand-strong)]' : 'rounded-bl-md border border-slate-200 bg-slate-100 text-slate-700'}`}>
@@ -633,7 +721,7 @@ export default function MessagesPage() {
                               {m.body && <p className="text-sm leading-relaxed">{m.body}</p>}
                               <div className={`mt-3 flex items-center gap-1.5 text-[11px] font-medium ${mine ? 'text-[var(--brand-strong)]/58' : 'text-slate-400'}`}>
                                 <span>{timeText(m.createdAt)}</span>
-                                {mine && (
+                                {mine && !isGroupActive && (
                                   <>
                                     <CheckCheck className="h-3.5 w-3.5" />
                                     <span>{m.readAt ? `Read ${shortTimeText(m.readAt)}` : 'Delivered'}</span>

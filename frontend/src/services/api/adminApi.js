@@ -1,5 +1,10 @@
 import { apiRequest, buildQueryString } from './client.js';
 
+export async function getDashboardOverview(params = {}) {
+  const data = await apiRequest(`/admin/dashboard-overview${buildQueryString(params)}`);
+  return data.overview;
+}
+
 export async function getStats() {
   return apiRequest('/admin/stats');
 }

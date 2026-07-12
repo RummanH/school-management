@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { createTranslator, supportedLanguages } from '../i18n/translations.js';
 import { SITES, DEFAULT_SITE_SLUG } from '../features/landing/sites/index.js';
 import { getMe, logout as apiLogout } from '../services/api/authApi.js';
+import { getSocket } from '../services/realtime/socket.js';
 import LandingPage from '../features/landing/pages/LandingPage.jsx';
 import LoginPage from '../features/auth/pages/LoginPage.jsx';
 import DashboardPage from '../features/dashboard/pages/DashboardPage.jsx';
@@ -48,6 +49,18 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [currentTenant, setCurrentTenant] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [socket, setSocket] = useState(null);
+
+  // Connects once a user is known (fresh login or a restored session via
+  // getMe()) and disconnects on logout — one shared socket for the whole
+  // app, authenticated the same way as every HTTP request (session cookie).
+  useEffect(() => {
+    if (!currentUser) { setSocket(null); return; }
+    const s = getSocket();
+    s.connect();
+    setSocket(s);
+    return () => { s.disconnect(); };
+  }, [currentUser?.id]);
 
   useEffect(() => {
     const handler = () => setPathname(window.location.pathname);
@@ -126,7 +139,7 @@ export default function App() {
 
   return (
     <LanguageContext.Provider value={{ language, switchLanguage, t, siteSlug }}>
-      <AuthContext.Provider value={{ currentUser, currentTenant, login, logout }}>
+      <AuthContext.Provider value={{ currentUser, currentTenant, login, logout, socket }}>
         {isDashboard ? <DashboardPage />
           : isDocument  ? <DocumentPage />
           : isReport    ? <ProgressReportPage />

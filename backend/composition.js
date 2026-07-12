@@ -18,10 +18,13 @@ import { CommunicationService } from "./services/communicationService.js";
 import { HrService } from "./services/hrService.js";
 import { DocumentService } from "./services/documentService.js";
 import { createApp } from "./app.js";
+import { createRealtimeGateway } from "./realtime.js";
 
 export async function createBackendApp() {
   const databaseManager = new DatabaseManager(env.DATABASE_URL);
   await bootstrapService.initialize(databaseManager, env);
+
+  const realtime = createRealtimeGateway();
 
   const contactService   = new ContactService(databaseManager);
   const authService      = new AuthService(databaseManager, env);
@@ -36,7 +39,7 @@ export async function createBackendApp() {
   const admissionService = new AdmissionService(databaseManager);
   const feeService       = new FeeService(databaseManager);
   const financeService   = new FinanceService(databaseManager);
-  const communicationService = new CommunicationService(databaseManager);
+  const communicationService = new CommunicationService(databaseManager, realtime);
   const hrService = new HrService(databaseManager);
   const documentService = new DocumentService(databaseManager);
 
@@ -46,7 +49,7 @@ export async function createBackendApp() {
     guardianService, noticeService, galleryService, admissionService, feeService, financeService,
     communicationService, hrService, documentService, databaseManager,
   });
-  return { app, databaseManager, env, feeService };
+  return { app, databaseManager, env, feeService, authService, realtime };
 }
 
 

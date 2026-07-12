@@ -502,6 +502,27 @@ export async function createSchema(pool) {
       created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    -- Full member list for a thread (1:1 or group). The legacy participant_one/
+    -- two columns above only ever supported exactly two people; this table is
+    -- the source of truth for access control and membership going forward.
+    CREATE TABLE IF NOT EXISTS communication_thread_participants (
+      id         TEXT PRIMARY KEY,
+      thread_id  TEXT NOT NULL REFERENCES communication_threads(id) ON DELETE CASCADE,
+      user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(thread_id, user_id)
+    );
+
+    -- Per-participant read tracking for group threads, where a single
+    -- recipient_user_id/read_at pair on the message no longer applies.
+    CREATE TABLE IF NOT EXISTS communication_message_reads (
+      id         TEXT PRIMARY KEY,
+      message_id TEXT NOT NULL REFERENCES communication_messages(id) ON DELETE CASCADE,
+      user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      read_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(message_id, user_id)
+    );
+
     CREATE TABLE IF NOT EXISTS staff_profiles (
       id             TEXT PRIMARY KEY,
       tenant_id      TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -709,6 +730,25 @@ export async function createSchema(pool) {
     ALTER TABLE communication_threads ADD COLUMN IF NOT EXISTS participant_one_user_id TEXT REFERENCES users(id) ON DELETE SET NULL;
     ALTER TABLE communication_threads ADD COLUMN IF NOT EXISTS participant_two_user_id TEXT REFERENCES users(id) ON DELETE SET NULL;
 
+    -- Group chat: a thread can now hold 3+ people. participant_one/two stay
+    -- populated (first two members) for cheap display fallbacks, but access
+    -- control and membership always go through communication_thread_participants.
+    ALTER TABLE communication_threads ADD COLUMN IF NOT EXISTS is_group BOOLEAN NOT NULL DEFAULT false;
+    ALTER TABLE communication_messages ALTER COLUMN recipient_user_id DROP NOT NULL;
+
+    -- Backfill the new participants table from every existing thread's
+    -- legacy two-column model so it's queryable through one path immediately.
+    INSERT INTO communication_thread_participants (id, thread_id, user_id)
+      SELECT 'ctp-' || md5(ct.id || '|' || ct.participant_one_user_id), ct.id, ct.participant_one_user_id
+        FROM communication_threads ct
+       WHERE ct.participant_one_user_id IS NOT NULL
+      ON CONFLICT (thread_id, user_id) DO NOTHING;
+    INSERT INTO communication_thread_participants (id, thread_id, user_id)
+      SELECT 'ctp-' || md5(ct.id || '|' || ct.participant_two_user_id), ct.id, ct.participant_two_user_id
+        FROM communication_threads ct
+       WHERE ct.participant_two_user_id IS NOT NULL
+      ON CONFLICT (thread_id, user_id) DO NOTHING;
+
     -- Messages can carry one file attachment (PDF/image/text/Word) instead of,
     -- or alongside, body text. Stored on /uploads like gallery photos rather
     -- than through the authenticated admission-document flow, since a message
@@ -826,6 +866,10 @@ export async function createSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_comm_threads_tenant       ON communication_threads(tenant_id, updated_at DESC);
     CREATE INDEX IF NOT EXISTS idx_comm_messages_thread      ON communication_messages(thread_id, created_at ASC);
     CREATE INDEX IF NOT EXISTS idx_comm_messages_recipient   ON communication_messages(recipient_user_id, read_at, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_comm_thread_participants_thread ON communication_thread_participants(thread_id);
+    CREATE INDEX IF NOT EXISTS idx_comm_thread_participants_user   ON communication_thread_participants(user_id);
+    CREATE INDEX IF NOT EXISTS idx_comm_message_reads_message ON communication_message_reads(message_id);
+    CREATE INDEX IF NOT EXISTS idx_comm_message_reads_user    ON communication_message_reads(user_id);
   `);
 }
 

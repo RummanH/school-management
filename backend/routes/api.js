@@ -290,6 +290,7 @@ export function createApiRouter({
   router.get("/guardian/wards/:studentUserId/fees", ...guardianOnly, feeController.getWardFees);
 
   // Admin dashboard
+  router.get("/admin/dashboard-overview",  auth, adminController.getDashboardOverview);
   router.get("/admin/stats",               auth, adminController.getStats);
   router.get("/admin/reports", ...dataExport, auditAction(databaseManager, "export.admin_reports", "report"), adminController.getReports);
   router.get("/admin/contacts",            auth, adminController.getContacts);
@@ -297,4 +298,5 @@ export function createApiRouter({
 
   return router;
 }
+
 
