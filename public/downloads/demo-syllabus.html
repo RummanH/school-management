@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Greenfield Academy Demo Syllabus 2026</title>
+  <style>
+    :root {
+      --navy: #161233;
+      --indigo: #201b46;
+      --emerald: #15866c;
+      --gold: #d7a228;
+      --ink: #192132;
+      --muted: #667085;
+      --line: #d9e2ec;
+      --soft: #f6f8fb;
+      --white: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(180deg, #eef3f8 0%, #ffffff 100%);
+      color: var(--ink);
+      padding: 40px 18px;
+    }
+    .page {
+      max-width: 920px;
+      margin: 0 auto;
+      background: var(--white);
+      border: 1px solid rgba(22, 18, 51, 0.08);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(15, 23, 42, 0.12);
+    }
+    .hero {
+      padding: 34px 38px 30px;
+      color: var(--white);
+      background:
+        radial-gradient(circle at top right, rgba(61, 208, 160, 0.22), transparent 28%),
+        linear-gradient(135deg, var(--navy) 0%, var(--indigo) 55%, #0f172a 100%);
+    }
+    .topline {
+      display: inline-block;
+      padding: 8px 12px;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.07);
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 0.8fr;
+      gap: 24px;
+      margin-top: 18px;
+      align-items: end;
+    }
+    h1 {
+      margin: 0;
+      font-size: 38px;
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+    .subtitle {
+      max-width: 560px;
+      margin: 14px 0 0;
+      color: rgba(255,255,255,0.74);
+      font-size: 15px;
+      line-height: 1.75;
+    }
+    .hero-card {
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 22px;
+      background: rgba(255,255,255,0.08);
+      padding: 18px;
+      backdrop-filter: blur(10px);
+    }
+    .hero-card .label,
+    .meta .label,
+    .section-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .hero-card .value {
+      margin-top: 8px;
+      font-size: 26px;
+      font-weight: 800;
+    }
+    .hero-card p:last-child {
+      margin: 8px 0 0;
+      color: rgba(255,255,255,0.7);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .content {
+      padding: 30px 38px 40px;
+    }
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: -34px;
+      position: relative;
+      z-index: 1;
+    }
+    .meta-item {
+      padding: 16px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.96);
+      box-shadow: 0 14px 36px rgba(15, 23, 42, 0.06);
+    }
+    .meta .label { color: var(--muted); }
+    .meta .value {
+      margin-top: 6px;
+      font-weight: 800;
+      color: var(--navy);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .section {
+      margin-top: 28px;
+      display: grid;
+      gap: 18px;
+    }
+    .section-header h2 {
+      margin: 6px 0 0;
+      font-size: 28px;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--navy);
+    }
+    .section-header p {
+      margin: 10px 0 0;
+      max-width: 720px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.8;
+    }
+    .section-label { color: var(--emerald); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: linear-gradient(180deg, #ffffff 0%, #f9fbfd 100%);
+      padding: 20px;
+    }
+    .card h3 {
+      margin: 0;
+      font-size: 18px;
+      color: var(--navy);
+    }
+    .card .range {
+      margin-top: 6px;
+      color: var(--emerald);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    ul {
+      margin: 14px 0 0;
+      padding-left: 18px;
+      color: var(--ink);
+    }
+    li {
+      margin: 8px 0;
+      line-height: 1.65;
+      font-size: 14px;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 16px;
+    }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+    }
+    .table th,
+    .table td {
+      padding: 12px 14px;
+      text-align: left;
+      font-size: 13px;
+      border-bottom: 1px solid var(--line);
+    }
+    .table th {
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .table tr:last-child td { border-bottom: 0; }
+    .band {
+      margin-top: 18px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #f6fbf9 0%, #eef6f2 100%);
+      border: 1px solid #dbeee6;
+      padding: 18px 20px;
+    }
+    .band strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--navy);
+      font-size: 14px;
+    }
+    .footer {
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .page { box-shadow: none; border-radius: 0; border: 0; max-width: none; }
+    }
+    @media (max-width: 760px) {
+      body { padding: 18px 10px; }
+      .hero, .content { padding-left: 20px; padding-right: 20px; }
+      .hero-grid, .grid, .two-col, .meta { grid-template-columns: 1fr; }
+      h1 { font-size: 30px; }
+      .footer { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="topline">Greenfield Academy • Academic Year 2026</div>
+      <div class="hero-grid">
+        <div>
+          <h1>Demo Academic Syllabus</h1>
+          <p class="subtitle">A polished sample syllabus designed for parents and students. It outlines the academic pathway, core subjects, assessment rhythm, and co-curricular expectations across the school year.</p>
+        </div>
+        <div class="hero-card">
+          <div class="label">Prepared For</div>
+          <div class="value">School Overview</div>
+          <p>Use this as a downloadable demo for admissions, website presentation, or academic orientation.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="content">
+      <div class="meta">
+        <div class="meta-item">
+          <div class="label">Institution</div>
+          <div class="value">Greenfield Academy</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Coverage</div>
+          <div class="value">Primary to Higher Secondary</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Academic Session</div>
+          <div class="value">January 2026 to December 2026</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Version</div>
+          <div class="value">Website Demo Edition</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div class="section-label">Curriculum Scope</div>
+          <h2>Structured learning for every stage</h2>
+          <p>The academic program combines core subjects, moral development, communication skills, digital literacy, and practical classroom engagement. Each section is planned to support both exam performance and confident growth.</p>
+        </div>
+
+        <div class="grid">
+          <article class="card">
+            <h3>Primary Section</h3>
+            <div class="range">Class I to V</div>
+            <ul>
+              <li>Foundational Bangla, English, Mathematics, and General Science.</li>
+              <li>Reading habits, handwriting, spoken confidence, and creative activities.</li>
+              <li>Continuous classwork, oral participation, and term-based evaluation.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Junior Secondary</h3>
+            <div class="range">Class VI to VIII</div>
+            <ul>
+              <li>Stronger subject depth in language, mathematics, science, social studies, and ICT.</li>
+              <li>Project-based assignments and routine-based exam preparation.</li>
+              <li>Balanced focus on discipline, teamwork, and presentation skills.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Secondary Program</h3>
+            <div class="range">Class IX to X</div>
+            <ul>
+              <li>Board-aligned syllabus with stream-based academic guidance.</li>
+              <li>Model tests, revision cycles, lab sessions, and performance tracking.</li>
+              <li>Career awareness and guardian communication before public exams.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Higher Secondary</h3>
+            <div class="range">Class XI to XII</div>
+            <ul>
+              <li>Advanced content coverage with academic mentoring and exam discipline.</li>
+              <li>Focused preparation through chapter completion targets and test routines.</li>
+              <li>University readiness, responsibility, and independent study habits.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div class="section-label">Academic Framework</div>
+          <h2>Subjects, assessment, and learning rhythm</h2>
+        </div>
+
+        <div class="two-col">
+          <article class="card">
+            <h3>Core Subject Areas</h3>
+            <ul>
+              <li>Bangla Language and Literature</li>
+              <li>English Language and Composition</li>
+              <li>Mathematics and Applied Problem Solving</li>
+              <li>General Science / Physics / Chemistry / Biology</li>
+              <li>Bangladesh and Global Studies</li>
+              <li>ICT, Moral Education, Arts, and Physical Education</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Assessment Pattern</h3>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Term</th>
+                  <th>Focus</th>
+                  <th>Weight</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Class Tests</td>
+                  <td>Weekly and chapter review</td>
+                  <td>20%</td>
+                </tr>
+                <tr>
+                  <td>Half-Yearly</td>
+                  <td>Syllabus completion checkpoint</td>
+                  <td>30%</td>
+                </tr>
+                <tr>
+                  <td>Project / Practical</td>
+                  <td>Application and presentation</td>
+                  <td>10%</td>
+                </tr>
+                <tr>
+                  <td>Annual Exam</td>
+                  <td>Final mastery evaluation</td>
+                  <td>40%</td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+        </div>
+
+        <div class="band">
+          <strong>Co-curricular integration</strong>
+          Debate, recitation, science fair participation, assembly speaking, and supervised club activities are included to strengthen confidence, communication, and leadership.
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div class="section-label">Parent Note</div>
+          <h2>How this demo can be used</h2>
+          <p>This file is intentionally presentation-ready. Schools can adapt the subject list, class ranges, assessment pattern, branding, and notice details to match their live academic program.</p>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div>
+          Greenfield Academy Demo Syllabus • Prepared for website download preview
+        </div>
+        <div>
+          Contact: info@greenfieldacademy.edu.bd • +880 1700-000000
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
