@@ -15,6 +15,7 @@ import TestimonialsSection from '../components/TestimonialsSection.jsx';
 import FaqDemoSection from '../components/FaqDemoSection.jsx';
 import ContactSection from '../components/ContactSection.jsx';
 import LandingFooter from '../components/LandingFooter.jsx';
+import FloatingWhatsAppButton from '../components/FloatingWhatsAppButton.jsx';
 
 export default function LandingPage() {
   return (
@@ -36,6 +37,7 @@ export default function LandingPage() {
       <FaqDemoSection />
       <ContactSection />
       <LandingFooter />
+      <FloatingWhatsAppButton />
     </div>
   );
 }

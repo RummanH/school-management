@@ -2,6 +2,8 @@ export const SCHOOL_PHONE = '+880 1678-560660';
 export const SCHOOL_EMAIL = 'thehasan227@gmail.com';
 export const SCHOOL_ADDRESS = 'Middle Paikpara, Mirpur-1, Dhaka 1216, Bangladesh';
 export const SCHOOL_FB = 'https://www.facebook.com/jahidhasan.rumman.3';
+// International format, digits only (no +, spaces, or dashes) — required by the wa.me deep-link scheme.
+export const SCHOOL_WHATSAPP = '8801678560660';
 export const SCHOOL_YT = 'https://youtube.com/@greenfieldacademy';
 
 export const STATS = [
