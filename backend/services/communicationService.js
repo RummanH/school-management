@@ -1,5 +1,8 @@
+import fs from "node:fs/promises";
+import path from "node:path";
 import { assert } from "../lib/errors.js";
 import { createId } from "../lib/ids.js";
+import { publicUploadsPath } from "../config/paths.js";
 import { findUserById } from "../repositories/userRepository.js";
 import { isWardOfGuardian } from "../repositories/guardianRepository.js";
 import {
@@ -18,6 +21,42 @@ function cleanText(value) {
 
 function assertTenant(actor) {
   assert(actor.tenantId, "No active organization.", 403);
+}
+
+const ATTACHMENT_DATA_URL_PATTERN = /^data:([a-zA-Z0-9.+/-]+);base64,(.+)$/;
+const ATTACHMENT_MIME_EXTENSIONS = {
+  "application/pdf": "pdf",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "text/plain": "txt",
+  "application/msword": "doc",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+};
+const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+
+async function saveMessageAttachment(dataUrl, originalName) {
+  const match = ATTACHMENT_DATA_URL_PATTERN.exec(String(dataUrl || '').trim());
+  assert(match, "Attachment is invalid.", 400);
+  const mimeType = match[1].toLowerCase();
+  const extension = ATTACHMENT_MIME_EXTENSIONS[mimeType];
+  assert(extension, "Unsupported file type. Allowed: PDF, JPG, PNG, WEBP, GIF, TXT, DOC, DOCX.", 400);
+  const buffer = Buffer.from(match[2], "base64");
+  assert(buffer.length > 0, "Attachment is empty.", 400);
+  assert(buffer.length <= MAX_ATTACHMENT_BYTES, "Attachment must be 8MB or smaller.", 400);
+
+  const dir = path.join(publicUploadsPath, "communication");
+  await fs.mkdir(dir, { recursive: true });
+  const fileName = `${createId("commatt")}.${extension}`;
+  await fs.writeFile(path.join(dir, fileName), buffer);
+
+  return {
+    attachmentUrl: `/uploads/communication/${fileName}`,
+    attachmentName: cleanText(originalName) || fileName,
+    attachmentMimeType: mimeType,
+    attachmentSize: buffer.length,
+  };
 }
 
 export class CommunicationService {
@@ -49,7 +88,11 @@ export class CommunicationService {
     const topic = cleanText(input.topic) || "Direct message";
     const body = cleanText(input.body);
     assert(recipientUserId, "Recipient is required.", 400);
-    assert(body, "Message is required.", 400);
+    assert(body || input.attachment, "Message or attachment is required.", 400);
+
+    const attachmentData = input.attachment
+      ? await saveMessageAttachment(input.attachment, input.attachmentName)
+      : {};
 
     return this.databaseManager.withTransaction(async (client) => {
       const recipient = await findUserById(client, recipientUserId);
@@ -70,6 +113,7 @@ export class CommunicationService {
         senderUserId: actor.id,
         recipientUserId: recipient.id,
         body,
+        ...attachmentData,
       });
       const thread = await findCommunicationThread(client, threadRow.id);
       const messages = await listCommunicationMessages(client, threadRow.id);
@@ -80,7 +124,11 @@ export class CommunicationService {
   async reply(actor, threadId, input) {
     assertTenant(actor);
     const body = cleanText(input.body);
-    assert(body, "Message is required.", 400);
+    assert(body || input.attachment, "Message or attachment is required.", 400);
+
+    const attachmentData = input.attachment
+      ? await saveMessageAttachment(input.attachment, input.attachmentName)
+      : {};
 
     return this.databaseManager.withTransaction(async (client) => {
       const thread = await findCommunicationThread(client, threadId);
@@ -95,6 +143,7 @@ export class CommunicationService {
         senderUserId: actor.id,
         recipientUserId,
         body,
+        ...attachmentData,
       });
       await markThreadMessagesRead(client, threadId, actor.id);
       const messages = await listCommunicationMessages(client, threadId);

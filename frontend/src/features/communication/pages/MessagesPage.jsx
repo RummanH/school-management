@@ -2,9 +2,12 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   CheckCheck,
+  Download,
+  FileText,
   Inbox,
   Loader2,
   MessageSquare,
+  Paperclip,
   PencilLine,
   Search,
   Send,
@@ -16,6 +19,86 @@ import { useAuth } from '../../../app/App.jsx';
 import { createThread, getThread, listRecipients, listThreads, replyToThread } from '../../../services/api/communicationApi.js';
 import { getMyWards } from '../../../services/api/guardianApi.js';
 import { listStudents } from '../../../services/api/studentApi.js';
+
+// Kept in sync with backend/services/communicationService.js's ATTACHMENT_MIME_EXTENSIONS.
+const ALLOWED_ATTACHMENT_TYPES = new Set([
+  'application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+  'text/plain', 'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+const ATTACHMENT_ACCEPT = '.pdf,.jpg,.jpeg,.png,.webp,.gif,.txt,.doc,.docx';
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = () => reject(new Error('Could not read the selected file.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function formatFileSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function validateAttachment(file) {
+  if (!ALLOWED_ATTACHMENT_TYPES.has(file.type)) {
+    return 'Unsupported file type. Allowed: PDF, JPG, PNG, WEBP, GIF, TXT, DOC, DOCX.';
+  }
+  if (file.size > MAX_ATTACHMENT_BYTES) {
+    return 'File must be 8MB or smaller.';
+  }
+  return '';
+}
+
+function AttachmentChip({ name, size, onRemove }) {
+  return (
+    <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
+      <FileText className="h-4 w-4 shrink-0 text-slate-400" />
+      <span className="min-w-0 flex-1 truncate">{name}</span>
+      {size ? <span className="shrink-0 text-slate-400">{formatFileSize(size)}</span> : null}
+      {onRemove && (
+        <button type="button" onClick={onRemove} className="shrink-0 rounded-full p-0.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function MessageAttachment({ url, name, mimeType, size, mine }) {
+  if (!url) return null;
+  const isImage = (mimeType || '').startsWith('image/');
+  if (isImage) {
+    return (
+      <a href={url} target="_blank" rel="noreferrer" className="mb-2 block overflow-hidden rounded-2xl">
+        <img src={url} alt={name || 'Attachment'} className="max-h-64 w-full object-cover" />
+      </a>
+    );
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      download={name || undefined}
+      className={`mb-2 flex items-center gap-2.5 rounded-2xl border px-3.5 py-2.5 text-xs font-bold transition ${
+        mine
+          ? 'border-[color-mix(in_srgb,var(--brand)_20%,white)] bg-white/60 text-[var(--brand-strong)] hover:bg-white'
+          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+      }`}
+    >
+      <FileText className="h-4 w-4 shrink-0" />
+      <span className="min-w-0 flex-1 truncate">{name || 'Attachment'}</span>
+      {size ? <span className="shrink-0 font-medium opacity-60">{formatFileSize(size)}</span> : null}
+      <Download className="h-3.5 w-3.5 shrink-0" />
+    </a>
+  );
+}
 
 const ROLE_LABELS = {
   admin: 'Admin',
@@ -92,6 +175,23 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
   const [loadingRecipients, setLoadingRecipients] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [attachment, setAttachment] = useState(null);
+  const fileInputRef = useRef(null);
+
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const validationError = validateAttachment(file);
+    if (validationError) { setError(validationError); return; }
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setAttachment({ dataUrl, name: file.name, size: file.size });
+      setError('');
+    } catch (err) {
+      setError(err.message || 'Could not read the selected file.');
+    }
+  }
 
   useEffect(() => {
     setLoadingRecipients(true);
@@ -120,8 +220,13 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
     setSaving(true);
     setError('');
     try {
-      const data = await createThread(form);
+      const data = await createThread({
+        ...form,
+        attachment: attachment?.dataUrl,
+        attachmentName: attachment?.name,
+      });
       setForm({ recipientUserId: '', studentUserId: '', topic: '', body: '' });
+      setAttachment(null);
       onCreated(data.thread?.id);
     } catch (err) {
       setError(err.message || 'Failed to send message.');
@@ -204,18 +309,26 @@ function ComposeModal({ currentUser, onClose, onCreated }) {
                 className="input min-h-[220px]"
                 value={form.body}
                 onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
-                required
                 placeholder="Write your message..."
               />
             </label>
+
+            {attachment && (
+              <AttachmentChip name={attachment.name} size={attachment.size} onRemove={() => setAttachment(null)} />
+            )}
           </div>
         </div>
 
         <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-          <p className="text-sm text-slate-500">This message will be saved to the conversation history.</p>
+          <div className="flex items-center gap-2">
+            <input ref={fileInputRef} type="file" accept={ATTACHMENT_ACCEPT} className="hidden" onChange={handleFileChange} />
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="btn-secondary" title="Attach a file">
+              <Paperclip className="h-4 w-4" /> Attach file
+            </button>
+          </div>
           <div className="flex items-center justify-end gap-3">
             <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-            <button disabled={saving || !form.recipientUserId || !form.body.trim()} className="btn-primary min-w-[140px] disabled:opacity-60">
+            <button disabled={saving || !form.recipientUserId || (!form.body.trim() && !attachment)} className="btn-primary min-w-[140px] disabled:opacity-60">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               {saving ? 'Sending...' : 'Send message'}
             </button>
@@ -261,7 +374,9 @@ export default function MessagesPage() {
   const [active, setActive] = useState(null);
   const [messages, setMessages] = useState([]);
   const [reply, setReply] = useState('');
+  const [replyAttachment, setReplyAttachment] = useState(null);
   const [sendingReply, setSendingReply] = useState(false);
+  const replyFileInputRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [showCompose, setShowCompose] = useState(false);
@@ -332,14 +447,34 @@ export default function MessagesPage() {
   const unreadTotal = useMemo(() => threads.reduce((sum, t) => sum + Number(t.unreadCount || 0), 0), [threads]);
   const activeParticipant = active ? participantLabel(active, currentUser) : 'Conversation';
 
+  async function handleReplyFileChange(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const validationError = validateAttachment(file);
+    if (validationError) { setReplyError(validationError); return; }
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setReplyAttachment({ dataUrl, name: file.name, size: file.size });
+      setReplyError('');
+    } catch (err) {
+      setReplyError(err.message || 'Could not read the selected file.');
+    }
+  }
+
   async function submitReply(e) {
     e.preventDefault();
-    if (!reply.trim() || !activeId || sendingReply) return;
+    if ((!reply.trim() && !replyAttachment) || !activeId || sendingReply) return;
     setSendingReply(true);
     setReplyError('');
     try {
-      const data = await replyToThread(activeId, { body: reply });
+      const data = await replyToThread(activeId, {
+        body: reply,
+        attachment: replyAttachment?.dataUrl,
+        attachmentName: replyAttachment?.name,
+      });
       setReply('');
+      setReplyAttachment(null);
       setActive(data.thread);
       setMessages(data.messages || []);
       loadThreads(activeId).catch(() => {});
@@ -485,8 +620,17 @@ export default function MessagesPage() {
                                 {mine ? 'You' : activeParticipant}
                               </p>
                             )}
-                            <div className={`rounded-[1.6rem] px-4 py-3.5 ${mine ? 'rounded-br-md border border-[color-mix(in_srgb,var(--brand)_14%,white)] bg-[color-mix(in_srgb,var(--brand)_8%,white)] text-[var(--brand-strong)]' : 'rounded-bl-md border border-slate-200 bg-slate-900 text-white'}`}>
-                              <p className="text-sm leading-relaxed">{m.body}</p>
+                            <div className={`rounded-[1.6rem] px-4 py-3.5 ${mine ? 'rounded-br-md border border-[color-mix(in_srgb,var(--brand)_14%,white)] bg-[color-mix(in_srgb,var(--brand)_8%,white)] text-[var(--brand-strong)]' : 'rounded-bl-md border border-slate-200 bg-slate-100 text-slate-700'}`}>
+                              {m.attachmentUrl && (
+                                <MessageAttachment
+                                  url={m.attachmentUrl}
+                                  name={m.attachmentName}
+                                  mimeType={m.attachmentMimeType}
+                                  size={m.attachmentSize}
+                                  mine={mine}
+                                />
+                              )}
+                              {m.body && <p className="text-sm leading-relaxed">{m.body}</p>}
                               <div className={`mt-3 flex items-center gap-1.5 text-[11px] font-medium ${mine ? 'text-[var(--brand-strong)]/58' : 'text-slate-400'}`}>
                                 <span>{timeText(m.createdAt)}</span>
                                 {mine && (
@@ -509,14 +653,28 @@ export default function MessagesPage() {
                     <div className="mb-3 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-sm text-red-700">{replyError}</div>
                   )}
                   <form onSubmit={submitReply} className="rounded-[1.6rem] border border-slate-300 bg-white p-3">
+                    {replyAttachment && (
+                      <div className="mb-2">
+                        <AttachmentChip name={replyAttachment.name} size={replyAttachment.size} onRemove={() => setReplyAttachment(null)} />
+                      </div>
+                    )}
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                      <input ref={replyFileInputRef} type="file" accept={ATTACHMENT_ACCEPT} className="hidden" onChange={handleReplyFileChange} />
+                      <button
+                        type="button"
+                        onClick={() => replyFileInputRef.current?.click()}
+                        title="Attach a file"
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                      >
+                        <Paperclip className="h-4 w-4" />
+                      </button>
                       <textarea
                         className="min-h-[56px] flex-1 resize-none border-0 bg-transparent px-2 py-2 text-sm text-slate-700 outline-none placeholder:text-slate-400"
                         value={reply}
                         onChange={(e) => setReply(e.target.value)}
                         placeholder="Write a reply..."
                       />
-                      <button className="btn-primary h-12 rounded-2xl px-5" disabled={!reply.trim() || sendingReply}>
+                      <button className="btn-primary h-12 rounded-2xl px-5" disabled={(!reply.trim() && !replyAttachment) || sendingReply}>
                         {sendingReply ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                         {sendingReply ? 'Sending...' : 'Send'}
                       </button>

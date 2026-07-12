@@ -33,6 +33,10 @@ export function mapMessage(row) {
     recipientName: row.recipient_name || '',
     recipientRole: row.recipient_role || '',
     body: row.body,
+    attachmentUrl: row.attachment_url || null,
+    attachmentName: row.attachment_name || null,
+    attachmentMimeType: row.attachment_mime_type || null,
+    attachmentSize: row.attachment_size || null,
     readAt: row.read_at,
     createdAt: row.created_at,
     status: row.read_at ? 'read' : 'unread',
@@ -110,10 +114,11 @@ export async function insertCommunicationThread(client, data) {
 export async function insertCommunicationMessage(client, data) {
   const result = await client.query(
     `INSERT INTO communication_messages
-       (id, thread_id, tenant_id, sender_user_id, recipient_user_id, body)
-     VALUES ($1,$2,$3,$4,$5,$6)
+       (id, thread_id, tenant_id, sender_user_id, recipient_user_id, body, attachment_url, attachment_name, attachment_mime_type, attachment_size)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
      RETURNING *`,
-    [data.id, data.threadId, data.tenantId, data.senderUserId, data.recipientUserId, data.body],
+    [data.id, data.threadId, data.tenantId, data.senderUserId, data.recipientUserId, data.body,
+     data.attachmentUrl || null, data.attachmentName || null, data.attachmentMimeType || null, data.attachmentSize || null],
   );
   await client.query(`UPDATE communication_threads SET updated_at = NOW() WHERE id = $1`, [data.threadId]);
   return result.rows[0];

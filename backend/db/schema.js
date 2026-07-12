@@ -708,6 +708,17 @@ export async function createSchema(pool) {
     -- columns are kept (unused) rather than dropped.
     ALTER TABLE communication_threads ADD COLUMN IF NOT EXISTS participant_one_user_id TEXT REFERENCES users(id) ON DELETE SET NULL;
     ALTER TABLE communication_threads ADD COLUMN IF NOT EXISTS participant_two_user_id TEXT REFERENCES users(id) ON DELETE SET NULL;
+
+    -- Messages can carry one file attachment (PDF/image/text/Word) instead of,
+    -- or alongside, body text. Stored on /uploads like gallery photos rather
+    -- than through the authenticated admission-document flow, since a message
+    -- is already only visible to its two participants (+ admin) via the
+    -- thread access check — the file URL itself is just an unguessable path.
+    ALTER TABLE communication_messages ADD COLUMN IF NOT EXISTS attachment_url TEXT;
+    ALTER TABLE communication_messages ADD COLUMN IF NOT EXISTS attachment_name TEXT;
+    ALTER TABLE communication_messages ADD COLUMN IF NOT EXISTS attachment_mime_type TEXT;
+    ALTER TABLE communication_messages ADD COLUMN IF NOT EXISTS attachment_size INTEGER;
+
     UPDATE communication_threads
        SET participant_one_user_id = COALESCE(guardian_user_id, teacher_user_id, admin_user_id),
            participant_two_user_id = (
