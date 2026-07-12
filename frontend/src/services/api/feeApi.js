@@ -24,6 +24,10 @@ export const listFeePayments = (filters = {}) => apiRequest(`/fees/payments${bui
 export const listExpenses = () => apiRequest('/fees/expenses');
 export const createExpense = (data) => apiRequest('/fees/expenses', { method: 'POST', body: data });
 export const deleteExpense = (id) => apiRequest(`/fees/expenses/${id}`, { method: 'DELETE' });
+
+export const listDonations = () => apiRequest('/fees/donations');
+export const createDonation = (data) => apiRequest('/fees/donations', { method: 'POST', body: data });
+export const deleteDonation = (id) => apiRequest(`/fees/donations/${id}`, { method: 'DELETE' });
 export const getFeeReport = (period) => apiRequest(`/fees/report${buildQueryString({ period })}`);
 export const getFeeDefaulters = (filters = {}) => apiRequest(`/fees/defaulters${buildQueryString(filters)}`);
 export const getStudentMonthlyLedger = (studentUserId, year) => apiRequest(`/fees/students/${studentUserId}/monthly${buildQueryString({ year })}`);

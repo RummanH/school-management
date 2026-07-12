@@ -11,7 +11,8 @@ import {
   listAssignments, findAssignmentById, listBillableAssignments, listPreviouslyBilledOneTimeCategories, insertAssignment, updateAssignment, deleteAssignment,
   listInvoices, findInvoiceById, findInvoiceByIdForUpdate, findInvoiceForStudentPeriod, insertInvoice, insertInvoiceItem, listInvoiceItems,
   listPayments, receiptNumberExists, insertPayment, updateInvoicePaymentStatus,
-  listExpenses, insertExpense, deleteExpense, getFeeReport,
+  listExpenses, insertExpense, deleteExpense,
+  listDonations, insertDonation, deleteDonation, getFeeReport,
   getDefaulters, getStudentMonthlyLedger, listOverdueInvoicesForFines, applyInvoiceFine,
 } from "../repositories/feeRepository.js";
 import { insertTransaction } from "../repositories/financeRepository.js";
@@ -437,6 +438,37 @@ export class FeeService {
       const expenses = await listExpenses(client, actor.tenantId);
       assert(expenses.some((e) => e.id === id), "Expense not found.", 404);
       await deleteExpense(client, id);
+    });
+  }
+
+  async listDonations(actor) {
+    return this.databaseManager.withClient((client) => listDonations(client, actor.tenantId));
+  }
+
+  async createDonation(input, actor) {
+    const amount = money(input.amount, "Donation amount");
+    const donationDate = cleanText(input.donationDate) || new Date().toISOString().slice(0, 10);
+    const method = PAYMENT_METHODS.includes(input.method) ? input.method : "cash";
+    const donorName = cleanText(input.donorName);
+    return this.databaseManager.withTransaction(async (client) => {
+      const donation = await insertDonation(client, {
+        id: createId("donation"), tenantId: actor.tenantId, donorName, amount, donationDate,
+        method, notes: cleanText(input.notes), receivedBy: actor.id,
+      });
+      await insertTransaction(client, {
+        id: createId("fintx"), tenantId: actor.tenantId, direction: "in", sourceType: "donation", sourceId: donation.id,
+        amount, method, category: donorName ? `Donation — ${donorName}` : "Donation",
+        transactionDate: donationDate, recordedBy: actor.id, notes: donation.notes,
+      });
+      return donation;
+    });
+  }
+
+  async deleteDonation(id, actor) {
+    return this.databaseManager.withTransaction(async (client) => {
+      const donations = await listDonations(client, actor.tenantId);
+      assert(donations.some((d) => d.id === id), "Donation not found.", 404);
+      await deleteDonation(client, id);
     });
   }
 

@@ -2,7 +2,7 @@ const money = (v) => Number(Number(v || 0).toFixed(2));
 const mapStaff = (r) => r && ({ id:r.id, tenantId:r.tenant_id, staffType:r.staff_type, name:r.name, employeeId:r.employee_id||'', designation:r.designation||'', department:r.department||'', qualification:r.qualification||'', phone:r.phone||'', email:r.email||'', address:r.address||'', joiningDate:r.joining_date||'', contractType:r.contract_type, baseSalary:money(r.base_salary), status:r.status, createdAt:r.created_at, updatedAt:r.updated_at });
 const mapAttendance = (r) => r && ({ id:r.id, staffId:r.staff_id, staffName:r.staff_name||'', attendanceDate:r.attendance_date, status:r.status, note:r.note||'', createdAt:r.created_at });
 const mapLeave = (r) => r && ({ id:r.id, staffId:r.staff_id, staffName:r.staff_name||'', leaveType:r.leave_type, startDate:r.start_date, endDate:r.end_date, reason:r.reason||'', status:r.status, reviewedBy:r.reviewed_by, reviewedAt:r.reviewed_at, createdAt:r.created_at });
-const mapPayroll = (r) => r && ({ id:r.id, staffId:r.staff_id, staffName:r.staff_name||'', period:r.period, baseSalary:money(r.base_salary), allowances:money(r.allowances), deductions:money(r.deductions), netSalary:money(r.net_salary), status:r.status, paidAt:r.paid_at||'', notes:r.notes||'', createdAt:r.created_at });
+const mapPayroll = (r) => r && ({ id:r.id, staffId:r.staff_id||null, teacherId:r.teacher_id||null, staffName:r.staff_name||'', period:r.period, baseSalary:money(r.base_salary), allowances:money(r.allowances), deductions:money(r.deductions), netSalary:money(r.net_salary), status:r.status, method:r.method||'cash', paidAt:r.paid_at||'', notes:r.notes||'', createdAt:r.created_at });
 const mapDocument = (r) => r && ({ id:r.id, staffId:r.staff_id, staffName:r.staff_name||'', documentType:r.document_type, title:r.title, fileUrl:r.file_url||'', notes:r.notes||'', createdAt:r.created_at });
 const mapNote = (r) => r && ({ id:r.id, staffId:r.staff_id, staffName:r.staff_name||'', note:r.note, rating:r.rating, createdAt:r.created_at });
 
@@ -26,8 +26,42 @@ export async function listLeaves(client, tenantId) { const r=await client.query(
 export async function createLeave(client, tenantId, data) { const r=await client.query(`INSERT INTO staff_leave_requests (id,tenant_id,staff_id,leave_type,start_date,end_date,reason) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,[data.id,tenantId,data.staffId,data.leaveType||'casual',data.startDate,data.endDate,data.reason||'']); return mapLeave(r.rows[0]); }
 export async function reviewLeave(client, tenantId, id, status, reviewer) { await client.query(`UPDATE staff_leave_requests SET status=$3, reviewed_by=$4, reviewed_at=NOW() WHERE tenant_id=$1 AND id=$2`,[tenantId,id,status,reviewer]); }
 
-export async function listPayroll(client, tenantId, period=null) { const r=await client.query(`SELECT pr.*, sp.name staff_name FROM staff_payroll_records pr JOIN staff_profiles sp ON sp.id=pr.staff_id WHERE pr.tenant_id=$1 AND ($2::text IS NULL OR pr.period=$2) ORDER BY pr.period DESC, sp.name ASC`,[tenantId,period]); return r.rows.map(mapPayroll); }
-export async function upsertPayroll(client, tenantId, data) { const base=money(data.baseSalary), allow=money(data.allowances), ded=money(data.deductions), net=money(base+allow-ded); const r=await client.query(`INSERT INTO staff_payroll_records (id,tenant_id,staff_id,period,base_salary,allowances,deductions,net_salary,status,paid_at,notes) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT (staff_id, period) DO UPDATE SET base_salary=$5,allowances=$6,deductions=$7,net_salary=$8,status=$9,paid_at=$10,notes=$11,updated_at=NOW() RETURNING *`,[data.id,tenantId,data.staffId,data.period,base,allow,ded,net,data.status||'draft',data.paidAt||null,data.notes||'']); return mapPayroll(r.rows[0]); }
+export async function listPayroll(client, tenantId, period=null) {
+  const r = await client.query(
+    `SELECT pr.*, COALESCE(sp.name, u.name) AS staff_name
+       FROM staff_payroll_records pr
+       LEFT JOIN staff_profiles sp ON sp.id = pr.staff_id
+       LEFT JOIN teacher_profiles tp ON tp.id = pr.teacher_id
+       LEFT JOIN users u ON u.id = tp.user_id
+      WHERE pr.tenant_id=$1 AND ($2::text IS NULL OR pr.period=$2)
+      ORDER BY pr.period DESC, staff_name ASC`,
+    [tenantId, period],
+  );
+  return r.rows.map(mapPayroll);
+}
+
+export async function upsertPayroll(client, tenantId, data) {
+  const base=money(data.baseSalary), allow=money(data.allowances), ded=money(data.deductions), net=money(base+allow-ded);
+  const status = data.status||'draft', method = data.method||'cash', paidAt = data.paidAt||null, notes = data.notes||'';
+  const r = data.teacherId
+    ? await client.query(
+        `INSERT INTO staff_payroll_records (id,tenant_id,teacher_id,period,base_salary,allowances,deductions,net_salary,status,method,paid_at,notes)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+         ON CONFLICT (teacher_id, period) DO UPDATE SET
+           base_salary=$5,allowances=$6,deductions=$7,net_salary=$8,status=$9,method=$10,paid_at=$11,notes=$12,updated_at=NOW()
+         RETURNING *`,
+        [data.id, tenantId, data.teacherId, data.period, base, allow, ded, net, status, method, paidAt, notes],
+      )
+    : await client.query(
+        `INSERT INTO staff_payroll_records (id,tenant_id,staff_id,period,base_salary,allowances,deductions,net_salary,status,method,paid_at,notes)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+         ON CONFLICT (staff_id, period) DO UPDATE SET
+           base_salary=$5,allowances=$6,deductions=$7,net_salary=$8,status=$9,method=$10,paid_at=$11,notes=$12,updated_at=NOW()
+         RETURNING *`,
+        [data.id, tenantId, data.staffId, data.period, base, allow, ded, net, status, method, paidAt, notes],
+      );
+  return mapPayroll(r.rows[0]);
+}
 
 export async function listDocuments(client, tenantId) { const r=await client.query(`SELECT sd.*, sp.name staff_name FROM staff_documents sd JOIN staff_profiles sp ON sp.id=sd.staff_id WHERE sd.tenant_id=$1 ORDER BY sd.created_at DESC`,[tenantId]); return r.rows.map(mapDocument); }
 export async function createDocument(client, tenantId, data) { const r=await client.query(`INSERT INTO staff_documents (id,tenant_id,staff_id,document_type,title,file_url,notes) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,[data.id,tenantId,data.staffId,data.documentType||'joining',data.title,data.fileUrl||'',data.notes||'']); return mapDocument(r.rows[0]); }

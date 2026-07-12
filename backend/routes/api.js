@@ -264,6 +264,9 @@ export function createApiRouter({
   router.get("/fees/expenses",            ...financeAdmin, feeController.listExpenses);
   router.post("/fees/expenses",           ...financeAdmin, feeController.createExpense);
   router.delete("/fees/expenses/:id",     ...financeAdmin, feeController.deleteExpense);
+  router.get("/fees/donations",           ...financeAdmin, feeController.listDonations);
+  router.post("/fees/donations",          ...financeAdmin, feeController.createDonation);
+  router.delete("/fees/donations/:id",    ...financeAdmin, feeController.deleteDonation);
   router.get("/fees/report",              ...financeAdmin, feeController.getReport);
   router.get("/fees/defaulters",          ...financeAdmin, feeController.getDefaulters);
   router.get("/fees/students/:studentUserId/monthly", ...financeAdmin, feeController.getStudentMonthlyLedger);

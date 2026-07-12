@@ -14,13 +14,14 @@ export class HrService {
   reviewLeave(id,status,actor){ this.requireTenant(actor); assert(['approved','rejected','pending'].includes(status),"Invalid leave status.",400); return this.databaseManager.withTransaction(c=>repo.reviewLeave(c,actor.tenantId,id,status,actor.id)); }
   savePayroll(input,actor){
     this.requireTenant(actor);
-    assert(input.staffId&&input.period,"Staff and period are required.",400);
+    assert(input.period,"Period is required.",400);
+    assert(Boolean(input.staffId)!==Boolean(input.teacherId),"Select exactly one staff member or teacher to pay.",400);
     return this.databaseManager.withTransaction(async c=>{
       const payroll=await repo.upsertPayroll(c,actor.tenantId,{...input,id:input.id||createId('staff_pay')});
       if(payroll.status==='paid'){
         await upsertTransaction(c,{
           id:createId('fintx'),tenantId:actor.tenantId,direction:'out',sourceType:'payroll',sourceId:payroll.id,
-          amount:payroll.netSalary,method:'bank',category:'Staff Payroll',
+          amount:payroll.netSalary,method:payroll.method||'cash',category:'Staff Payroll',
           transactionDate:payroll.paidAt||`${payroll.period}-01`,recordedBy:actor.id,
           notes:`Salary for ${payroll.staffName} (${payroll.period})`,
         });

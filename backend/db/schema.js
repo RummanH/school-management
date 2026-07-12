@@ -600,6 +600,18 @@ export async function createSchema(pool) {
       updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS donations (
+      id             TEXT PRIMARY KEY,
+      tenant_id      TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      donor_name     TEXT NOT NULL DEFAULT '',
+      amount         NUMERIC(10,2) NOT NULL,
+      donation_date  TEXT NOT NULL,
+      method         TEXT NOT NULL DEFAULT 'cash',
+      notes          TEXT NOT NULL DEFAULT '',
+      received_by    TEXT REFERENCES users(id) ON DELETE SET NULL,
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS finance_transactions (
       id               TEXT PRIMARY KEY,
       tenant_id        TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -674,6 +686,17 @@ export async function createSchema(pool) {
     -- Class-wise fee rules + accounting ledger additions.
     ALTER TABLE fee_categories ADD COLUMN IF NOT EXISTS late_fee_amount NUMERIC(10,2) NOT NULL DEFAULT 0;
     ALTER TABLE fee_invoices   ADD COLUMN IF NOT EXISTS fine_applied BOOLEAN NOT NULL DEFAULT false;
+
+    -- Salary payments now record how they were actually paid (cash/bank/...)
+    -- instead of always being posted to the ledger as 'bank'.
+    ALTER TABLE staff_payroll_records ADD COLUMN IF NOT EXISTS method TEXT NOT NULL DEFAULT 'cash';
+
+    -- Teachers are paid through the same salary-payment flow as non-teaching
+    -- staff, but live in a separate table (teacher_profiles), so a payroll
+    -- record now points at exactly one of staff_id / teacher_id.
+    ALTER TABLE teacher_profiles ADD COLUMN IF NOT EXISTS base_salary NUMERIC(10,2) NOT NULL DEFAULT 0;
+    ALTER TABLE staff_payroll_records ALTER COLUMN staff_id DROP NOT NULL;
+    ALTER TABLE staff_payroll_records ADD COLUMN IF NOT EXISTS teacher_id TEXT REFERENCES teacher_profiles(id) ON DELETE CASCADE;
 
     -- Backfill the new cash-book ledger from existing fee payments, expenses,
     -- and paid payroll records so it isn't empty on rollout.
@@ -760,6 +783,8 @@ export async function createSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_fee_payments_invoice      ON fee_payments(invoice_id);
     CREATE INDEX IF NOT EXISTS idx_fee_payments_student      ON fee_payments(student_user_id, payment_date DESC);
     CREATE INDEX IF NOT EXISTS idx_expenses_tenant_date      ON expenses(tenant_id, expense_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_donations_tenant_date     ON donations(tenant_id, donation_date DESC);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_staff_payroll_teacher_period ON staff_payroll_records(teacher_id, period);
     CREATE INDEX IF NOT EXISTS idx_finance_tx_tenant_date    ON finance_transactions(tenant_id, transaction_date DESC);
     CREATE INDEX IF NOT EXISTS idx_finance_tx_source         ON finance_transactions(source_type, source_id);
     CREATE INDEX IF NOT EXISTS idx_staff_profiles_tenant    ON staff_profiles(tenant_id, status);

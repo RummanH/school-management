@@ -88,6 +88,19 @@ export class FeeController {
     catch (err) { next(err); }
   };
 
+  listDonations = async (req, res, next) => {
+    try { res.json({ donations: await this.feeService.listDonations(req.currentUser) }); }
+    catch (err) { next(err); }
+  };
+  createDonation = async (req, res, next) => {
+    try { res.status(201).json({ donation: await this.feeService.createDonation(req.body, req.currentUser) }); }
+    catch (err) { next(err); }
+  };
+  deleteDonation = async (req, res, next) => {
+    try { await this.feeService.deleteDonation(req.params.id, req.currentUser); res.json({ success: true }); }
+    catch (err) { next(err); }
+  };
+
   getReport = async (req, res, next) => {
     try { res.json({ report: await this.feeService.getReport(req.currentUser, req.query.period || null) }); }
     catch (err) { next(err); }

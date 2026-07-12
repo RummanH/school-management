@@ -11,7 +11,7 @@ const QUALIFICATIONS = ['B.Ed', 'M.Ed', 'B.Sc', 'M.Sc', 'B.A', 'M.A', 'B.B.A', '
 const EMPTY = {
   name: '', email: '', password: '', status: 'active',
   employeeId: '', designation: '', photoUrl: '', department: '', subjects: '',
-  qualification: '', joiningDate: '', dateOfBirth: '',
+  qualification: '', baseSalary: 0, joiningDate: '', dateOfBirth: '',
   gender: '', bloodGroup: '', phone: '', address: '',
 };
 
@@ -77,7 +77,7 @@ function TeacherModal({ initial, onClose, onSaved }) {
     name: initial.name, email: initial.email, password: '', status: initial.status,
     employeeId: initial.employeeId || '', designation: initial.designation || '',
     photoUrl: initial.photoUrl || '', department: initial.department || '', subjects: initial.subjects || '',
-    qualification: initial.qualification || '', joiningDate: initial.joiningDate || '',
+    qualification: initial.qualification || '', baseSalary: initial.baseSalary ?? 0, joiningDate: initial.joiningDate || '',
     dateOfBirth: initial.dateOfBirth || '', gender: initial.gender || '',
     bloodGroup: initial.bloodGroup || '', phone: initial.phone || '', address: initial.address || '',
   } : { ...EMPTY });
@@ -182,6 +182,10 @@ function TeacherModal({ initial, onClose, onSaved }) {
               <div>
                 <FieldLabel>Joining Date</FieldLabel>
                 <Input type="date" value={form.joiningDate} onChange={e => set('joiningDate', e.target.value)} />
+              </div>
+              <div>
+                <FieldLabel>Base Salary</FieldLabel>
+                <Input type="number" min="0" step="0.01" value={form.baseSalary} onChange={e => set('baseSalary', e.target.value)} placeholder="Monthly salary" />
               </div>
             </div>
 

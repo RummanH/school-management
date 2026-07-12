@@ -148,6 +148,20 @@ export function mapExpense(row) {
   };
 }
 
+export function mapDonation(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    tenantId: row.tenant_id,
+    donorName: row.donor_name || '',
+    amount: mapMoney(row, 'amount'),
+    donationDate: row.donation_date,
+    method: row.method,
+    notes: row.notes || '',
+    createdAt: row.created_at,
+  };
+}
+
 const invoiceSelect = `fi.*, u.name AS student_name, sp.class_name, sp.section, sp.roll_number,
   (fi.total_amount - fi.paid_amount) AS due_amount`;
 
@@ -497,6 +511,28 @@ export async function insertExpense(client, data) {
 
 export async function deleteExpense(client, id) {
   await client.query(`DELETE FROM expenses WHERE id = $1`, [id]);
+}
+
+export async function listDonations(client, tenantId) {
+  const result = await client.query(
+    `SELECT * FROM donations WHERE tenant_id = $1 ORDER BY donation_date DESC, created_at DESC`,
+    [tenantId],
+  );
+  return result.rows.map(mapDonation);
+}
+
+export async function insertDonation(client, data) {
+  const result = await client.query(
+    `INSERT INTO donations (id, tenant_id, donor_name, amount, donation_date, method, notes, received_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+    [data.id, data.tenantId, data.donorName || '', data.amount, data.donationDate,
+     data.method, data.notes || '', data.receivedBy || null],
+  );
+  return mapDonation(result.rows[0]);
+}
+
+export async function deleteDonation(client, id) {
+  await client.query(`DELETE FROM donations WHERE id = $1`, [id]);
 }
 
 export async function getDefaulters(client, tenantId, { period, classId } = {}) {

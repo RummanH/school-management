@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   BadgeDollarSign, Plus, Save, Trash2, Pencil, Loader2, ReceiptText, CreditCard, WalletCards,
   AlertTriangle, BookOpen, Tags, UserCog, CalendarDays, Banknote, X, Search, Sparkles, ArrowRight,
-  CheckCircle2, Copy,
+  CheckCircle2, Copy, Gift,
 } from 'lucide-react';
 import { listStudents } from '../../../services/api/studentApi.js';
 import { listClasses } from '../../../services/api/academicApi.js';
@@ -11,7 +11,8 @@ import {
   listFeeStructures, createFeeStructure, updateFeeStructure, deleteFeeStructure,
   listFeeAssignments, createFeeAssignment, updateFeeAssignment, deleteFeeAssignment,
   listFeeInvoices, getFeeInvoice, generateFeeInvoices, recordFeePayment,
-  listExpenses, createExpense, deleteExpense, getFeeReport, getFeeDefaulters,
+  listExpenses, createExpense, deleteExpense,
+  listDonations, createDonation, deleteDonation, getFeeReport, getFeeDefaulters,
   getCashBook, getFinanceBalance, getStudentMonthlyLedger,
 } from '../../../services/api/feeApi.js';
 
@@ -24,6 +25,7 @@ const TABS = [
   { key: 'Monthly Record', icon: CalendarDays },
   { key: 'Cash Book', icon: WalletCards },
   { key: 'Expenses', icon: Banknote },
+  { key: 'Donations', icon: Gift },
 ];
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const BILLING_CYCLE_META = {
@@ -394,6 +396,28 @@ function ExpenseForm({ onSaved, onCancel }) {
   </form>;
 }
 
+function DonationForm({ onSaved, onCancel }) {
+  const [form, setForm] = useState({ donorName: '', amount: '', donationDate: today(), method: 'cash', notes: '' });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  async function submit(e) {
+    e.preventDefault(); setSaving(true); setError('');
+    try { await createDonation(form); onSaved(); }
+    catch (err) { setError(err.message || 'Save failed.'); setSaving(false); }
+  }
+  return <form onSubmit={submit} className="space-y-4">
+    {error && <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Field label="Donor Name"><Input autoFocus value={form.donorName} onChange={e => setForm(f => ({ ...f, donorName: e.target.value }))} placeholder="Optional" /></Field>
+      <Field label="Amount *"><Input required type="number" min="0" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} /></Field>
+      <Field label="Date"><Input type="date" value={form.donationDate} onChange={e => setForm(f => ({ ...f, donationDate: e.target.value }))} /></Field>
+      <Field label="Method"><Select value={form.method} onChange={e => setForm(f => ({ ...f, method: e.target.value }))}><option value="cash">Cash</option><option value="bank">Bank</option><option value="bkash">bKash</option><option value="nagad">Nagad</option><option value="other">Other</option></Select></Field>
+    </div>
+    <Field label="Notes"><Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optional" /></Field>
+    <FormFooter saving={saving} onCancel={onCancel} saveLabel="Add Donation" />
+  </form>;
+}
+
 /* ─── Tab bodies ─── */
 
 function DefaultersPanel({ classes }) {
@@ -487,7 +511,7 @@ function CashBookTab() {
       <div className="flex items-end"><button onClick={load} className="btn-primary w-full justify-center">Filter</button></div>
     </div>
     {loading ? <div className="flex h-32 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-[var(--brand)]" /></div>
-      : !txns.length ? <Empty icon={WalletCards} title="No transactions recorded yet">Fee payments, expenses, and paid payroll all show up here automatically.</Empty>
+      : !txns.length ? <Empty icon={WalletCards} title="No transactions recorded yet">Fee payments, expenses, donations, and paid salaries all show up here automatically.</Empty>
       : <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white"><table className="w-full text-sm"><thead><tr className="bg-slate-50 text-left text-xs font-bold uppercase text-slate-400"><th className="px-4 py-3">Date</th><th>Source</th><th>Category</th><th>Method</th><th className="text-right">Amount</th></tr></thead><tbody>{txns.map(t => <tr key={t.id} className="border-b border-slate-50"><td className="px-4 py-3 text-slate-500">{t.transactionDate}</td><td className="capitalize">{t.sourceType.replace(/_/g, ' ')}</td><td>{t.category || '—'}</td><td className="capitalize">{t.method}</td><td className={`px-4 py-3 text-right font-bold ${t.direction === 'in' ? 'text-emerald-600' : 'text-red-600'}`}>{t.direction === 'in' ? '+' : '-'}{money(t.amount)}</td></tr>)}</tbody></table></div>}
   </div>;
 }
@@ -504,6 +528,7 @@ export default function FeesPage() {
   const [assignments, setAssignments] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [donations, setDonations] = useState([]);
   const [report, setReport] = useState(null);
 
   const [modal, setModal] = useState(null); // { type, initial? }
@@ -513,17 +538,18 @@ export default function FeesPage() {
   const [structuresSearch, setStructuresSearch] = useState('');
   const [overridesSearch, setOverridesSearch] = useState('');
   const [expensesSearch, setExpensesSearch] = useState('');
+  const [donationsSearch, setDonationsSearch] = useState('');
   const [invoiceFilters, setInvoiceFilters] = useState({ className: '', period: '', search: '' });
 
   async function load() {
     setLoading(true);
-    const [s, cl, c, st, a, i, e, r] = await Promise.all([
+    const [s, cl, c, st, a, i, e, d, r] = await Promise.all([
       listStudents(), listClasses(), listFeeCategories(), listFeeStructures(), listFeeAssignments(),
-      listFeeInvoices(), listExpenses(), getFeeReport(),
+      listFeeInvoices(), listExpenses(), listDonations(), getFeeReport(),
     ]);
     setStudents(s.students || []); setClasses(cl.classes || []); setCategories(c.categories || []);
     setStructures(st.structures || []); setAssignments(a.assignments || []); setInvoices(i.invoices || []);
-    setExpenses(e.expenses || []); setReport(r.report || null); setLoading(false);
+    setExpenses(e.expenses || []); setDonations(d.donations || []); setReport(r.report || null); setLoading(false);
   }
   useEffect(() => { load().catch(() => setLoading(false)); }, []);
 
@@ -557,6 +583,12 @@ export default function FeesPage() {
     if (!q) return true;
     return e.category.toLowerCase().includes(q) || (e.payee || '').toLowerCase().includes(q);
   }), [expenses, expensesSearch]);
+
+  const filteredDonations = useMemo(() => donations.filter(d => {
+    const q = donationsSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (d.donorName || '').toLowerCase().includes(q) || (d.notes || '').toLowerCase().includes(q);
+  }), [donations, donationsSearch]);
 
   const filteredInvoices = useMemo(() => invoices.filter(i =>
     (!invoiceFilters.className || i.className === invoiceFilters.className) &&
@@ -642,6 +674,12 @@ export default function FeesPage() {
         {filteredExpenses.length ? <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white"><table className="w-full text-sm"><thead><tr className="bg-slate-50 text-left text-xs font-bold uppercase text-slate-400"><th className="px-4 py-3">Category</th><th>Payee</th><th>Amount</th><th>Method</th><th></th></tr></thead><tbody>{filteredExpenses.map(e => <tr key={e.id} className="border-b border-slate-50"><td className="px-4 py-3 font-bold text-slate-800">{e.category}<p className="text-xs font-normal text-slate-400">{e.expenseDate}</p></td><td>{e.payee || '—'}</td><td className="font-bold">{money(e.amount)}</td><td className="capitalize">{e.method}</td><td className="px-4 py-3"><RowActions onDelete={() => askDelete({ title: 'Delete Expense', message: `Delete this ${e.category} expense of ${money(e.amount)}?`, run: () => deleteExpense(e.id) })} /></td></tr>)}</tbody></table></div>
           : <Empty icon={Banknote} title={expensesSearch ? 'No matching expenses' : 'No expenses recorded yet'} action={!expensesSearch && <button onClick={() => setModal({ type: 'expense' })} className="btn-primary mt-4"><Plus className="h-4 w-4" />New Expense</button>}>{expensesSearch ? 'Try a different search.' : 'Track school outgoings like utilities, supplies, or maintenance.'}</Empty>}
       </>}
+
+      {active === 'Donations' && <>
+        <Toolbar search={donationsSearch} onSearch={setDonationsSearch} searchPlaceholder="Search by donor or notes…" newLabel="New Donation" onNew={() => setModal({ type: 'donation' })} />
+        {filteredDonations.length ? <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white"><table className="w-full text-sm"><thead><tr className="bg-slate-50 text-left text-xs font-bold uppercase text-slate-400"><th className="px-4 py-3">Donor</th><th>Amount</th><th>Method</th><th>Notes</th><th></th></tr></thead><tbody>{filteredDonations.map(d => <tr key={d.id} className="border-b border-slate-50"><td className="px-4 py-3 font-bold text-slate-800">{d.donorName || 'Anonymous'}<p className="text-xs font-normal text-slate-400">{d.donationDate}</p></td><td className="font-bold text-emerald-600">+{money(d.amount)}</td><td className="capitalize">{d.method}</td><td className="text-slate-500">{d.notes || '—'}</td><td className="px-4 py-3"><RowActions onDelete={() => askDelete({ title: 'Delete Donation', message: `Delete this ${money(d.amount)} donation from ${d.donorName || 'Anonymous'}?`, run: () => deleteDonation(d.id) })} /></td></tr>)}</tbody></table></div>
+          : <Empty icon={Gift} title={donationsSearch ? 'No matching donations' : 'No donations recorded yet'} action={!donationsSearch && <button onClick={() => setModal({ type: 'donation' })} className="btn-primary mt-4"><Plus className="h-4 w-4" />New Donation</button>}>{donationsSearch ? 'Try a different search.' : 'Record cash or bank donations — they add straight to cash-in-hand.'}</Empty>}
+      </>}
     </>}
 
     {modal?.type === 'category' && <Modal title={modal.initial ? 'Edit Category' : 'New Fee Category'} onClose={closeModal}><CategoryForm initial={modal.initial} onSaved={afterSave} onCancel={closeModal} /></Modal>}
@@ -650,6 +688,7 @@ export default function FeesPage() {
     {modal?.type === 'generate' && <Modal title="Create Billing Run" subtitle="Monthly recurring fees or selected exam and other charges" maxWidth="max-w-3xl" onClose={closeModal}><GenerateForm students={students} categories={categories} onGenerated={load} onCancel={closeModal} /></Modal>}
     {modal?.type === 'payment' && <Modal title="Invoice & Collection" maxWidth="max-w-2xl" onClose={closeModal}><PaymentForm invoiceId={modal.invoiceId} onPaid={load} onCancel={closeModal} /></Modal>}
     {modal?.type === 'expense' && <Modal title="New Expense" onClose={closeModal}><ExpenseForm onSaved={afterSave} onCancel={closeModal} /></Modal>}
+    {modal?.type === 'donation' && <Modal title="New Donation" onClose={closeModal}><DonationForm onSaved={afterSave} onCancel={closeModal} /></Modal>}
 
     {confirm && <Confirm title={confirm.title} message={confirm.message} onConfirm={runConfirm} onCancel={() => setConfirm(null)} busy={confirmBusy} />}
   </div>;
