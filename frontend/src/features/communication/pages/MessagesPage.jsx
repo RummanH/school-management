@@ -90,7 +90,7 @@ function MessageAttachment({ url, name, mimeType, size, mine }) {
       download={name || undefined}
       className={`mb-2 flex items-center gap-2.5 rounded-2xl border px-3.5 py-2.5 text-xs font-bold transition ${
         mine
-          ? 'border-[color-mix(in_srgb,var(--brand)_20%,white)] bg-white/60 text-[var(--brand-strong)] hover:bg-white'
+          ? 'border-[color-mix(in_srgb,var(--brand)_25%,white)] bg-white/70 text-[var(--brand-strong)] hover:bg-white'
           : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
       }`}
     >
@@ -730,9 +730,11 @@ export default function MessagesPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="truncate text-base font-black text-slate-900">{activeParticipant}</p>
-                        <span className="inline-flex items-center rounded-full bg-[var(--brand-soft)] px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[var(--brand-strong)]">
-                          {isGroupActive ? 'Group' : 'Active thread'}
-                        </span>
+                        {isGroupActive && (
+                          <span className="inline-flex items-center rounded-full bg-[var(--brand-soft)] px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[var(--brand-strong)]">
+                            Group
+                          </span>
+                        )}
                       </div>
                       <p className={`mt-1 truncate text-sm ${activeIsOnline ? 'font-semibold text-emerald-600' : 'text-slate-500'}`}>
                         {activeSubtitle}
@@ -766,7 +768,7 @@ export default function MessagesPage() {
                                 {mine ? 'You' : senderName}
                               </p>
                             )}
-                            <div className={`rounded-[1.6rem] px-4 py-3.5 ${mine ? 'rounded-br-md border border-[color-mix(in_srgb,var(--brand)_14%,white)] bg-[color-mix(in_srgb,var(--brand)_8%,white)] text-[var(--brand-strong)]' : 'rounded-bl-md border border-slate-200 bg-slate-100 text-slate-700'}`}>
+                            <div className={`rounded-[1.6rem] px-4 py-3.5 ${mine ? 'rounded-br-md border border-[color-mix(in_srgb,var(--brand)_35%,white)] bg-[color-mix(in_srgb,var(--brand)_22%,white)] text-[var(--brand-strong)]' : 'rounded-bl-md border border-slate-200 bg-slate-100 text-slate-700'}`}>
                               {m.attachmentUrl && (
                                 <MessageAttachment
                                   url={m.attachmentUrl}
@@ -776,8 +778,8 @@ export default function MessagesPage() {
                                   mine={mine}
                                 />
                               )}
-                              {m.body && <p className="text-sm leading-relaxed">{m.body}</p>}
-                              <div className={`mt-3 flex items-center gap-1.5 text-[11px] font-medium ${mine ? 'text-[var(--brand-strong)]/58' : 'text-slate-400'}`}>
+                              {m.body && <p className="text-sm font-medium leading-relaxed">{m.body}</p>}
+                              <div className={`mt-3 flex items-center gap-1.5 text-[11px] font-medium ${mine ? 'text-[var(--brand-strong)]/60' : 'text-slate-400'}`}>
                                 <span>{timeText(m.createdAt)}</span>
                                 {mine && !isGroupActive && (
                                   <>
@@ -794,33 +796,40 @@ export default function MessagesPage() {
                   })}
                 </div>
 
-                <div className="border-t border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(241,245,249,0.96))] p-4 backdrop-blur sm:p-5">
+                <div className="border-t border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(241,245,249,0.96))] p-3 backdrop-blur sm:p-4">
                   {replyError && (
                     <div className="mb-3 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-sm text-red-700">{replyError}</div>
                   )}
-                  <form onSubmit={submitReply} className="rounded-[1.6rem] border border-slate-300 bg-white p-3">
+                  <form onSubmit={submitReply} className="rounded-[1.4rem] border border-slate-300 bg-white p-2">
                     {replyAttachment && (
                       <div className="mb-2">
                         <AttachmentChip name={replyAttachment.name} size={replyAttachment.size} onRemove={() => setReplyAttachment(null)} />
                       </div>
                     )}
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <div className="flex items-end gap-2">
                       <input ref={replyFileInputRef} type="file" accept={ATTACHMENT_ACCEPT} className="hidden" onChange={handleReplyFileChange} />
                       <button
                         type="button"
                         onClick={() => replyFileInputRef.current?.click()}
                         title="Attach a file"
-                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
                       >
                         <Paperclip className="h-4 w-4" />
                       </button>
                       <textarea
-                        className="min-h-[56px] flex-1 resize-none border-0 bg-transparent px-2 py-2 text-sm text-slate-700 outline-none placeholder:text-slate-400"
+                        rows={1}
+                        className="min-h-[40px] max-h-32 flex-1 resize-none border-0 bg-transparent px-2 py-2 text-sm font-medium text-slate-700 outline-none placeholder:text-slate-400"
                         value={reply}
                         onChange={(e) => setReply(e.target.value)}
-                        placeholder="Write a reply..."
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            submitReply(e);
+                          }
+                        }}
+                        placeholder="Write a reply... (Enter to send, Shift+Enter for a new line)"
                       />
-                      <button className="btn-primary h-12 rounded-2xl px-5" disabled={(!reply.trim() && !replyAttachment) || sendingReply}>
+                      <button className="btn-primary h-10 rounded-xl px-4" disabled={(!reply.trim() && !replyAttachment) || sendingReply}>
                         {sendingReply ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                         {sendingReply ? 'Sending...' : 'Send'}
                       </button>
