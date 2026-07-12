@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Loader2, X, Save, FileText, CalendarRange } from 'lucide-react';
+import { useConfirm } from '../../../components/ConfirmDialog.jsx';
 import {
   listClasses, getExams, createExam, updateExam, deleteExam,
   listExamGroups, createExamGroup, updateExamGroup, deleteExamGroup,
@@ -15,6 +16,7 @@ const STATUS_STYLES = {
 };
 
 export default function ExamsTab() {
+  const confirm = useConfirm();
   const [groups, setGroups] = useState([]);
   const [groupId, setGroupId] = useState('');
   const [classes, setClasses] = useState([]);
@@ -88,7 +90,12 @@ export default function ExamsTab() {
   }
 
   async function handleDeleteGroup(group) {
-    if (!confirm(`Delete "${group.name}" and its entire schedule across all classes? Results entered for it will also be deleted.`)) return;
+    const ok = await confirm({
+      title: `Delete "${group.name}"?`,
+      message: 'Its entire schedule across all classes will be removed, along with any results already entered for it.',
+      confirmLabel: 'Delete exam',
+    });
+    if (!ok) return;
     setDeleting(group.id);
     try {
       const result = await deleteExamGroup(group.id);
@@ -120,7 +127,12 @@ export default function ExamsTab() {
   }
 
   async function handleDeleteSchedule(id) {
-    if (!confirm('Delete this subject from the exam schedule?')) return;
+    const ok = await confirm({
+      title: 'Delete this subject?',
+      message: 'It will be removed from the exam schedule.',
+      confirmLabel: 'Delete',
+    });
+    if (!ok) return;
     setDeleting(id);
     try {
       const result = await deleteExam(id);

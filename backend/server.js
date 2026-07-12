@@ -3,10 +3,10 @@ import { createBackendApp } from './composition.js';
 import { startFeeCronScheduler } from './services/feeCronScheduler.js';
 
 async function start() {
-  const { app, databaseManager, env, feeService, authService, realtime } = await createBackendApp();
+  const { app, databaseManager, env, feeService, authService, realtime, getThreadParticipantIds } = await createBackendApp();
 
   const httpServer = http.createServer(app);
-  realtime.attach(httpServer, { authService, env });
+  realtime.attach(httpServer, { authService, env, getThreadParticipantIds });
 
   httpServer.listen(env.PORT, () => {
     console.log(`Server running on http://localhost:${env.PORT}`);

@@ -26,7 +26,7 @@ export function createRealtimeGateway() {
   return {
     // Attaches Socket.IO to the same HTTP server Express listens on (no
     // separate port). Called once from server.js after the server is created.
-    attach(httpServer, { authService, env }) {
+    attach(httpServer, { authService, env, getThreadParticipantIds }) {
       io = new Server(httpServer, {
         cors: { origin: true, credentials: true },
       });
@@ -76,6 +76,23 @@ export function createRealtimeGateway() {
             io.to(roomForTenant(tenantId)).emit("presence:offline", { userId, lastSeenAt: new Date().toISOString() });
           }
         });
+
+        // Typing indicator: purely ephemeral (no DB write), relayed to the
+        // other participants of that specific thread. Membership is checked
+        // on every event rather than trusted from the client, since anyone
+        // could otherwise emit a threadId they don't belong to and learn who
+        // else is in it.
+        async function relayTyping(event, threadId) {
+          if (!threadId || !getThreadParticipantIds) return;
+          const participantIds = await getThreadParticipantIds(threadId).catch(() => []);
+          if (!participantIds.includes(userId)) return;
+          for (const uid of participantIds) {
+            if (uid === userId) continue;
+            io.to(roomForUser(uid)).emit(event, { threadId, userId, name: socket.data.user.name });
+          }
+        }
+        socket.on("typing:start", ({ threadId } = {}) => relayTyping("typing:update", threadId));
+        socket.on("typing:stop", ({ threadId } = {}) => relayTyping("typing:stopped", threadId));
       });
 
       return io;

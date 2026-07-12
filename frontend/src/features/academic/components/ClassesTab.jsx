@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Loader2, Users, X, Save, GraduationCap } from 'lucide-react';
 import { useAuth } from '../../../app/App.jsx';
+import { useConfirm } from '../../../components/ConfirmDialog.jsx';
 import { listClasses, createClass, updateClass, deleteClass, getAcademicStructure } from '../../../services/api/academicApi.js';
 import { listTeachersForAcademic } from '../../../services/api/academicApi.js';
 
@@ -34,6 +35,7 @@ const EMPTY = { name: '', section: '', sessionId: '', classTeacherId: '', descri
 
 export default function ClassesTab() {
   const { currentUser } = useAuth();
+  const confirm = useConfirm();
   const canManage = CAN_MANAGE_ROLES.includes(currentUser?.role);
 
   const [classes, setClasses]   = useState([]);
@@ -76,7 +78,12 @@ export default function ClassesTab() {
   }
 
   async function handleDelete(id) {
-    if (!confirm('Delete this class? All routines, syllabus, exams and results will also be deleted.')) return;
+    const ok = await confirm({
+      title: 'Delete class?',
+      message: 'All routines, syllabus, exams and results for this class will also be deleted.',
+      confirmLabel: 'Delete class',
+    });
+    if (!ok) return;
     setDeleting(id);
     try {
       const result = await deleteClass(id);

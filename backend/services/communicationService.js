@@ -7,13 +7,21 @@ import { findUserById } from "../repositories/userRepository.js";
 import { isWardOfGuardian } from "../repositories/guardianRepository.js";
 import {
   addThreadParticipants,
+  countThreadParticipants,
   findCommunicationThread,
+  findDirectThreadBetween,
+  findMessageById,
   insertCommunicationMessage,
   insertCommunicationThread,
   listCommunicationMessages,
   listCommunicationThreads,
   listMessageRecipients,
+  listThreadParticipantIds,
   markThreadMessagesRead,
+  removeThreadParticipant,
+  renameThread,
+  softDeleteMessage,
+  updateMessageBody,
 } from "../repositories/communicationRepository.js";
 
 function cleanText(value) {
@@ -95,11 +103,25 @@ export class CommunicationService {
       assert(thread && thread.tenantId === actor.tenantId, "Conversation not found.", 404);
       assert(canAccessThread(actor, thread), "You do not have permission to view this conversation.", 403);
       didMarkRead = await markThreadMessagesRead(client, threadId, actor.id);
-      const messages = await listCommunicationMessages(client, threadId);
-      return { thread, messages };
+      const { messages, hasMore } = await listCommunicationMessages(client, threadId);
+      return { thread, messages, hasMore };
     });
     if (didMarkRead) this.broadcastThreadRead(result.thread, actor.id);
     return result;
+  }
+
+  // Pagination: loads the page of messages immediately older than `before`
+  // (a message id). No read-marking here — markThreadMessagesRead already
+  // covers the whole thread regardless of which page is currently loaded.
+  async listOlderMessages(actor, threadId, before) {
+    assertTenant(actor);
+    assert(before, "A cursor is required.", 400);
+    return this.databaseManager.withClient(async (client) => {
+      const thread = await findCommunicationThread(client, threadId);
+      assert(thread && thread.tenantId === actor.tenantId, "Conversation not found.", 404);
+      assert(canAccessThread(actor, thread), "You do not have permission to view this conversation.", 403);
+      return listCommunicationMessages(client, threadId, { before });
+    });
   }
 
   async createThread(actor, input) {
@@ -129,6 +151,30 @@ export class CommunicationService {
       }
 
       const isGroup = recipients.length > 1;
+
+      // "New Message" to someone you already have a direct conversation with
+      // should continue that conversation, not splinter it into a duplicate
+      // thread — group creation is exempt since overlapping membership across
+      // separate named groups (e.g. two different class groups) is normal.
+      if (!isGroup) {
+        const existingThreadId = await findDirectThreadBetween(client, actor.tenantId, actor.id, recipients[0].id);
+        if (existingThreadId) {
+          await insertCommunicationMessage(client, {
+            id: createId("comm_msg"),
+            threadId: existingThreadId,
+            tenantId: actor.tenantId,
+            senderUserId: actor.id,
+            recipientUserId: recipients[0].id,
+            body,
+            ...attachmentData,
+          });
+          await markThreadMessagesRead(client, existingThreadId, actor.id);
+          const thread = await findCommunicationThread(client, existingThreadId);
+          const { messages, hasMore } = await listCommunicationMessages(client, existingThreadId);
+          return { thread, messages, hasMore };
+        }
+      }
+
       const topic = cleanText(input.topic) || (isGroup ? "Group message" : "Direct message");
       await validateStudentTag(client, [{ id: actor.id, role: actor.role }, ...recipients], studentUserId);
 
@@ -155,8 +201,8 @@ export class CommunicationService {
         ...attachmentData,
       });
       const thread = await findCommunicationThread(client, threadRow.id);
-      const messages = await listCommunicationMessages(client, threadRow.id);
-      return { thread, messages };
+      const { messages, hasMore } = await listCommunicationMessages(client, threadRow.id);
+      return { thread, messages, hasMore };
     });
     this.broadcastNewMessage(result.thread, result.messages[result.messages.length - 1]);
     return result;
@@ -187,8 +233,8 @@ export class CommunicationService {
         ...attachmentData,
       });
       await markThreadMessagesRead(client, threadId, actor.id);
-      const messages = await listCommunicationMessages(client, threadId);
-      return { thread, messages };
+      const { messages, hasMore } = await listCommunicationMessages(client, threadId);
+      return { thread, messages, hasMore };
     });
     this.broadcastNewMessage(result.thread, result.messages[result.messages.length - 1]);
     return result;
@@ -197,6 +243,119 @@ export class CommunicationService {
   async recipients(actor, role) {
     assertTenant(actor);
     return this.databaseManager.withClient((client) => listMessageRecipients(client, actor.tenantId, actor.id, role || null));
+  }
+
+  broadcastMessageEvent(participantIds, event, payload) {
+    for (const uid of participantIds || []) {
+      this.realtime?.emitToUser(uid, event, payload);
+    }
+  }
+
+  async editMessage(actor, messageId, input) {
+    assertTenant(actor);
+    const body = cleanText(input.body);
+    assert(body, "Message body is required.", 400);
+
+    const result = await this.databaseManager.withTransaction(async (client) => {
+      const existing = await findMessageById(client, messageId);
+      assert(existing && existing.tenant_id === actor.tenantId, "Message not found.", 404);
+      assert(existing.sender_user_id === actor.id, "You can only edit your own messages.", 403);
+      assert(!existing.deleted_at, "This message has been deleted.", 400);
+      assert(!existing.attachment_url, "Attachment messages can't be edited — delete and resend instead.", 400);
+      const updated = await updateMessageBody(client, messageId, body);
+      const participantIds = await listThreadParticipantIds(client, existing.thread_id);
+      return { threadId: existing.thread_id, body: updated.body, editedAt: updated.edited_at, participantIds };
+    });
+    const payload = { threadId: result.threadId, messageId, body: result.body, editedAt: result.editedAt };
+    this.broadcastMessageEvent(result.participantIds, "message:edited", payload);
+    return payload;
+  }
+
+  async deleteMessage(actor, messageId) {
+    assertTenant(actor);
+    const result = await this.databaseManager.withTransaction(async (client) => {
+      const existing = await findMessageById(client, messageId);
+      assert(existing && existing.tenant_id === actor.tenantId, "Message not found.", 404);
+      assert(existing.sender_user_id === actor.id, "You can only delete your own messages.", 403);
+      assert(!existing.deleted_at, "This message has already been deleted.", 400);
+      await softDeleteMessage(client, messageId);
+      const participantIds = await listThreadParticipantIds(client, existing.thread_id);
+      return { threadId: existing.thread_id, participantIds };
+    });
+    const payload = { threadId: result.threadId, messageId, deleted: true };
+    this.broadcastMessageEvent(result.participantIds, "message:deleted", payload);
+    return payload;
+  }
+
+  broadcastThreadUpdate(thread) {
+    for (const p of thread.participants || []) {
+      this.realtime?.emitToUser(p.userId, "thread:updated", { thread });
+    }
+  }
+
+  async renameGroup(actor, threadId, input) {
+    assertTenant(actor);
+    const topic = cleanText(input.topic);
+    assert(topic, "Group name is required.", 400);
+    const thread = await this.databaseManager.withTransaction(async (client) => {
+      const existing = await findCommunicationThread(client, threadId);
+      assert(existing && existing.tenantId === actor.tenantId, "Conversation not found.", 404);
+      assert(existing.isGroup, "Only groups can be renamed.", 400);
+      assert(canAccessThread(actor, existing), "You do not have permission to manage this group.", 403);
+      await renameThread(client, threadId, topic);
+      return findCommunicationThread(client, threadId);
+    });
+    this.broadcastThreadUpdate(thread);
+    return { thread };
+  }
+
+  async addGroupMembers(actor, threadId, input) {
+    assertTenant(actor);
+    const userIds = [...new Set((Array.isArray(input.userIds) ? input.userIds : []).map(cleanText).filter(Boolean))];
+    assert(userIds.length > 0, "Select at least one person to add.", 400);
+
+    const thread = await this.databaseManager.withTransaction(async (client) => {
+      const existing = await findCommunicationThread(client, threadId);
+      assert(existing && existing.tenantId === actor.tenantId, "Conversation not found.", 404);
+      assert(existing.isGroup, "Only groups support adding members.", 400);
+      assert(canAccessThread(actor, existing), "You do not have permission to manage this group.", 403);
+
+      const currentIds = new Set((existing.participants || []).map((p) => p.userId));
+      const rows = [];
+      for (const uid of userIds) {
+        if (currentIds.has(uid)) continue;
+        const user = await findUserById(client, uid);
+        assert(user && user.tenant_id === actor.tenantId && user.status === 'active', "One or more selected people were not found.", 404);
+        rows.push({ id: createId("ctp"), threadId, userId: uid });
+      }
+      if (rows.length) await addThreadParticipants(client, rows);
+      return findCommunicationThread(client, threadId);
+    });
+    this.broadcastThreadUpdate(thread);
+    return { thread };
+  }
+
+  async removeGroupMember(actor, threadId, memberUserId) {
+    assertTenant(actor);
+    const cleanMemberId = cleanText(memberUserId);
+    assert(cleanMemberId, "Member is required.", 400);
+
+    const thread = await this.databaseManager.withTransaction(async (client) => {
+      const existing = await findCommunicationThread(client, threadId);
+      assert(existing && existing.tenantId === actor.tenantId, "Conversation not found.", 404);
+      assert(existing.isGroup, "Only groups support removing members.", 400);
+      assert(canAccessThread(actor, existing), "You do not have permission to manage this group.", 403);
+      const memberCount = await countThreadParticipants(client, threadId);
+      assert(memberCount > 1, "A group needs at least one member.", 400);
+      await removeThreadParticipant(client, threadId, cleanMemberId);
+      return findCommunicationThread(client, threadId);
+    });
+    // The removed member is no longer in thread.participants, so the normal
+    // broadcast loop below would skip telling them — do that explicitly so
+    // their client can drop the thread from view.
+    this.realtime?.emitToUser(cleanMemberId, "thread:removed", { threadId });
+    this.broadcastThreadUpdate(thread);
+    return { thread };
   }
 }
 

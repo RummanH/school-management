@@ -770,6 +770,12 @@ export async function createSchema(pool) {
     ALTER TABLE communication_messages ADD COLUMN IF NOT EXISTS attachment_mime_type TEXT;
     ALTER TABLE communication_messages ADD COLUMN IF NOT EXISTS attachment_size INTEGER;
 
+    -- Edit/soft-delete: deleted messages keep their row (so unread counts,
+    -- ordering, and "N messages in thread" stay correct) but the body and
+    -- attachment are cleared and the API returns a tombstone instead.
+    ALTER TABLE communication_messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ;
+    ALTER TABLE communication_messages ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+
     UPDATE communication_threads
        SET participant_one_user_id = COALESCE(guardian_user_id, teacher_user_id, admin_user_id),
            participant_two_user_id = (

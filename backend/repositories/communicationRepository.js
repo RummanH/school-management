@@ -43,6 +43,8 @@ export function mapMessage(row) {
     attachmentSize: row.attachment_size || null,
     readAt: row.read_at,
     createdAt: row.created_at,
+    editedAt: row.edited_at || null,
+    deleted: Boolean(row.deleted_at),
     status: row.read_at ? 'read' : 'unread',
   };
 }
@@ -163,7 +165,19 @@ export async function insertCommunicationMessage(client, data) {
   return result.rows[0];
 }
 
-export async function listCommunicationMessages(client, threadId) {
+// Cursor-paginated: without `before`, returns the most recent `limit`
+// messages; with `before` (a message id), returns the `limit` messages
+// immediately older than it. Either way the result is in ascending
+// (oldest-first) order for direct rendering, plus a `hasMore` flag so the
+// caller knows whether an older page actually exists.
+export async function listCommunicationMessages(client, threadId, { before, limit = 40 } = {}) {
+  const params = [threadId];
+  let cursorClause = '';
+  if (before) {
+    params.push(before);
+    cursorClause = `AND cm.created_at < (SELECT created_at FROM communication_messages WHERE id = $${params.length})`;
+  }
+  params.push(limit + 1);
   const result = await client.query(
     `SELECT cm.*,
             su.name AS sender_name,
@@ -174,11 +188,86 @@ export async function listCommunicationMessages(client, threadId) {
        FROM communication_messages cm
        JOIN users su ON su.id = cm.sender_user_id
        LEFT JOIN users ru ON ru.id = cm.recipient_user_id
-      WHERE cm.thread_id = $1
-      ORDER BY cm.created_at ASC`,
+      WHERE cm.thread_id = $1 ${cursorClause}
+      ORDER BY cm.created_at DESC
+      LIMIT $${params.length}`,
+    params,
+  );
+  const hasMore = result.rows.length > limit;
+  const page = (hasMore ? result.rows.slice(0, limit) : result.rows).reverse();
+  return { messages: page.map(mapMessage), hasMore };
+}
+
+export async function findMessageById(client, id) {
+  const result = await client.query(`SELECT * FROM communication_messages WHERE id = $1 LIMIT 1`, [id]);
+  return result.rows[0] || null;
+}
+
+export async function updateMessageBody(client, id, body) {
+  const result = await client.query(
+    `UPDATE communication_messages SET body = $2, edited_at = NOW() WHERE id = $1 RETURNING *`,
+    [id, body],
+  );
+  return result.rows[0];
+}
+
+export async function softDeleteMessage(client, id) {
+  const result = await client.query(
+    `UPDATE communication_messages
+        SET deleted_at = NOW(), body = '', attachment_url = NULL, attachment_name = NULL, attachment_mime_type = NULL, attachment_size = NULL
+      WHERE id = $1
+      RETURNING *`,
+    [id],
+  );
+  return result.rows[0];
+}
+
+export async function renameThread(client, threadId, topic) {
+  const result = await client.query(
+    `UPDATE communication_threads SET topic = $2, updated_at = NOW() WHERE id = $1 RETURNING *`,
+    [threadId, topic],
+  );
+  return result.rows[0];
+}
+
+export async function removeThreadParticipant(client, threadId, userId) {
+  await client.query(
+    `DELETE FROM communication_thread_participants WHERE thread_id = $1 AND user_id = $2`,
+    [threadId, userId],
+  );
+}
+
+export async function countThreadParticipants(client, threadId) {
+  const result = await client.query(
+    `SELECT COUNT(*)::int AS c FROM communication_thread_participants WHERE thread_id = $1`,
     [threadId],
   );
-  return result.rows.map(mapMessage);
+  return result.rows[0].c;
+}
+
+export async function listThreadParticipantIds(client, threadId) {
+  const result = await client.query(
+    `SELECT user_id FROM communication_thread_participants WHERE thread_id = $1`,
+    [threadId],
+  );
+  return result.rows.map((r) => r.user_id);
+}
+
+// Finds the existing 1:1 (non-group) thread between exactly these two people,
+// if one exists — used so "New Message" to someone you already talk to
+// continues that conversation instead of splintering it into a duplicate.
+export async function findDirectThreadBetween(client, tenantId, userIdA, userIdB) {
+  const result = await client.query(
+    `SELECT ct.id
+       FROM communication_threads ct
+      WHERE ct.tenant_id = $1 AND ct.is_group = false
+        AND EXISTS (SELECT 1 FROM communication_thread_participants p WHERE p.thread_id = ct.id AND p.user_id = $2)
+        AND EXISTS (SELECT 1 FROM communication_thread_participants p WHERE p.thread_id = ct.id AND p.user_id = $3)
+        AND (SELECT COUNT(*) FROM communication_thread_participants p WHERE p.thread_id = ct.id) = 2
+      LIMIT 1`,
+    [tenantId, userIdA, userIdB],
+  );
+  return result.rows[0]?.id || null;
 }
 
 // Returns true only if this call actually flipped something from unread to

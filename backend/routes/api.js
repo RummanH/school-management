@@ -225,7 +225,13 @@ export function createApiRouter({
   router.get("/communication/threads",          ...communicationUsers, communicationController.listThreads);
   router.post("/communication/threads",         ...communicationUsers, communicationController.createThread);
   router.get("/communication/threads/:threadId", ...communicationUsers, communicationController.getThread);
+  router.get("/communication/threads/:threadId/messages", ...communicationUsers, communicationController.olderMessages);
   router.post("/communication/threads/:threadId/messages", ...communicationUsers, communicationController.reply);
+  router.put("/communication/messages/:messageId",    ...communicationUsers, communicationController.editMessage);
+  router.delete("/communication/messages/:messageId", ...communicationUsers, communicationController.deleteMessage);
+  router.patch("/communication/threads/:threadId",                    ...communicationUsers, communicationController.renameGroup);
+  router.post("/communication/threads/:threadId/participants",       ...communicationUsers, communicationController.addGroupMembers);
+  router.delete("/communication/threads/:threadId/participants/:userId", ...communicationUsers, communicationController.removeGroupMember);
   router.get("/communication/recipients",       ...communicationUsers, communicationController.recipients);
 
   // Notices & News

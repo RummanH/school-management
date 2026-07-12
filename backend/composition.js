@@ -20,12 +20,15 @@ import { DocumentService } from "./services/documentService.js";
 import { ProfileService } from "./services/profileService.js";
 import { createApp } from "./app.js";
 import { createRealtimeGateway } from "./realtime.js";
+import { listThreadParticipantIds } from "./repositories/communicationRepository.js";
 
 export async function createBackendApp() {
   const databaseManager = new DatabaseManager(env.DATABASE_URL);
   await bootstrapService.initialize(databaseManager, env);
 
   const realtime = createRealtimeGateway();
+  const getThreadParticipantIds = (threadId) =>
+    databaseManager.withClient((client) => listThreadParticipantIds(client, threadId));
 
   const contactService   = new ContactService(databaseManager);
   const authService      = new AuthService(databaseManager, env);
@@ -51,7 +54,7 @@ export async function createBackendApp() {
     guardianService, noticeService, galleryService, admissionService, feeService, financeService,
     communicationService, hrService, documentService, profileService, databaseManager,
   });
-  return { app, databaseManager, env, feeService, authService, realtime };
+  return { app, databaseManager, env, feeService, authService, realtime, getThreadParticipantIds };
 }
 
 

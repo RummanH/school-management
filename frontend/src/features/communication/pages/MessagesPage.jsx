@@ -1,26 +1,37 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
+  Check,
   CheckCheck,
+  ChevronUp,
   Download,
   FileText,
   Inbox,
   Loader2,
+  LogOut,
   MessageSquare,
   Paperclip,
+  Pencil,
   PencilLine,
   Search,
   Send,
+  Settings,
   Sparkles,
+  Trash2,
+  UserPlus,
   UserRound,
   Users,
   X,
 } from 'lucide-react';
 import { useAuth } from '../../../app/App.jsx';
-import { createThread, getThread, listRecipients, listThreads, replyToThread } from '../../../services/api/communicationApi.js';
+import {
+  addGroupMembers, createThread, deleteMessage, editMessage, getThread, listOlderMessages,
+  listRecipients, listThreads, removeGroupMember, renameGroup, replyToThread,
+} from '../../../services/api/communicationApi.js';
 import { getMyWards } from '../../../services/api/guardianApi.js';
 import { listStudents } from '../../../services/api/studentApi.js';
 import Avatar from '../../../components/Avatar.jsx';
+import { useConfirm } from '../../../components/ConfirmDialog.jsx';
 
 // Kept in sync with backend/services/communicationService.js's ATTACHMENT_MIME_EXTENSIONS.
 const ALLOWED_ATTACHMENT_TYPES = new Set([
@@ -127,6 +138,35 @@ function shortTimeText(value) {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function dayKey(value) {
+  const d = new Date(value);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function dateSeparatorLabel(value) {
+  const d = new Date(value);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  if (dayKey(value) === dayKey(today)) return 'Today';
+  if (dayKey(value) === dayKey(yesterday)) return 'Yesterday';
+  return d.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: d.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
+  });
+}
+
+function DateSeparator({ label }) {
+  return (
+    <div className="flex items-center justify-center py-2">
+      <span className="rounded-full bg-slate-200/70 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+        {label}
+      </span>
+    </div>
+  );
 }
 
 // Sourced from the full participants list (not the legacy participant_one/
@@ -413,6 +453,171 @@ function ComposeModal({ currentUser, onlineUserIds, onClose, onCreated }) {
   );
 }
 
+function GroupInfoModal({ thread, currentUser, onlineUserIds, onClose, onUpdated, onLeft }) {
+  const [topic, setTopic] = useState(thread.topic || '');
+  const [savingTopic, setSavingTopic] = useState(false);
+  const [recipients, setRecipients] = useState([]);
+  const [loadingRecipients, setLoadingRecipients] = useState(true);
+  const [addSelection, setAddSelection] = useState([]);
+  const [busyUserId, setBusyUserId] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    listRecipients()
+      .then((d) => setRecipients(d.recipients || []))
+      .catch(() => setRecipients([]))
+      .finally(() => setLoadingRecipients(false));
+  }, []);
+
+  const memberIds = new Set((thread.participants || []).map((p) => p.userId));
+  const addableByRole = ROLE_GROUP_ORDER
+    .map((role) => ({ role, people: recipients.filter((r) => r.role === role && !memberIds.has(r.id)) }))
+    .filter((g) => g.people.length > 0);
+
+  async function saveTopic(e) {
+    e.preventDefault();
+    const cleanTopic = topic.trim();
+    if (!cleanTopic || cleanTopic === thread.topic) return;
+    setSavingTopic(true);
+    setError('');
+    try {
+      const d = await renameGroup(thread.id, cleanTopic);
+      onUpdated(d.thread);
+    } catch (err) {
+      setError(err.message || 'Failed to rename group.');
+    } finally {
+      setSavingTopic(false);
+    }
+  }
+
+  function toggleAdd(id) {
+    setAddSelection((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  async function addMembers() {
+    if (!addSelection.length) return;
+    setBusyUserId('add');
+    setError('');
+    try {
+      const d = await addGroupMembers(thread.id, addSelection);
+      setAddSelection([]);
+      onUpdated(d.thread);
+    } catch (err) {
+      setError(err.message || 'Failed to add members.');
+    } finally {
+      setBusyUserId(null);
+    }
+  }
+
+  async function removeMember(userId) {
+    setBusyUserId(userId);
+    setError('');
+    try {
+      const d = await removeGroupMember(thread.id, userId);
+      if (userId === currentUser?.id) {
+        onLeft();
+      } else {
+        onUpdated(d.thread);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to update the group.');
+    } finally {
+      setBusyUserId(null);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="relative z-10 flex max-h-[min(42rem,calc(100dvh-2rem))] w-full max-w-lg flex-col overflow-hidden rounded-[1.75rem] bg-white">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--brand)]">Group info</p>
+            <h3 className="mt-1 text-xl font-black text-slate-900">Manage group</h3>
+          </div>
+          <button type="button" onClick={onClose} className="icon-btn shrink-0">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="premium-scrollbar flex-1 overflow-y-auto px-6 py-5">
+          {error && <div className="mb-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>}
+
+          <form onSubmit={saveTopic} className="mb-6">
+            <span className="label-sm">Group name</span>
+            <div className="mt-1 flex gap-2">
+              <input className="input flex-1" value={topic} onChange={(e) => setTopic(e.target.value)} />
+              <button type="submit" disabled={savingTopic || !topic.trim() || topic.trim() === thread.topic} className="btn-secondary shrink-0 disabled:opacity-50">
+                {savingTopic ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              </button>
+            </div>
+          </form>
+
+          <div className="mb-6">
+            <span className="label-sm">Members ({(thread.participants || []).length})</span>
+            <div className="mt-2 space-y-1">
+              {(thread.participants || []).map((p) => (
+                <div key={p.userId} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5">
+                  <Avatar name={p.name} photoUrl={p.photoUrl} size="h-8 w-8" textSize="text-[11px]" tone="bg-slate-200 text-slate-600">
+                    <OnlineDot show={onlineUserIds?.has(p.userId)} />
+                  </Avatar>
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-700">
+                    {p.name} {p.userId === currentUser?.id && <span className="text-slate-400">(you)</span>}
+                  </span>
+                  <span className="shrink-0 text-xs text-slate-400">{ROLE_LABELS[p.role] || p.role}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeMember(p.userId)}
+                    disabled={busyUserId === p.userId}
+                    title={p.userId === currentUser?.id ? 'Leave group' : 'Remove member'}
+                    className="shrink-0 rounded-full p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                  >
+                    {busyUserId === p.userId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : p.userId === currentUser?.id ? <LogOut className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <span className="label-sm">Add members</span>
+            <div className="mt-2 max-h-48 space-y-3 overflow-y-auto rounded-2xl border border-slate-200 p-3">
+              {loadingRecipients ? (
+                <p className="px-2 py-1 text-sm text-slate-400">Loading...</p>
+              ) : addableByRole.length === 0 ? (
+                <p className="px-2 py-1 text-sm text-slate-400">Everyone available is already in this group.</p>
+              ) : addableByRole.map((g) => (
+                <div key={g.role}>
+                  <p className="px-1 pb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">{ROLE_LABELS[g.role] || g.role}</p>
+                  <div className="space-y-0.5">
+                    {g.people.map((r) => (
+                      <label key={r.id} className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-slate-50">
+                        <input
+                          type="checkbox"
+                          checked={addSelection.includes(r.id)}
+                          onChange={() => toggleAdd(r.id)}
+                          className="h-4 w-4 shrink-0 rounded border-slate-300 text-[var(--brand)] focus:ring-[var(--brand)]"
+                        />
+                        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-700">{r.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {addSelection.length > 0 && (
+              <button type="button" onClick={addMembers} disabled={busyUserId === 'add'} className="btn-primary mt-3 w-full justify-center disabled:opacity-60">
+                {busyUserId === 'add' ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+                Add {addSelection.length} {addSelection.length === 1 ? 'person' : 'people'}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ThreadListItem({ thread, active, currentUser, online, onSelect }) {
   const name = threadDisplayName(thread, currentUser);
   const hasUnread = Number(thread.unreadCount || 0) > 0;
@@ -459,6 +664,7 @@ function ThreadListItem({ thread, active, currentUser, online, onSelect }) {
 
 export default function MessagesPage() {
   const { currentUser, socket, onlineUserIds, lastSeenByUserId } = useAuth();
+  const confirm = useConfirm();
   const [threads, setThreads] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [active, setActive] = useState(null);
@@ -470,10 +676,23 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [showCompose, setShowCompose] = useState(false);
+  const [showGroupInfo, setShowGroupInfo] = useState(false);
   const [query, setQuery] = useState('');
   const [threadError, setThreadError] = useState('');
   const [replyError, setReplyError] = useState('');
   const scrollRef = useRef(null);
+  const skipAutoScrollRef = useRef(false);
+
+  const [hasMoreOlder, setHasMoreOlder] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editingBody, setEditingBody] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const [typingUsers, setTypingUsers] = useState(new Map()); // userId -> name
+  const isTypingRef = useRef(false);
+  const typingStopTimerRef = useRef(null);
 
   async function loadThreads(selectId = activeId) {
     const data = await listThreads();
@@ -500,10 +719,12 @@ export default function MessagesPage() {
     }
     setDetailLoading(true);
     setThreadError('');
+    setTypingUsers(new Map());
     getThread(activeId)
       .then((d) => {
         setActive(d.thread);
         setMessages(d.messages || []);
+        setHasMoreOlder(Boolean(d.hasMore));
         loadThreads(activeId).catch(() => {});
       })
       .catch((err) => setThreadError(err.message || 'Failed to load conversation.'))
@@ -513,8 +734,30 @@ export default function MessagesPage() {
   useEffect(() => {
     const node = scrollRef.current;
     if (!node) return;
+    if (skipAutoScrollRef.current) { skipAutoScrollRef.current = false; return; }
     node.scrollTop = node.scrollHeight;
   }, [messages, detailLoading, activeId]);
+
+  async function loadOlderMessages() {
+    if (!hasMoreOlder || loadingOlder || !messages.length || !activeId) return;
+    setLoadingOlder(true);
+    const node = scrollRef.current;
+    const prevScrollHeight = node?.scrollHeight || 0;
+    try {
+      const oldestId = messages[0].id;
+      const d = await listOlderMessages(activeId, oldestId);
+      skipAutoScrollRef.current = true;
+      setMessages((prev) => [...(d.messages || []), ...prev]);
+      setHasMoreOlder(Boolean(d.hasMore));
+      requestAnimationFrame(() => {
+        if (node) node.scrollTop = node.scrollHeight - prevScrollHeight;
+      });
+    } catch {
+      // Silently leave hasMoreOlder as-is — the button just stays clickable to retry.
+    } finally {
+      setLoadingOlder(false);
+    }
+  }
 
   // Real-time inbound events (see backend/realtime.js): a new message anywhere
   // refreshes the sidebar (unread badges, ordering, preview); if it landed in
@@ -522,24 +765,159 @@ export default function MessagesPage() {
   // marks it read — same call the user opening the thread already makes).
   useEffect(() => {
     if (!socket) return;
+    // Merges rather than replaces: a wholesale replace with getThread()'s
+    // latest-page result would silently discard any older messages the user
+    // already scrolled up and loaded via pagination.
+    function mergeLatestPage(threadId) {
+      getThread(threadId).then((d) => {
+        setActive(d.thread);
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          const newOnes = (d.messages || []).filter((m) => !existingIds.has(m.id));
+          return [...prev, ...newOnes];
+        });
+      }).catch(() => {});
+    }
     function handleNewMessage({ message }) {
       if (message.threadId === activeId) {
-        getThread(activeId).then((d) => { setActive(d.thread); setMessages(d.messages || []); }).catch(() => {});
+        setTypingUsers((prev) => { const next = new Map(prev); next.delete(message.senderUserId); return next; });
+        mergeLatestPage(activeId);
       }
       loadThreads(activeId).catch(() => {});
     }
     function handleThreadRead({ threadId }) {
-      if (threadId === activeId) {
-        getThread(activeId).then((d) => { setActive(d.thread); setMessages(d.messages || []); }).catch(() => {});
-      }
+      if (threadId === activeId) mergeLatestPage(activeId);
+    }
+    function handleMessageEdited({ threadId, messageId, body, editedAt }) {
+      if (threadId !== activeId) return;
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, body, editedAt } : m)));
+    }
+    function handleMessageDeleted({ threadId, messageId }) {
+      if (threadId !== activeId) return;
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, body: '', deleted: true, attachmentUrl: null } : m)));
+    }
+    function handleThreadUpdated({ thread }) {
+      if (thread.id === activeId) setActive(thread);
+      setThreads((prev) => prev.map((t) => (t.id === thread.id ? { ...t, ...thread } : t)));
+    }
+    function handleThreadRemoved({ threadId }) {
+      setThreads((prev) => prev.filter((t) => t.id !== threadId));
+      if (threadId === activeId) setActiveId(null);
+    }
+    function handleTypingUpdate({ threadId, userId, name }) {
+      if (threadId !== activeId || userId === currentUser?.id) return;
+      setTypingUsers((prev) => new Map(prev).set(userId, name));
+    }
+    function handleTypingStopped({ threadId, userId }) {
+      if (threadId !== activeId) return;
+      setTypingUsers((prev) => { const next = new Map(prev); next.delete(userId); return next; });
     }
     socket.on('message:new', handleNewMessage);
     socket.on('thread:read', handleThreadRead);
+    socket.on('message:edited', handleMessageEdited);
+    socket.on('message:deleted', handleMessageDeleted);
+    socket.on('thread:updated', handleThreadUpdated);
+    socket.on('thread:removed', handleThreadRemoved);
+    socket.on('typing:update', handleTypingUpdate);
+    socket.on('typing:stopped', handleTypingStopped);
     return () => {
       socket.off('message:new', handleNewMessage);
       socket.off('thread:read', handleThreadRead);
+      socket.off('message:edited', handleMessageEdited);
+      socket.off('message:deleted', handleMessageDeleted);
+      socket.off('thread:updated', handleThreadUpdated);
+      socket.off('thread:removed', handleThreadRemoved);
+      socket.off('typing:update', handleTypingUpdate);
+      socket.off('typing:stopped', handleTypingStopped);
     };
-  }, [socket, activeId]);
+  }, [socket, activeId, currentUser?.id]);
+
+  // Typing emission: fires typing:start at most once every few seconds while
+  // the user keeps typing, and typing:stop after a short pause or on send.
+  function notifyTyping() {
+    if (!socket || !activeId) return;
+    if (!isTypingRef.current) {
+      isTypingRef.current = true;
+      socket.emit('typing:start', { threadId: activeId });
+    }
+    clearTimeout(typingStopTimerRef.current);
+    typingStopTimerRef.current = setTimeout(() => {
+      isTypingRef.current = false;
+      socket.emit('typing:stop', { threadId: activeId });
+    }, 2500);
+  }
+
+  function notifyTypingStopped() {
+    clearTimeout(typingStopTimerRef.current);
+    if (isTypingRef.current && socket && activeId) {
+      isTypingRef.current = false;
+      socket.emit('typing:stop', { threadId: activeId });
+    }
+  }
+
+  // Sends a stop event for whichever thread was active when leaving it (e.g.
+  // switching threads mid-type), so the other person doesn't see a stale
+  // "typing..." that only clears after the multi-second server-side timeout.
+  useEffect(() => {
+    return () => {
+      clearTimeout(typingStopTimerRef.current);
+      if (isTypingRef.current && socket && activeId) {
+        socket.emit('typing:stop', { threadId: activeId });
+        isTypingRef.current = false;
+      }
+    };
+  }, [activeId, socket]);
+
+  function startEdit(message) {
+    setEditingMessageId(message.id);
+    setEditingBody(message.body);
+  }
+
+  function cancelEdit() {
+    setEditingMessageId(null);
+    setEditingBody('');
+  }
+
+  async function saveEdit(messageId) {
+    const body = editingBody.trim();
+    if (!body) return;
+    setSavingEdit(true);
+    try {
+      const d = await editMessage(messageId, body);
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, body: d.body, editedAt: d.editedAt } : m)));
+      cancelEdit();
+    } catch (err) {
+      setReplyError(err.message || 'Failed to edit message.');
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
+  async function handleDeleteMessage(messageId) {
+    const ok = await confirm({
+      title: 'Delete this message?',
+      message: 'This cannot be undone.',
+      confirmLabel: 'Delete message',
+    });
+    if (!ok) return;
+    try {
+      await deleteMessage(messageId);
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, body: '', deleted: true, attachmentUrl: null } : m)));
+    } catch (err) {
+      setReplyError(err.message || 'Failed to delete message.');
+    }
+  }
+
+  function handleGroupUpdated(thread) {
+    setActive(thread);
+    setThreads((prev) => prev.map((t) => (t.id === thread.id ? { ...t, ...thread } : t)));
+  }
+
+  function handleGroupLeft() {
+    setShowGroupInfo(false);
+    setThreads((prev) => prev.filter((t) => t.id !== activeId));
+    setActiveId(null);
+  }
 
   const deferredQuery = useDeferredValue(query);
   const filteredThreads = useMemo(() => {
@@ -601,6 +979,7 @@ export default function MessagesPage() {
     if ((!reply.trim() && !replyAttachment) || !activeId || sendingReply) return;
     setSendingReply(true);
     setReplyError('');
+    notifyTypingStopped();
     try {
       const data = await replyToThread(activeId, {
         body: reply,
@@ -610,7 +989,11 @@ export default function MessagesPage() {
       setReply('');
       setReplyAttachment(null);
       setActive(data.thread);
-      setMessages(data.messages || []);
+      // Append just the new message rather than replacing the whole array —
+      // a wholesale replace would discard any older messages already loaded
+      // via "load earlier messages" pagination.
+      const newMessage = data.messages[data.messages.length - 1];
+      setMessages((prev) => (prev.some((m) => m.id === newMessage.id) ? prev : [...prev, newMessage]));
       loadThreads(activeId).catch(() => {});
     } catch (err) {
       setReplyError(err.message || 'Failed to send message.');
@@ -741,6 +1124,16 @@ export default function MessagesPage() {
                         {active?.studentName ? ` / Student: ${active.studentName}` : ''}
                       </p>
                     </div>
+                    {isGroupActive && (
+                      <button
+                        type="button"
+                        onClick={() => setShowGroupInfo(true)}
+                        title="Group info"
+                        className="icon-btn shrink-0"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </button>
+                    )}
                     <div className="hidden text-right sm:block">
                       <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Messages</p>
                       <p className="mt-1 text-sm font-semibold text-slate-600">{messages.length} in thread</p>
@@ -748,45 +1141,106 @@ export default function MessagesPage() {
                   </div>
                 </div>
 
-                <div ref={scrollRef} className="premium-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
+                <div ref={scrollRef} onScroll={(e) => { if (e.target.scrollTop < 60) loadOlderMessages(); }} className="premium-scrollbar min-h-0 flex-1 space-y-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
+                  {hasMoreOlder && (
+                    <div className="flex justify-center pb-3">
+                      <button
+                        type="button"
+                        onClick={loadOlderMessages}
+                        disabled={loadingOlder}
+                        className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-500 transition hover:bg-slate-50 disabled:opacity-60"
+                      >
+                        {loadingOlder ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ChevronUp className="h-3.5 w-3.5" />}
+                        {loadingOlder ? 'Loading...' : 'Load earlier messages'}
+                      </button>
+                    </div>
+                  )}
                   {messages.map((m, index) => {
                     const mine = m.senderUserId === currentUser?.id;
                     const prev = messages[index - 1];
                     const showMeta = !prev || prev.senderUserId !== m.senderUserId;
+                    const showDateSeparator = !prev || dayKey(m.createdAt) !== dayKey(prev.createdAt);
                     const senderName = m.senderName || activeParticipant;
+                    const isEditing = editingMessageId === m.id;
                     return (
-                      <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`flex max-w-[88%] items-end gap-3 sm:max-w-[74%] ${mine ? 'flex-row-reverse' : 'flex-row'}`}>
-                          {mine ? (
-                            <Avatar name={currentUser?.name} photoUrl={currentUser?.photoUrl} size="h-10 w-10" textSize="text-xs" rounded="rounded-2xl" tone="bg-[var(--brand)] text-white" />
-                          ) : (
-                            <Avatar name={senderName} photoUrl={m.senderPhotoUrl} size="h-10 w-10" textSize="text-xs" rounded="rounded-2xl" tone="bg-slate-900 text-white" />
-                          )}
-                          <div>
-                            {showMeta && (
-                              <p className={`mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.16em] ${mine ? 'text-right text-[var(--brand-strong)]/55' : 'text-left text-slate-400'}`}>
-                                {mine ? 'You' : senderName}
-                              </p>
+                      <div key={m.id}>
+                        {showDateSeparator && <DateSeparator label={dateSeparatorLabel(m.createdAt)} />}
+                        <div className={`group flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`flex max-w-[88%] items-end gap-3 sm:max-w-[74%] ${mine ? 'flex-row-reverse' : 'flex-row'}`}>
+                            {mine ? (
+                              <Avatar name={currentUser?.name} photoUrl={currentUser?.photoUrl} size="h-10 w-10" textSize="text-xs" rounded="rounded-2xl" tone="bg-[var(--brand)] text-white" />
+                            ) : (
+                              <Avatar name={senderName} photoUrl={m.senderPhotoUrl} size="h-10 w-10" textSize="text-xs" rounded="rounded-2xl" tone="bg-slate-900 text-white" />
                             )}
-                            <div className={`rounded-[1.6rem] px-4 py-3.5 ${mine ? 'rounded-br-md border border-[color-mix(in_srgb,var(--brand)_35%,white)] bg-[color-mix(in_srgb,var(--brand)_22%,white)] text-[var(--brand-strong)]' : 'rounded-bl-md border border-slate-200 bg-slate-100 text-slate-700'}`}>
-                              {m.attachmentUrl && (
-                                <MessageAttachment
-                                  url={m.attachmentUrl}
-                                  name={m.attachmentName}
-                                  mimeType={m.attachmentMimeType}
-                                  size={m.attachmentSize}
-                                  mine={mine}
-                                />
+                            <div className="min-w-0">
+                              {showMeta && (
+                                <p className={`mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.16em] ${mine ? 'text-right text-[var(--brand-strong)]/55' : 'text-left text-slate-400'}`}>
+                                  {mine ? 'You' : senderName}
+                                </p>
                               )}
-                              {m.body && <p className="text-sm font-medium leading-relaxed">{m.body}</p>}
-                              <div className={`mt-3 flex items-center gap-1.5 text-[11px] font-medium ${mine ? 'text-[var(--brand-strong)]/60' : 'text-slate-400'}`}>
-                                <span>{timeText(m.createdAt)}</span>
-                                {mine && !isGroupActive && (
-                                  <>
-                                    <CheckCheck className="h-3.5 w-3.5" />
-                                    <span>{m.readAt ? `Read ${shortTimeText(m.readAt)}` : 'Delivered'}</span>
-                                  </>
+                              <div className="flex items-end gap-1.5">
+                                {mine && !m.deleted && !isEditing && (
+                                  <div className="mb-1 flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
+                                    {!m.attachmentUrl && (
+                                      <button type="button" onClick={() => startEdit(m)} title="Edit" className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+                                        <Pencil className="h-3.5 w-3.5" />
+                                      </button>
+                                    )}
+                                    <button type="button" onClick={() => handleDeleteMessage(m.id)} title="Delete" className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600">
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
                                 )}
+                                <div className={`rounded-[1.6rem] px-4 py-3.5 ${mine ? 'rounded-br-md border border-[color-mix(in_srgb,var(--brand)_35%,white)] bg-[color-mix(in_srgb,var(--brand)_22%,white)] text-[var(--brand-strong)]' : 'rounded-bl-md border border-slate-200 bg-slate-100 text-slate-700'}`}>
+                                  {m.deleted ? (
+                                    <p className="text-sm italic text-slate-400">This message was deleted</p>
+                                  ) : isEditing ? (
+                                    <div className="min-w-[14rem]">
+                                      <textarea
+                                        autoFocus
+                                        rows={2}
+                                        className="w-full resize-none rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-sm font-medium text-slate-800 outline-none focus:border-[var(--brand)]"
+                                        value={editingBody}
+                                        onChange={(e) => setEditingBody(e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEdit(m.id); }
+                                          if (e.key === 'Escape') cancelEdit();
+                                        }}
+                                      />
+                                      <div className="mt-1.5 flex justify-end gap-2">
+                                        <button type="button" onClick={cancelEdit} className="text-xs font-bold text-slate-500 hover:text-slate-700">Cancel</button>
+                                        <button type="button" onClick={() => saveEdit(m.id)} disabled={savingEdit || !editingBody.trim()} className="text-xs font-bold text-[var(--brand)] hover:opacity-80 disabled:opacity-50">
+                                          {savingEdit ? 'Saving...' : 'Save'}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      {m.attachmentUrl && (
+                                        <MessageAttachment
+                                          url={m.attachmentUrl}
+                                          name={m.attachmentName}
+                                          mimeType={m.attachmentMimeType}
+                                          size={m.attachmentSize}
+                                          mine={mine}
+                                        />
+                                      )}
+                                      {m.body && <p className="text-sm font-medium leading-relaxed">{m.body}</p>}
+                                    </>
+                                  )}
+                                  {!m.deleted && !isEditing && (
+                                    <div className={`mt-3 flex items-center gap-1.5 text-[11px] font-medium ${mine ? 'text-[var(--brand-strong)]/60' : 'text-slate-400'}`}>
+                                      <span>{timeText(m.createdAt)}</span>
+                                      {m.editedAt && <span>(edited)</span>}
+                                      {mine && !isGroupActive && (
+                                        <>
+                                          <CheckCheck className="h-3.5 w-3.5" />
+                                          <span>{m.readAt ? `Read ${shortTimeText(m.readAt)}` : 'Delivered'}</span>
+                                        </>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -794,6 +1248,16 @@ export default function MessagesPage() {
                       </div>
                     );
                   })}
+                  {typingUsers.size > 0 && (
+                    <div className="flex items-center gap-2 px-1 text-xs font-semibold text-slate-400">
+                      <span className="flex gap-0.5">
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.3s]" />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.15s]" />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" />
+                      </span>
+                      {[...typingUsers.values()].join(', ')} {typingUsers.size === 1 ? 'is' : 'are'} typing...
+                    </div>
+                  )}
                 </div>
 
                 <div className="border-t border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(241,245,249,0.96))] p-3 backdrop-blur sm:p-4">
@@ -820,7 +1284,7 @@ export default function MessagesPage() {
                         rows={1}
                         className="min-h-[40px] max-h-32 flex-1 resize-none border-0 bg-transparent px-2 py-2 text-sm font-medium text-slate-700 outline-none placeholder:text-slate-400"
                         value={reply}
-                        onChange={(e) => setReply(e.target.value)}
+                        onChange={(e) => { setReply(e.target.value); if (e.target.value.trim()) notifyTyping(); else notifyTypingStopped(); }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
@@ -851,6 +1315,17 @@ export default function MessagesPage() {
             setShowCompose(false);
             loadThreads(id).catch(() => {});
           }}
+        />
+      )}
+
+      {showGroupInfo && active && (
+        <GroupInfoModal
+          thread={active}
+          currentUser={currentUser}
+          onlineUserIds={onlineUserIds}
+          onClose={() => setShowGroupInfo(false)}
+          onUpdated={handleGroupUpdated}
+          onLeft={handleGroupLeft}
         />
       )}
     </>
