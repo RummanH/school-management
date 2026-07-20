@@ -682,6 +682,7 @@ export default function MessagesPage() {
   const [replyError, setReplyError] = useState('');
   const scrollRef = useRef(null);
   const skipAutoScrollRef = useRef(false);
+  const restoringScrollRef = useRef(false);
 
   const [hasMoreOlder, setHasMoreOlder] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
@@ -750,7 +751,14 @@ export default function MessagesPage() {
       setMessages((prev) => [...(d.messages || []), ...prev]);
       setHasMoreOlder(Boolean(d.hasMore));
       requestAnimationFrame(() => {
-        if (node) node.scrollTop = node.scrollHeight - prevScrollHeight;
+        if (node) {
+          // Restoring scrollTop fires a native scroll event; mark it so the
+          // handler below doesn't treat it as the user scrolling near the top
+          // and re-trigger loadOlderMessages (which caused a runaway fetch
+          // loop whenever the newly prepended batch rendered under 60px tall).
+          restoringScrollRef.current = true;
+          node.scrollTop = node.scrollHeight - prevScrollHeight;
+        }
       });
     } catch {
       // Silently leave hasMoreOlder as-is — the button just stays clickable to retry.
@@ -1141,7 +1149,14 @@ export default function MessagesPage() {
                   </div>
                 </div>
 
-                <div ref={scrollRef} onScroll={(e) => { if (e.target.scrollTop < 60) loadOlderMessages(); }} className="premium-scrollbar min-h-0 flex-1 space-y-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
+                <div
+                  ref={scrollRef}
+                  onScroll={(e) => {
+                    if (restoringScrollRef.current) { restoringScrollRef.current = false; return; }
+                    if (e.target.scrollTop < 60) loadOlderMessages();
+                  }}
+                  className="premium-scrollbar min-h-0 flex-1 space-y-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6"
+                >
                   {hasMoreOlder && (
                     <div className="flex justify-center pb-3">
                       <button
