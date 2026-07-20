@@ -62,7 +62,7 @@ export default function SyllabusTab() {
   async function handleDelete(id) {
     setDeleting(id);
     try {
-      await deleteSyllabusEntry(id, classId);
+      await deleteSyllabusEntry(id);
       setSyllabus(s => s.filter(e => e.id !== id));
     } catch (e) { alert(e.message); }
     finally { setDeleting(null); }

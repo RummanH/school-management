@@ -124,14 +124,16 @@ export async function listClasses(client, tenantId) {
 }
 
 // Public (unauthenticated) — used by the online admission form's "Applying
-// for Class" dropdown. No tenant filter: this deployment is single-school in
-// practice (same simplification already used for notices/gallery/contact) —
-// revisit if this becomes a shared multi-tenant public site.
-export async function listClassesPublic(client) {
+// for Class" dropdown. Tenant is resolved from the site's slug (see
+// noticeRepository/galleryRepository's listPublic* for the same pattern) so
+// one school's classes never leak onto another's admission page.
+export async function listClassesPublic(client, tenantId) {
   const result = await client.query(
     `SELECT id, name, section, academic_year
        FROM classes
+      WHERE tenant_id = $1
       ORDER BY name ASC, section ASC`,
+    [tenantId],
   );
   return result.rows.map((row) => ({
     id: row.id,
@@ -144,6 +146,22 @@ export async function listClassesPublic(client) {
 export async function findClassById(client, id) {
   const result = await client.query('SELECT * FROM classes WHERE id = $1', [id]);
   return result.rows[0] || null;
+}
+
+// A teacher may write to a class (attendance/results) if they're its
+// homeroom teacher OR assigned to teach any subject in it — same two
+// signals teacher_subject_assignments/classes already track elsewhere.
+export async function isTeacherAssignedToClass(client, tenantId, teacherId, classId) {
+  const result = await client.query(
+    `SELECT 1 FROM classes
+      WHERE id = $1 AND tenant_id = $2 AND class_teacher_id = $3
+     UNION
+     SELECT 1 FROM teacher_subject_assignments
+      WHERE tenant_id = $2 AND class_id = $1 AND teacher_id = $3
+     LIMIT 1`,
+    [classId, tenantId, teacherId],
+  );
+  return result.rowCount > 0;
 }
 
 export async function insertClass(client, { tenantId, name, section, academicYear, sessionId, classTeacherId, description }) {
@@ -202,6 +220,11 @@ export async function upsertRoutineEntry(client, { tenantId, classId, dayOfWeek,
   );
 }
 
+export async function findRoutineEntryById(client, id) {
+  const result = await client.query('SELECT * FROM class_routines WHERE id = $1', [id]);
+  return result.rows[0] || null;
+}
+
 export async function deleteRoutineEntry(client, id) {
   await client.query('DELETE FROM class_routines WHERE id = $1', [id]);
 }
@@ -224,6 +247,11 @@ export async function insertSyllabusEntry(client, { tenantId, classId, subject, 
     [id, tenantId, classId, subject, title, description || '', chapterCount || 0],
   );
   return id;
+}
+
+export async function findSyllabusEntryById(client, id) {
+  const result = await client.query('SELECT * FROM syllabus_entries WHERE id = $1', [id]);
+  return result.rows[0] || null;
 }
 
 export async function updateSyllabusEntry(client, { id, subject, title, description, chapterCount }) {

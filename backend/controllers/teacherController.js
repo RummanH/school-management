@@ -12,7 +12,7 @@ export class TeacherController {
   listPublic = async (req, res, next) => {
     try {
       const limit = Math.min(Number(req.query.limit) || 12, 24);
-      res.json({ teachers: await this.teacherService.listPublic(limit) });
+      res.json({ teachers: await this.teacherService.listPublic(req.query.school, limit) });
     } catch (err) { next(err); }
   };
 

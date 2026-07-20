@@ -14,6 +14,7 @@ import {
   updateUser,
   deleteUser,
 } from "../repositories/userRepository.js";
+import { findTenantBySlug } from "../repositories/tenantRepository.js";
 
 export class TeacherService {
   constructor(databaseManager) {
@@ -25,8 +26,16 @@ export class TeacherService {
     return this.databaseManager.withClient((client) => listTeachers(client, actor.tenantId));
   }
 
-  listPublic(limit = 12) {
-    return this.databaseManager.withClient((client) => listPublicTeachers(client, limit));
+  // No resolvable tenant means an empty list, not another school's staff —
+  // same reasoning as noticeService.listPublic/galleryService.listPublic.
+  listPublic(schoolSlug, limit = 12) {
+    const slug = (schoolSlug || "").trim();
+    if (!slug) return [];
+    return this.databaseManager.withClient(async (client) => {
+      const tenant = await findTenantBySlug(client, slug);
+      if (!tenant || tenant.status !== "active") return [];
+      return listPublicTeachers(client, tenant.id, limit);
+    });
   }
 
   async create(input, actor) {

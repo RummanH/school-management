@@ -1,8 +1,8 @@
-import { apiRequest } from './client.js';
+import { apiRequest, buildQueryString } from './client.js';
 
 // Classes
 export const listClasses       = ()           => apiRequest('/academic/classes');
-export const listClassesPublic = ()           => apiRequest('/academic/classes/public');
+export const listClassesPublic = (schoolSlug) => apiRequest(`/academic/classes/public${buildQueryString({ school: schoolSlug })}`);
 export const createClass       = (data)       => apiRequest('/academic/classes', { method: 'POST', body: data });
 export const updateClass       = (id, data)   => apiRequest(`/academic/classes/${id}`, { method: 'PUT', body: data });
 export const deleteClass       = (id)         => apiRequest(`/academic/classes/${id}`, { method: 'DELETE' });
@@ -19,7 +19,7 @@ export const deleteRoutineEntry = (entryId)       => apiRequest(`/academic/routi
 export const getSyllabus          = (classId)           => apiRequest(`/academic/classes/${classId}/syllabus`);
 export const createSyllabusEntry  = (classId, data)     => apiRequest(`/academic/classes/${classId}/syllabus`, { method: 'POST', body: data });
 export const updateSyllabusEntry  = (entryId, data)     => apiRequest(`/academic/syllabus/${entryId}`, { method: 'PUT', body: data });
-export const deleteSyllabusEntry  = (entryId, classId)  => apiRequest(`/academic/syllabus/${entryId}`, { method: 'DELETE', body: { classId } });
+export const deleteSyllabusEntry  = (entryId)           => apiRequest(`/academic/syllabus/${entryId}`, { method: 'DELETE' });
 
 // Exams
 export const getExams       = (classId)         => apiRequest(`/academic/classes/${classId}/exams`);

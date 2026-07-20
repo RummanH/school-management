@@ -93,16 +93,16 @@ export async function updateTeacherProfile(client, {
 }
 
 
-export async function listPublicTeachers(client, limit = 12) {
+export async function listPublicTeachers(client, tenantId, limit = 12) {
   const result = await client.query(
     `SELECT tp.*, u.name, u.email, u.status
      FROM teacher_profiles tp
      JOIN users u ON u.id = tp.user_id
      JOIN tenants t ON t.id = tp.tenant_id
-     WHERE u.status = 'active' AND t.status = 'active'
+     WHERE tp.tenant_id = $1 AND u.status = 'active' AND t.status = 'active'
      ORDER BY NULLIF(tp.designation, '') NULLS LAST, u.name ASC
-     LIMIT $1`,
-    [limit],
+     LIMIT $2`,
+    [tenantId, limit],
   );
   return result.rows.map(mapTeacher);
 }

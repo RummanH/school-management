@@ -88,11 +88,11 @@ function ApplyForm({ onSubmitted, t, schoolSlug }) {
   const [classesLoading, setClassesLoading] = useState(true);
 
   useEffect(() => {
-    listClassesPublic()
+    listClassesPublic(schoolSlug)
       .then((d) => setClasses(d.classes || []))
       .catch(() => {})
       .finally(() => setClassesLoading(false));
-  }, []);
+  }, [schoolSlug]);
 
   function set(field, value) { setForm((f) => ({ ...f, [field]: value })); setError(''); }
 

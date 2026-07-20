@@ -2,8 +2,9 @@ import { assert } from "../lib/errors.js";
 import { createId as cryptoId } from "../lib/ids.js";
 import {
   listClasses, listClassesPublic, findClassById, insertClass, updateClass, deleteClass,
-  listRoutineByClass, upsertRoutineEntry, deleteRoutineEntry,
-  listSyllabusByClass, insertSyllabusEntry, updateSyllabusEntry, deleteSyllabusEntry,
+  isTeacherAssignedToClass,
+  listRoutineByClass, upsertRoutineEntry, deleteRoutineEntry, findRoutineEntryById,
+  listSyllabusByClass, insertSyllabusEntry, updateSyllabusEntry, deleteSyllabusEntry, findSyllabusEntryById,
   listExamsByClass, findExamById, insertExam, updateExam, deleteExam,
   listExamGroups, findExamGroupById, insertExamGroup, updateExamGroup, deleteExamGroup,
   listStudentsByClass, listResultsByExam, listResultsByStudent, upsertResult,
@@ -14,6 +15,7 @@ import {
   updateAcademicSession, deactivateOtherSessions, findSessionById, updateAcademicTerm, updateSubject, updateGradingPolicy, deleteStructureRecord,
   getGradingPolicies,
 } from "../repositories/academicRepository.js";
+import { findTenantBySlug } from "../repositories/tenantRepository.js";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -45,9 +47,17 @@ export class AcademicService {
     return this.databaseManager.withClient(c => listClasses(c, tenantId));
   }
 
-  // Public — for the admission form's "Applying for Class" dropdown
-  async listClassesPublic() {
-    return this.databaseManager.withClient(c => listClassesPublic(c));
+  // Public — for the admission form's "Applying for Class" dropdown. No
+  // resolvable tenant means an empty list, not another school's classes —
+  // same reasoning as noticeService.listPublic/galleryService.listPublic.
+  async listClassesPublic(schoolSlug) {
+    const slug = (schoolSlug || "").trim();
+    if (!slug) return [];
+    return this.databaseManager.withClient(async (c) => {
+      const tenant = await findTenantBySlug(c, slug);
+      if (!tenant || tenant.status !== "active") return [];
+      return listClassesPublic(c, tenant.id);
+    });
   }
 
   // The class's academic_year display string mirrors the linked session's name
@@ -137,6 +147,8 @@ export class AcademicService {
 
   async deleteRoutineEntry(entryId, actor) {
     return this.databaseManager.withTransaction(async (c) => {
+      const entry = await findRoutineEntryById(c, entryId);
+      assert(entry && entry.tenant_id === actor.tenantId, "Routine entry not found.", 404);
       await deleteRoutineEntry(c, entryId);
     });
   }
@@ -176,17 +188,23 @@ export class AcademicService {
     assert(title, "Title is required.", 400);
 
     return this.databaseManager.withTransaction(async (c) => {
+      const existing = await findSyllabusEntryById(c, entryId);
+      assert(existing && existing.tenant_id === actor.tenantId, "Syllabus entry not found.", 404);
       await updateSyllabusEntry(c, {
         id: entryId, subject, title,
         description:  (input.description  || '').trim(),
         chapterCount: Number(input.chapterCount || 0),
       });
-      return listSyllabusByClass(c, input.classId);
+      return listSyllabusByClass(c, existing.class_id);
     });
   }
 
-  async deleteSyllabusEntry(entryId, classId) {
-    await this.databaseManager.withTransaction(c => deleteSyllabusEntry(c, entryId));
+  async deleteSyllabusEntry(entryId, actor) {
+    return this.databaseManager.withTransaction(async (c) => {
+      const existing = await findSyllabusEntryById(c, entryId);
+      assert(existing && existing.tenant_id === actor.tenantId, "Syllabus entry not found.", 404);
+      await deleteSyllabusEntry(c, entryId);
+    });
   }
 
   // ── Exams (first-class records: name/term/session) ────────────────────────
@@ -335,6 +353,9 @@ export class AcademicService {
     return this.databaseManager.withTransaction(async (c) => {
       const exam = await findExamById(c, examScheduleId);
       assert(exam && exam.tenant_id === actor.tenantId, "Exam not found.", 404);
+      if (actor.role === 'teacher') {
+        assert(await isTeacherAssignedToClass(c, actor.tenantId, actor.id, exam.class_id), "You are not assigned to this class.", 403);
+      }
       const policies = await getGradingPolicies(c, actor.tenantId);
       for (const entry of entries) {
         if (entry.marksObtained === null || entry.marksObtained === undefined) continue;
@@ -372,6 +393,9 @@ export class AcademicService {
     await this.databaseManager.withTransaction(async (c) => {
       const cls = await findClassById(c, classId);
       assert(cls && cls.tenant_id === actor.tenantId, "Class not found.", 404);
+      if (actor.role === 'teacher') {
+        assert(await isTeacherAssignedToClass(c, actor.tenantId, actor.id, classId), "You are not assigned to this class.", 403);
+      }
       for (const rec of records) {
         assert(VALID.includes(rec.status), "Invalid attendance status.", 400);
         await upsertAttendance(c, {

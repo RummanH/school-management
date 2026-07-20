@@ -14,7 +14,7 @@ export class AcademicController {
 
   listClassesPublic = async (req, res, next) => {
     try {
-      const classes = await this.academicService.listClassesPublic();
+      const classes = await this.academicService.listClassesPublic(req.query.school);
       res.json({ classes });
     } catch (err) { next(err); }
   };
@@ -88,7 +88,7 @@ export class AcademicController {
 
   deleteSyllabusEntry = async (req, res, next) => {
     try {
-      await this.academicService.deleteSyllabusEntry(req.params.entryId, req.body.classId);
+      await this.academicService.deleteSyllabusEntry(req.params.entryId, req.currentUser);
       res.json({ success: true });
     } catch (err) { next(err); }
   };
