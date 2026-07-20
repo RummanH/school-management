@@ -180,9 +180,24 @@ export class AuthService {
     };
   }
 
-  async logout(token) {
+  async logout(token, requestMeta = {}) {
     if (!token) return;
     const tokenHash = hashSessionToken(token);
+    const existing = await this.getUserFromSessionToken(token);
     await this.databaseManager.withTransaction((c) => deleteUserSessionByTokenHash(c, tokenHash));
+    if (existing) {
+      await this.databaseManager.withClient((client) => insertAuditLog(client, {
+        tenantId: existing.user.tenantId || null,
+        actorUserId: existing.user.id,
+        actorRole: existing.user.role,
+        action: 'auth.logout',
+        entityType: 'user',
+        entityId: existing.user.id,
+        method: 'POST',
+        path: '/api/auth/logout',
+        ipAddress: requestMeta.ip || '',
+        userAgent: requestMeta.userAgent || '',
+      })).catch(() => {});
+    }
   }
 }

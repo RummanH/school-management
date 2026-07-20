@@ -11,6 +11,7 @@ import ProgressReportPage from '../features/portal/pages/ProgressReportPage.jsx'
 import DocumentPage from '../features/portal/pages/DocumentPage.jsx';
 import AdmissionPage from '../features/admission/pages/AdmissionPage.jsx';
 import ProfilePage from '../features/profile/pages/ProfilePage.jsx';
+import VerifyDocumentPage from '../features/verify/pages/VerifyDocumentPage.jsx';
 
 const LanguageContext = createContext(null);
 const AuthContext = createContext(null);
@@ -129,7 +130,8 @@ export default function App() {
   const isAdmission = pathname.startsWith('/admission');
   const isLogin = pathname === '/login';
   const isAccount = pathname.startsWith('/account');
-  const isReservedRoute = isDashboard || isPortal || isAdmission || isLogin || isAccount;
+  const isVerify = pathname.startsWith('/verify');
+  const isReservedRoute = isDashboard || isPortal || isAdmission || isLogin || isAccount || isVerify;
 
   const pathSegments = pathname.split('/').filter(Boolean);
   const siteSlug = isReservedRoute || pathSegments.length === 0 ? DEFAULT_SITE_SLUG : pathSegments[0];
@@ -156,6 +158,7 @@ export default function App() {
           : isReport ? <ProgressReportPage />
           : isPortal ? <PortalPage />
           : isAdmission ? <AdmissionPage />
+          : isVerify ? <VerifyDocumentPage code={pathSegments[1]} />
           : isLogin ? <LoginPage />
           : !site ? <SiteNotFound slug={siteSlug} />
           : <LandingPage />}

@@ -28,7 +28,7 @@ export class AuthController {
   logout = async (req, res, next) => {
     try {
       const token = readCookie(req, this.env.SESSION_COOKIE_NAME);
-      if (token) await this.authService.logout(token);
+      if (token) await this.authService.logout(token, { ip: req.ip, userAgent: req.headers["user-agent"] || "" });
       res.clearCookie(this.env.SESSION_COOKIE_NAME);
       res.json({ success: true });
     } catch (error) {

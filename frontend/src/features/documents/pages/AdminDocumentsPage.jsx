@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Loader2, Search, Printer, Download, ArrowLeft, Award, BadgeCheck, Send, FileText, IdCard, CreditCard } from 'lucide-react';
 import { useAuth } from '../../../app/App.jsx';
 import { listStudents, getStudentDocumentData } from '../../../services/api/studentApi.js';
+import { studentDocumentDownloadUrl } from '../../../services/api/documentApi.js';
 import { schoolInfo, renderDocument } from '../../portal/components/documentTemplates.jsx';
 
 const DOCUMENT_TILES = [
@@ -100,8 +101,18 @@ export default function AdminDocumentsPage() {
                 ))}
               </select>
             )}
-            <button onClick={() => window.print()} className="btn-secondary"><Printer className="h-4 w-4" /> Print</button>
-            <button onClick={() => window.print()} className="btn-primary"><Download className="h-4 w-4" /> Download PDF</button>
+            <button onClick={() => window.print()} className="btn-secondary"><Printer className="h-4 w-4" /> Print Preview</button>
+            <a
+              href={studentDocumentDownloadUrl(studentId, docType, {
+                kind: docType === 'certificate' ? certKind : undefined,
+                payment: docType === 'fee-receipt' ? paymentId : undefined,
+              })}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-primary"
+            >
+              <Download className="h-4 w-4" /> Download PDF
+            </a>
           </div>
         </div>
         {renderDocument(docType, { school, subject, results: data.results, attendance: data.attendance, ledger, paymentId: paymentId || undefined, kind: certKind })}

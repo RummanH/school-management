@@ -648,6 +648,21 @@ export async function createSchema(pool) {
       created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       UNIQUE(source_type, source_id)
     );
+
+    -- Every generated PDF (report card, certificate, admit card, ID card,
+    -- fee receipt...) gets one row here, keyed by a short public verify_code
+    -- printed as a QR on the document itself, so anyone (another school,
+    -- an employer) can confirm authenticity at /verify/:code without login.
+    CREATE TABLE IF NOT EXISTS document_issuances (
+      id              TEXT PRIMARY KEY,
+      tenant_id       TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      student_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      document_type   TEXT NOT NULL,
+      verify_code     TEXT NOT NULL UNIQUE,
+      issued_by       TEXT REFERENCES users(id) ON DELETE SET NULL,
+      metadata        JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
   `);
 
   // Stage 2 â€” add columns that may be missing on existing databases
@@ -837,6 +852,8 @@ export async function createSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_audit_logs_actor_created ON audit_logs(actor_user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_login_attempts_email_created ON login_attempts(email, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user ON password_reset_tokens(user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_document_issuances_code    ON document_issuances(verify_code);
+    CREATE INDEX IF NOT EXISTS idx_document_issuances_student ON document_issuances(student_user_id, created_at DESC);
 
     CREATE INDEX IF NOT EXISTS idx_classes_tenant_id          ON classes(tenant_id);
     CREATE INDEX IF NOT EXISTS idx_class_routines_class_id    ON class_routines(class_id);

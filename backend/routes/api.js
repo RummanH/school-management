@@ -78,6 +78,7 @@ export function createApiRouter({
   router.get("/admission/status", rateLimit({ windowMs: 60_000, max: 20, keyPrefix: "admission-status" }), admissionController.checkStatus);
   router.get("/academic/classes/public", academicController.listClassesPublic);
   router.get("/teachers/public", teacherController.listPublic);
+  router.get("/documents/verify/:code", rateLimit({ windowMs: 60_000, max: 30, keyPrefix: "verify-document" }), documentController.verify);
 
   // Auth
   router.post("/auth/login", rateLimit({ windowMs: 60_000, max: 10, keyPrefix: "login" }), authController.login);
@@ -110,6 +111,10 @@ export function createApiRouter({
   router.delete("/students/:userId", ...adminOnly, studentController.remove);
   router.get("/students/:studentUserId/guardians", ...adminOnly, guardianController.listGuardiansForStudent);
   router.get("/students/:studentUserId/document-data", ...documentAdmin, documentController.getStudentDocumentData);
+  router.get("/students/:studentUserId/documents/:type/download", ...documentAdmin,
+    auditAction(databaseManager, "export.student_document", "document"), documentController.downloadForStudent);
+  router.get("/documents/me/:type/download", auth, documentController.downloadMine);
+  router.get("/guardian/wards/:studentUserId/documents/:type/download", ...guardianOnly, documentController.downloadForWard);
 
   // Teachers - admin only (tenant-scoped)
   router.get("/teachers",         ...adminOnly, teacherController.list);
