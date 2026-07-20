@@ -41,20 +41,20 @@
     mission: "Mission",
     missionText: "We foster a safe, inclusive, and stimulating environment where students develop intellectual curiosity, moral integrity, and a lifelong love of learning.",
     chairmanTitle: "Chairman's Message",
-    chairmanName: "Mr. Abdullah Al Mamun",
-    chairmanInitial: "C",
-    chairmanMessage: "Education is the most powerful tool we can use to change the world. At Greenfield Academy, we are committed to delivering excellence and creating compassionate global citizens.",
-    principalTitle: "Principal's Message",
-    principalName: "Mrs. Fatema Begum",
-    principalInitial: "P",
+    chairmanName: "Alhaj Mahmudul Hasan", // placeholder — replace with the real chairman's name
+    chairmanInitial: "MH",
+    chairmanMessage: "Education is the most powerful tool we can use to change the world. At Madinatunnor Madrasha, we are committed to delivering excellence in both deen and academics, and raising compassionate, principled citizens.",
+    principalTitle: "Muhtamim's Message",
+    principalName: "Maulana Serajul Islam", // placeholder — replace with the real principal/muhtamim's name
+    principalInitial: "SI",
     principalMessage: "Our dedicated team of educators works tirelessly to provide a nurturing environment where every child can discover their potential and achieve their dreams.",
     historyEyebrow: "Institution History",
     historyTitle: "Built on service, discipline, and academic care",
     historyItems: [
       {
-        year: "1998",
+        year: "[YEAR]",
         title: "Foundation",
-        text: "Greenfield Academy began with a small group of learners and a commitment to disciplined, caring education.",
+        text: "Madinatunnor Madrasha began with a small group of learners and a commitment to disciplined, caring education rooted in Islamic values.",
       },
       {
         year: "2008",
@@ -132,8 +132,8 @@
     levelLabel: "Level {number}",
     leadership: [
       { role: "Governing Body", name: "Strategic direction and institutional policy" },
-      { role: "Chairman", name: "Mr. Abdullah Al Mamun" },
-      { role: "Principal", name: "Mrs. Fatema Begum" },
+      { role: "Chairman", name: "Alhaj Mahmudul Hasan" },
+      { role: "Principal", name: "Maulana Serajul Islam" },
       { role: "Academic Coordinators", name: "Section planning, routines, exams, and teacher support" },
       { role: "Class Teachers", name: "Student care, attendance, guardians, and daily classroom guidance" },
     ],
@@ -157,7 +157,7 @@
     sample2: "Admission Open for Session 2026 - Apply Before 31 January",
     sample3: "Parent-Teacher Meeting: Saturday, 20 December 2025 at 10:00 AM",
     sample4: "School closed on 16 December 2025 (Victory Day)",
-    news1: "Greenfield students win Gold at the District Science Fair 2025",
+    news1: "Madinatunnor students win Gold at the District Science Fair 2025",
     news2: "New Computer Lab inaugurated with 40 modern workstations",
     news3: "Results: 98% pass rate in SSC 2025 - highest in the district",
   },
@@ -214,18 +214,18 @@
       academics: "Academics",
       finance: "Finance",
     },
-    browserUrl: "app.greenfieldacademy.edu.bd/dashboard",
-    productName: "Greenfield OS",
+    browserUrl: "app.madinatunnormadrasha.edu.bd/dashboard",
+    productName: "Madina OS",
     panelName: "School command centre",
-    workspace: "Greenfield Academy",
+    workspace: "Madinatunnor Madrasha",
     search: "Search the platform",
     liveStatus: "Live data",
     chartLegend: "This week",
     activityTitle: "Recent activity",
     viewAll: "View all",
     recently: "Updated moments ago",
-    adminInitials: "FB",
-    adminName: "Fatema Begum",
+    adminInitials: "SI",
+    adminName: "Serajul Islam",
     adminRole: "Principal",
     sidebar: {
       overview: "Overview",
@@ -249,7 +249,7 @@
     views: {
       operations: {
         title: "Operations Overview",
-        heading: "Good morning, Fatema",
+        heading: "Good morning, Serajul",
         subheading: "Here is what needs attention today.",
         chartTitle: "Weekly attendance",
         chartSubtitle: "Whole-school attendance by day",
@@ -301,12 +301,12 @@
     eyebrow: "School Community",
     title: "Small operational changes. A noticeably better school day.",
     subtitle: "The platform is designed around the moments that create friction for leadership, teachers, and families, then turns them into one dependable flow.",
-    note: "Perspectives from the Greenfield Academy demo community.",
+    note: "Perspectives from the Madinatunnor Madrasha demo community.",
     principal: {
       quote: "Before the first bell, I can see attendance, pending admissions, fee movement, and the items that need a decision. The day starts with clarity.",
-      initials: "FB",
-      name: "Mrs. Fatema Begum",
-      role: "Principal, Greenfield Academy",
+      initials: "SI",
+      name: "Maulana Serajul Islam",
+      role: "Principal, Madinatunnor Madrasha",
     },
     teacher: {
       quote: "Attendance, assessment entry, and guardian updates now sit in the same flow, so administration no longer follows me back home.",
@@ -386,7 +386,7 @@
   },
   whyChooseUs: {
     title: "Why Choose Us",
-    subtitle: "What makes Greenfield Academy the right choice for your child.",
+    subtitle: "What makes Madinatunnor Madrasha the right choice for your child.",
     facultyTitle: "Experienced Faculty",
     facultyDesc: "A caring, qualified teaching staff dedicated to every student's growth.",
     curriculumTitle: "Modern Curriculum",
@@ -565,7 +565,7 @@
   },
   gallery: {
     title: "Photo Gallery",
-    subtitle: "Glimpses of life at Greenfield Academy.",
+    subtitle: "Glimpses of life at Madinatunnor Madrasha.",
     viewAll: "View Full Gallery",
     empty: "Gallery photos coming soon.",
     videoTitle: "Gallery video",
@@ -592,7 +592,7 @@
     },
   },
   footer: {
-    description: "Committed to academic excellence and the holistic development of every student since 1998.",
+    description: "Committed to academic excellence, Islamic values, and the holistic development of every student.",
     quickLinks: "Quick Links",
     schoolAccess: "School Access",
     schoolAccessLinks: {
@@ -604,6 +604,6 @@
     contact: "Contact",
     followUs: "Follow Us",
     bottomNote: "Designed for modern school communication, operations, and family trust.",
-    copyright: "© {year} Greenfield Academy. All rights reserved.",
+    copyright: "© {year} Madinatunnor Madrasha. All rights reserved.",
   },
 };
